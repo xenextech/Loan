@@ -13,7 +13,7 @@ const SLIDES = [
     sub:
       "Submit your application and documents online. Partner banks review your case and communicate the decision directly — no branch visit needed.",
     image:
-      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=900&h=1200&fit=crop&auto=format&q=80",
+      "/assets/about.jpg",
     alt: "Students walking on a university campus",
   },
   {
@@ -35,9 +35,9 @@ const SLIDES = [
 ] as const;
 
 const STATS = [
-  { value: "12+", label: "Partner banks"  },
-  { value: "4",   label: "Steps to apply" },
-  { value: "0",   label: "Branch visits"  },
+  { num: 12, suffix: "+", label: "Partner banks"  },
+  { num: 4,  suffix: "",  label: "Steps to apply" },
+  { num: 0,  suffix: "",  label: "Branch visits"  },
 ] as const;
 
 const INTERVAL_MS = 6000;
@@ -64,6 +64,51 @@ function useTypewriter(text: string, speed = 38) {
   }, [text, speed]);
 
   return { displayed, typing };
+}
+
+/* ─── Count-up hook ─────────────────────────────────────────────────────── */
+
+function useCountUp(to: number, durationMs = 1500, delayMs = 500) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (to === 0) return;
+    let rafId = 0;
+    let startTime: number | null = null;
+
+    const step = (ts: number) => {
+      if (startTime === null) startTime = ts;
+      const progress = Math.min((ts - startTime) / durationMs, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setCount(Math.round(to * eased));
+      if (progress < 1) rafId = requestAnimationFrame(step);
+    };
+
+    const timerId = window.setTimeout(() => {
+      rafId = requestAnimationFrame(step);
+    }, delayMs);
+
+    return () => {
+      clearTimeout(timerId);
+      cancelAnimationFrame(rafId);
+    };
+  }, [to, durationMs, delayMs]);
+
+  return count;
+}
+
+function StatItem({ num, suffix, label, delay }: {
+  num: number; suffix: string; label: string; delay: number;
+}) {
+  const count = useCountUp(num, 1500, delay);
+  return (
+    <div className="shrink-0">
+      <p className="text-[1.6rem] font-bold text-zinc-900 tabular-nums leading-none">
+        {num === 0 ? 0 : count}{suffix}
+      </p>
+      <p className="text-xs text-zinc-500 mt-1">{label}</p>
+    </div>
+  );
 }
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
@@ -97,8 +142,8 @@ export default function HeroSection() {
       onMouseLeave={() => setPaused(false)}
     >
 
-      {/* ── Left panel — dark, content ───────────────────────────────────── */}
-      <div className="relative flex flex-col justify-center w-full lg:w-[55%] xl:w-[52%] bg-zinc-950 px-6 sm:px-10 lg:px-14 xl:px-20 pt-24 pb-12 lg:pt-0 lg:pb-0">
+      {/* ── Left panel — warm off-white, content ────────────────────────── */}
+      <div className="relative flex flex-col justify-center w-full lg:w-[55%] xl:w-[52%] bg-[#F8F6F1] px-6 sm:px-10 lg:px-14 xl:px-20 pt-24 pb-12 lg:pt-0 lg:pb-0">
 
         {/* Eyebrow — fades on slide change */}
         <AnimatePresence mode="wait">
@@ -117,7 +162,7 @@ export default function HeroSection() {
         {/* Headline with typewriter + blinking cursor */}
         <h1
           id="hero-heading"
-          className="text-[2.5rem] sm:text-5xl lg:text-[3.1rem] font-bold tracking-tight text-white leading-[1.09] mb-5 min-h-[2.2em]"
+          className="text-[2.5rem] sm:text-5xl lg:text-[3.1rem] font-bold tracking-tight text-zinc-900 leading-[1.09] mb-5 min-h-[2.2em]"
         >
           {typed}
           <span
@@ -136,13 +181,13 @@ export default function HeroSection() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.38, delay: 0.08 }}
-            className="text-base text-white/70 leading-relaxed max-w-[460px] mb-2"
+            className="text-base text-zinc-600 leading-relaxed max-w-[460px] mb-2"
           >
             {slide.sub}
           </motion.p>
         </AnimatePresence>
 
-        <p className="text-sm text-white/35 max-w-[460px] mb-10">
+        <p className="text-sm text-zinc-400 max-w-[460px] mb-10">
           Cliq is not a lender. We connect students with NRB-regulated banks.
         </p>
 
@@ -161,24 +206,25 @@ export default function HeroSection() {
             variant="outline"
             size="lg"
             onClick={() => scrollTo("how-it-works")}
-            className="w-full sm:w-auto h-11 px-7 text-sm font-medium rounded-xl border-white/20 text-white bg-transparent hover:bg-white/10 hover:text-white hover:border-white/40"
+            className="w-full sm:w-auto h-11 px-7 text-sm font-medium rounded-xl border-zinc-300 text-zinc-700 bg-transparent hover:bg-zinc-100 hover:text-zinc-900 hover:border-zinc-400"
           >
             How It Works
           </Button>
         </div>
 
         {/* Stats + slide controls on one baseline */}
-        <div className="flex items-end justify-between gap-4 pt-8 border-t border-white/10">
+        <div className="flex items-end justify-between gap-4 pt-8 border-t border-zinc-200">
 
-          {/* Stats */}
+          {/* Stats — each number counts up on mount */}
           <div className="flex gap-7 sm:gap-10">
-            {STATS.map(({ value, label }) => (
-              <div key={label} className="shrink-0">
-                <p className="text-[1.6rem] font-bold text-white tabular-nums leading-none">
-                  {value}
-                </p>
-                <p className="text-xs text-white/40 mt-1">{label}</p>
-              </div>
+            {STATS.map(({ num, suffix, label }, i) => (
+              <StatItem
+                key={label}
+                num={num}
+                suffix={suffix}
+                label={label}
+                delay={500 + i * 180}
+              />
             ))}
           </div>
 
@@ -223,7 +269,7 @@ export default function HeroSection() {
 
         {/* Right-edge blend — left panel fades into image */}
         <div
-          className="hidden lg:block absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-r from-zinc-950 to-transparent pointer-events-none z-10"
+          className="hidden lg:block absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#F8F6F1] to-transparent pointer-events-none z-10"
           aria-hidden="true"
         />
       </div>
@@ -250,8 +296,8 @@ export default function HeroSection() {
           </motion.div>
         </AnimatePresence>
 
-        {/* Left-edge gradient — blends image into the dark left panel */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-zinc-950 to-transparent z-10 pointer-events-none" />
+        {/* Left-edge gradient — blends image into the warm left panel */}
+        <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#F8F6F1] to-transparent z-10 pointer-events-none" />
 
         {/* Subtle tint so bright images don't blow out */}
         <div className="absolute inset-0 bg-black/10 z-[5] pointer-events-none" />
@@ -277,7 +323,7 @@ export default function HeroSection() {
       </div>
 
       {/* ── Progress bar ─────────────────────────────────────────────────── */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/10 z-30" aria-hidden="true">
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-zinc-200 z-30" aria-hidden="true">
         {!paused && (
           <motion.div
             key={`progress-${current}`}
