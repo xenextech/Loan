@@ -1,0 +1,48 @@
+import {
+  createApi,
+  fetchBaseQuery,
+  type BaseQueryFn,
+  type FetchArgs,
+  type FetchBaseQueryError,
+} from "@reduxjs/toolkit/query/react";
+import { clearCredentials } from "@/lib/store/authSlice";
+
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3001"}/api/v1`,
+  prepareHeaders: (headers, { getState }) => {
+    // Avoid circular import — cast instead of importing RootState
+    const token = (getState() as { auth: { token: string | null } }).auth?.token;
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return headers;
+  },
+});
+
+// Unwrap the backend's { success, statusCode, message, data, timestamp } envelope
+// and auto-logout on 401.
+const baseQueryWithUnwrap: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  const result = await rawBaseQuery(args, api, extraOptions);
+
+  if (result.error) {
+    if (result.error.status === 401) {
+      api.dispatch(clearCredentials());
+    }
+    return result;
+  }
+
+  if (result.data && typeof result.data === "object" && "data" in result.data) {
+    return { data: (result.data as { data: unknown }).data };
+  }
+
+  return result;
+};
+
+export const baseApi = createApi({
+  reducerPath: "api",
+  baseQuery: baseQueryWithUnwrap,
+  tagTypes: ["Application", "Document", "AdminApp", "Dashboard", "Notification"],
+  endpoints: () => ({}),
+});

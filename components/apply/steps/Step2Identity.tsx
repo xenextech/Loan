@@ -1,0 +1,455 @@
+"use client";
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { step2Schema, type Step2FormData } from "@/lib/validations/schemas";
+import FileUploadZone from "@/components/apply/fields/FileUploadZone";
+import OcrProcessor from "@/components/apply/fields/OcrProcessor";
+import { ArrowRight, ArrowLeft, IdCard, MapPin, User2 } from "lucide-react";
+import { useUploadDocumentMutation } from "@/lib/api/documentsApi";
+import { useAppSelector } from "@/lib/hooks";
+import type { DocumentType } from "@/types/api";
+
+interface Step2Props {
+  defaultValues?: Partial<Step2FormData>;
+  onNext: (data: Step2FormData) => void;
+  onPrev: () => void;
+  onDataChange?: (data: Partial<Step2FormData>) => void;
+}
+
+const PROVINCES = [
+  "Koshi", "Madhesh", "Bagmati", "Gandaki", "Lumbini", "Karnali", "Sudurpashchim",
+];
+
+const OCR_MOCK_DATA = {
+  citizenship: {
+    identityName: "Ram Bahadur Thapa",
+    dob: "1999-03-15",
+    identityNumber: "25-02-77-03456",
+    issuedDistrict: "Kathmandu",
+    issuedDate: "2016-08-10",
+  },
+  passport: {
+    identityName: "Ram Bahadur Thapa",
+    dob: "1999-03-15",
+    identityNumber: "P0345678",
+    issuedDistrict: "Kathmandu",
+    issuedDate: "2020-01-15",
+  },
+  driving_license: {
+    identityName: "Ram Bahadur Thapa",
+    dob: "1999-03-15",
+    identityNumber: "09-01-780234",
+    issuedDistrict: "Kathmandu",
+    issuedDate: "2019-06-20",
+  },
+};
+
+const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
+  <div className="flex items-center gap-2.5 mb-6">
+    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+      <Icon className="w-4 h-4 text-primary" />
+    </div>
+    <h3 className="text-base font-semibold text-foreground">{title}</h3>
+  </div>
+);
+
+export default function Step2Identity({ defaultValues, onNext, onPrev, onDataChange }: Step2Props) {
+  const [ocrProcessing, setOcrProcessing] = useState(false);
+  const [ocrDone, setOcrDone] = useState(false);
+  const applicationId = useAppSelector((s) => s.application.applicationId);
+  const [uploadDocument] = useUploadDocumentMutation();
+
+  const uploadFile = async (file: File, documentType: DocumentType) => {
+    if (!applicationId) { toast.error("No active application. Please refresh."); return; }
+    try {
+      await uploadDocument({ applicationId, documentType, file }).unwrap();
+    } catch {
+      toast.error(`Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`);
+    }
+  };
+
+  const form = useForm<Step2FormData>({
+    resolver: zodResolver(step2Schema),
+    defaultValues: {
+      identityType: undefined,
+      identityNumber: "",
+      identityName: "",
+      dob: "",
+      issuedDistrict: "",
+      issuedDate: "",
+      gender: undefined,
+      occupation: undefined,
+      province: "",
+      district: "",
+      municipality: "",
+      ward: "",
+      ...defaultValues,
+    },
+  });
+
+  const identityType = form.watch("identityType");
+  const watchedValues = form.watch();
+
+  useEffect(() => {
+    onDataChange?.(watchedValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(watchedValues)]);
+
+  const handleIdentityFront = (file: File | null) => {
+    if (!file) return;
+    uploadFile(file, "IDENTITY_FRONT");
+    if (!identityType) return;
+    setOcrProcessing(true);
+    setOcrDone(false);
+    setTimeout(() => {
+      setOcrProcessing(false);
+      setOcrDone(true);
+      const data = OCR_MOCK_DATA[identityType as keyof typeof OCR_MOCK_DATA];
+      if (data) {
+        Object.entries(data).forEach(([key, value]) => {
+          form.setValue(key as keyof Step2FormData, value, { shouldValidate: true });
+        });
+      }
+    }, 3000);
+  };
+
+  const handleIdentityBack = (file: File | null) => {
+    if (file) uploadFile(file, "IDENTITY_BACK");
+  };
+
+  const handleApplicantPhoto = (file: File | null) => {
+    if (file) uploadFile(file, "APPLICANT_PHOTO");
+  };
+
+  const identityLabels: Record<string, string> = {
+    citizenship: "Citizenship Certificate",
+    passport: "Passport",
+    driving_license: "Driving License",
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onNext)} className="space-y-10">
+        {/* Identity Type */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <SectionHeading icon={IdCard} title="Identity Document" />
+
+          <FormField
+            control={form.control}
+            name="identityType"
+            render={({ field }) => (
+              <FormItem className="mb-6">
+                <FormLabel>Identity Type</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+                  >
+                    {[
+                      { value: "citizenship", label: "Citizenship", desc: "Nepal Government" },
+                      { value: "passport", label: "Passport", desc: "Government issued" },
+                      { value: "driving_license", label: "Driving License", desc: "DOTM issued" },
+                    ].map((opt) => (
+                      <Label
+                        key={opt.value}
+                        htmlFor={opt.value}
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          field.value === opt.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} id={opt.value} />
+                        <div>
+                          <p className="text-sm font-semibold">{opt.label}</p>
+                          <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                        </div>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Document Upload */}
+          <AnimatePresence>
+            {identityType && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-4"
+              >
+                <p className="text-sm font-medium text-foreground mb-3">
+                  Upload {identityLabels[identityType] ?? "Document"}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FileUploadZone
+                    label="Front Side"
+                    hint="Clear photo of the front"
+                    accept="image/jpeg,image/png"
+                    onFileSelect={handleIdentityFront}
+                  />
+                  <FileUploadZone
+                    label="Back Side"
+                    hint="Clear photo of the back"
+                    accept="image/jpeg,image/png"
+                    onFileSelect={handleIdentityBack}
+                  />
+                </div>
+
+                <OcrProcessor isProcessing={ocrProcessing} extractedData={ocrDone ? [] : undefined} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Auto-fill / Manual fields */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <SectionHeading icon={User2} title="Personal Details" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <FormField
+              control={form.control}
+              name="identityName"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2">
+                  <FormLabel>Full Name (as on document)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Auto-filled from document" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="dob"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date of Birth</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="identityNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Document Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Auto-filled from document" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="issuedDistrict"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Issued District</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Auto-filled from document" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="issuedDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Issued Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Gender</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="occupation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Occupation</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select occupation" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="employed">Employed</SelectItem>
+                      <SelectItem value="self_employed">Self-Employed</SelectItem>
+                      <SelectItem value="unemployed">Unemployed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </motion.div>
+
+        {/* Address */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <SectionHeading icon={MapPin} title="Permanent Address" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <FormField
+              control={form.control}
+              name="province"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Province</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select province" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PROVINCES.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {p}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="district"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>District</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Kathmandu" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="municipality"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Municipality / VDC</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Kathmandu Metropolitan" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ward"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ward No.</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 12" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Photo upload */}
+          <div className="mt-6">
+            <p className="text-sm font-medium text-foreground mb-3">Applicant Photo</p>
+            <div className="max-w-[200px]">
+              <FileUploadZone
+                label="Upload Photo"
+                hint="Recent passport-size photo"
+                accept="image/jpeg,image/png"
+                variant="photo"
+                onFileSelect={handleApplicantPhoto}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Navigation */}
+        <div className="flex justify-between pt-2">
+          <Button type="button" variant="outline" size="lg" className="h-12 px-6" onClick={onPrev}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <Button type="submit" size="lg" className="h-12 px-8 text-base font-semibold">
+            Continue
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}
