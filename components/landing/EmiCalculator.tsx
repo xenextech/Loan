@@ -78,7 +78,7 @@ function SemiDonut({ principalRatio }: { principalRatio: number }) {
   return (
     <svg viewBox="0 0 300 158" className="w-full max-w-[260px] mx-auto overflow-visible">
       {/* Grey background track */}
-      <path d={d} fill="none" stroke="#E5E7EB" strokeWidth="28" strokeLinecap="round" />
+      <path d={d} fill="none" stroke="#0074A3" strokeWidth="28" strokeLinecap="round" />
 
       {/* Principal — primary blue, starts from left */}
       {pLen > 0 && (
@@ -207,7 +207,23 @@ export default function EmiCalculator() {
           </p>
           <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight">
             Find the right loan{" "}
-            <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-medium">for you.</span>
+            <span className="relative inline-block">
+              <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">for you.</span>
+              <svg
+                className="absolute -bottom-1 left-0 w-full overflow-visible"
+                viewBox="0 0 140 8"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
+                  stroke="#22C55E"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
           </h2>
         </motion.div>
 
@@ -216,15 +232,15 @@ export default function EmiCalculator() {
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid lg:grid-cols-2 gap-5 items-stretch"
+          className="grid lg:grid-cols-2 gap-5"
         >
 
           {/* ── LEFT: input card ─────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm px-8 py-8 space-y-8 h-full flex flex-col justify-between">
+          <div className="bg-white rounded-2xl border border-gray-200 px-8 py-8 flex flex-col gap-10 h-full">
 
             {/* Loan Amount */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <label className="text-[15px] font-semibold text-zinc-800">Loan Amount</label>
                 <PrefixInput
                   prefix="Rs."
@@ -238,9 +254,9 @@ export default function EmiCalculator() {
                 min={LOAN_MIN} max={LOAN_MAX} step={10_000}
                 onChange={handleLoanSlider}
               />
-              <div className="flex justify-between mt-2.5">
+              <div className="flex justify-between">
                 <span className="text-[11px] text-zinc-400">Rs.50,000</span>
-                <span className="text-[11px] text-zinc-400">Rs.10,00,000 (10 L)</span>
+                <span className="text-[11px] text-zinc-400">Rs.10,00,000</span>
               </div>
             </div>
 
@@ -258,9 +274,10 @@ export default function EmiCalculator() {
                       className="w-4 h-4 rounded-sm shrink-0"
                       style={{ background: lender.color }}
                     />
-                    <span className="text-zinc-600">({rate}%)</span>
+                    <span className="text-zinc-800 whitespace-nowrap">{lender.name}</span>
+                    <span className="text-zinc-500 whitespace-nowrap">({rate}%)</span>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-zinc-400 transition-transform duration-200 ${lenderOpen ? "rotate-180" : ""}`}
+                      className={`w-3.5 h-3.5 text-zinc-400 shrink-0 transition-transform duration-200 ${lenderOpen ? "rotate-180" : ""}`}
                     />
                   </button>
 
@@ -314,8 +331,8 @@ export default function EmiCalculator() {
                 onChange={handleTenureSlider}
               />
               <div className="flex justify-between mt-2.5">
-                <span className="text-[11px] text-zinc-400">Min 1 year</span>
-                <span className="text-[11px] text-zinc-400">Max 7 years</span>
+                <span className="text-[11px] text-zinc-400">1 year</span>
+                <span className="text-[11px] text-zinc-400">7 years</span>
               </div>
             </div>
 

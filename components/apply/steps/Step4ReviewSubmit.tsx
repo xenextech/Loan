@@ -43,7 +43,13 @@ interface ReviewCardProps {
   rows: { label: string; value: string | undefined }[];
 }
 
-function ReviewCard({ title, icon: Icon, step, onEdit, rows }: ReviewCardProps) {
+function ReviewCard({
+  title,
+  icon: Icon,
+  step,
+  onEdit,
+  rows,
+}: ReviewCardProps) {
   return (
     <Card className="shadow-sm hover:shadow-md transition-shadow border-border">
       <CardHeader className="pb-3">
@@ -70,7 +76,9 @@ function ReviewCard({ title, icon: Icon, step, onEdit, rows }: ReviewCardProps) 
         <dl className="space-y-3">
           {rows.map(({ label, value }) => (
             <div key={label} className="flex justify-between gap-4">
-              <dt className="text-xs text-muted-foreground shrink-0">{label}</dt>
+              <dt className="text-xs text-muted-foreground shrink-0">
+                {label}
+              </dt>
               <dd className="text-xs font-medium text-foreground text-right truncate">
                 {value ?? "—"}
               </dd>
@@ -113,7 +121,8 @@ export default function Step4ReviewSubmit({
           Please review all details before submitting.
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Once submitted, you cannot edit your application. Contact support for corrections.
+          Once submitted, you cannot edit your application. Contact support for
+          corrections.
         </p>
       </div>
 
@@ -138,7 +147,12 @@ export default function Step4ReviewSubmit({
           step={1}
           onEdit={onEdit}
           rows={[
-            { label: "Study Type", value: step1?.studyType ? STUDY_TYPE_MAP[step1.studyType] : undefined },
+            {
+              label: "Study Type",
+              value: step1?.studyType
+                ? STUDY_TYPE_MAP[step1.studyType]
+                : undefined,
+            },
             { label: "Course", value: step1?.courseName },
             { label: "University", value: step1?.boardUniversity },
             { label: "Duration", value: step1?.courseDuration },
@@ -152,7 +166,12 @@ export default function Step4ReviewSubmit({
           step={1}
           onEdit={onEdit}
           rows={[
-            { label: "Loan Amount", value: step1?.loanAmount ? formatNPR(step1.loanAmount) : undefined },
+            {
+              label: "Loan Amount",
+              value: step1?.loanAmount
+                ? formatNPR(step1.loanAmount)
+                : undefined,
+            },
           ]}
         />
 
@@ -163,11 +182,21 @@ export default function Step4ReviewSubmit({
           step={2}
           onEdit={onEdit}
           rows={[
-            { label: "ID Type", value: step2?.identityType?.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()) },
+            {
+              label: "ID Type",
+              value: step2?.identityType
+                ?.replace("_", " ")
+                .replace(/\b\w/g, (l) => l.toUpperCase()),
+            },
             { label: "Name on Doc", value: step2?.identityName },
             { label: "DOB", value: step2?.dob },
             { label: "Doc Number", value: step2?.identityNumber },
-            { label: "Gender", value: step2?.gender ? step2.gender.charAt(0).toUpperCase() + step2.gender.slice(1) : undefined },
+            {
+              label: "Gender",
+              value: step2?.gender
+                ? step2.gender.charAt(0).toUpperCase() + step2.gender.slice(1)
+                : undefined,
+            },
           ]}
         />
 
@@ -195,11 +224,22 @@ export default function Step4ReviewSubmit({
             { label: "Father's Name", value: step3?.fatherName },
             { label: "Mother's Name", value: step3?.motherName },
             { label: "Grandfather", value: step3?.grandfatherName },
-            { label: "Marital Status", value: step3?.maritalStatus ? step3.maritalStatus.charAt(0).toUpperCase() + step3.maritalStatus.slice(1) : undefined },
+            {
+              label: "Marital Status",
+              value: step3?.maritalStatus
+                ? step3.maritalStatus.charAt(0).toUpperCase() +
+                  step3.maritalStatus.slice(1)
+                : undefined,
+            },
             ...(step3?.maritalStatus === "married"
               ? [{ label: "Spouse", value: step3?.spouseName }]
               : []),
-            { label: "Expected Salary", value: step3?.expectedSalary ? `NPR ${step3.expectedSalary}` : undefined },
+            {
+              label: "Expected Salary",
+              value: step3?.expectedSalary
+                ? `NPR ${step3.expectedSalary}`
+                : undefined,
+            },
           ]}
         />
       </div>
@@ -218,10 +258,14 @@ export default function Step4ReviewSubmit({
               onCheckedChange={(v) => setAgreed1(v === true)}
               className="mt-0.5"
             />
-            <Label htmlFor="agree1" className="text-sm text-foreground leading-relaxed cursor-pointer">
-              I confirm that all information provided in this application is true, accurate, and
-              complete to the best of my knowledge. I understand that providing false information
-              may result in rejection or cancellation of the loan.
+            <Label
+              htmlFor="agree1"
+              className="text-sm text-foreground leading-relaxed cursor-pointer"
+            >
+              I confirm that all information provided in this application is
+              true, accurate, and complete to the best of my knowledge. I
+              understand that providing false information may result in
+              rejection or cancellation of the loan.
             </Label>
           </div>
           <div className="flex items-start gap-3">
@@ -231,9 +275,13 @@ export default function Step4ReviewSubmit({
               onCheckedChange={(v) => setAgreed2(v === true)}
               className="mt-0.5"
             />
-            <Label htmlFor="agree2" className="text-sm text-foreground leading-relaxed cursor-pointer">
-              I authorize Cliq Edu Loan and its partner banks to verify my identity, academic
-              records, and financial information with relevant institutions and government agencies.
+            <Label
+              htmlFor="agree2"
+              className="text-sm text-foreground leading-relaxed cursor-pointer"
+            >
+              I authorize GenZ Loan Edu Loan and its partner banks to verify my
+              identity, academic records, and financial information with
+              relevant institutions and government agencies.
             </Label>
           </div>
         </CardContent>
@@ -253,7 +301,12 @@ export default function Step4ReviewSubmit({
           Back
         </Button>
         <Button
-          onClick={() => onSubmit({ informationAccurate: agreed1, authorizeVerification: agreed2 })}
+          onClick={() =>
+            onSubmit({
+              informationAccurate: agreed1,
+              authorizeVerification: agreed2,
+            })
+          }
           disabled={!canSubmit}
           size="lg"
           className="h-12 px-8 text-base font-semibold shadow-sm hover:shadow-md transition-all disabled:opacity-50"

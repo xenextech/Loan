@@ -2,7 +2,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
@@ -16,8 +21,13 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/admin",              icon: LayoutDashboard, label: "Overview",     exact: true  },
-  { href: "/admin/applications", icon: FileText,        label: "Applications", exact: false },
+  { href: "/admin", icon: LayoutDashboard, label: "Overview", exact: true },
+  {
+    href: "/admin/applications",
+    icon: FileText,
+    label: "Applications",
+    exact: false,
+  },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -66,7 +76,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
           <GraduationCap className="w-4 h-4 text-white" />
         </div>
-        <span className="text-sm font-bold text-foreground leading-none">Cliq Edu Loan</span>
+        <span className="text-sm font-bold text-foreground leading-none">
+          GenZ Loan Edu Loan
+        </span>
         <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 py-0.5 ml-auto shrink-0 font-bold tracking-wide">
           ADMIN
         </Badge>
@@ -88,9 +100,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <ShieldCheck className="w-3.5 h-3.5 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-foreground truncate">Administrator</p>
+            <p className="text-xs font-semibold text-foreground truncate">
+              Administrator
+            </p>
             <p className="text-[10px] text-muted-foreground truncate">
-              {user?.email ?? "Cliq Admin Portal"}
+              {user?.email ?? "GenZ Loan Admin Portal"}
             </p>
           </div>
         </div>
@@ -124,7 +138,7 @@ export default function AdminSidebar() {
           <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
             <GraduationCap className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-sm font-bold text-foreground">Cliq</span>
+          <span className="text-sm font-bold text-foreground">GenZ Loan</span>
           <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 font-bold">
             ADMIN
           </Badge>

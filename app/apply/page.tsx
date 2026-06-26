@@ -1,7 +1,7 @@
 import ApplicationWizard from "@/components/apply/ApplicationWizard";
 
 export const metadata = {
-  title: "Apply for Education Loan — Cliq Edu Loan",
+  title: "Apply for Education Loan — GenZ Loan Edu Loan",
   description: "Complete your education loan application in 4 simple steps.",
 };
 

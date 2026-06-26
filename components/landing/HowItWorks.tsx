@@ -3,17 +3,8 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRight,
-  Bell,
-  Search,
-  SlidersHorizontal,
-  GraduationCap,
-  ChevronRight,
-  Wifi,
-  Signal,
-  Battery,
-} from "lucide-react";
+import { Signal, Wifi, Battery } from "lucide-react";
+
 
 /* ─── Step data ──────────────────────────────────────────────────────────── */
 const STEPS = [
@@ -30,7 +21,7 @@ const STEPS = [
   {
     title: "Get Approved & Funded",
     description:
-      "Once your application is approved, the bank will disburse the funds directly to your account. You can manage your loan and repayment schedule through our platform.",
+      "Once your application is approved, the bank will disburse the funds directly to your college account.",
   },
 ] as const;
 
@@ -49,7 +40,6 @@ function PhoneMockup({ inView }: { inView: boolean }) {
 
       {/* ── Phone frame ── */}
       <div className="relative bg-zinc-900 rounded-[52px] p-[10px] shadow-2xl shadow-zinc-900/40 ring-1 ring-white/10">
-
         {/* Side buttons */}
         <div className="absolute left-[-3px] top-[88px] w-[3px] h-7 bg-zinc-700 rounded-l-full" />
         <div className="absolute left-[-3px] top-[128px] w-[3px] h-12 bg-zinc-700 rounded-l-full" />
@@ -57,138 +47,32 @@ function PhoneMockup({ inView }: { inView: boolean }) {
         <div className="absolute right-[-3px] top-[128px] w-[3px] h-16 bg-zinc-700 rounded-r-full" />
 
         {/* ── Screen ── */}
-        <div className="bg-[#F7F8FA] rounded-[44px] overflow-hidden" style={{ height: 610 }}>
-
+        <div
+          className="relative rounded-[44px] overflow-hidden bg-white"
+          style={{ height: 610 }}
+        >
           {/* Status bar */}
-          <div className="flex items-center justify-between px-6 pt-4 pb-1 bg-white">
+          <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-6 pt-3 pb-1 bg-white/90 backdrop-blur-sm">
             <span className="text-[11px] font-bold text-zinc-900 tracking-tight">9:41</span>
             {/* Dynamic Island */}
-            <div className="w-[88px] h-[30px] bg-zinc-900 rounded-full" />
-            <div className="flex items-center gap-1.5">
+            <div className="w-18 h-5.5 bg-zinc-900 rounded-full" />
+            <div className="flex items-center gap-1">
               <Signal className="w-3 h-3 text-zinc-800" />
               <Wifi className="w-3 h-3 text-zinc-800" />
               <Battery className="w-3.5 h-3.5 text-zinc-800" />
             </div>
           </div>
 
-          {/* App content */}
-          <div className="bg-white px-0">
-
-            {/* ── User header ── */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[11px] shrink-0">
-                  AS
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold text-zinc-900 leading-tight">Aarav Sharma</p>
-                  <div className="flex items-center gap-1">
-                    <GraduationCap className="w-2.5 h-2.5 text-zinc-400" />
-                    <p className="text-[9px] text-zinc-400">Undergraduate</p>
-                  </div>
-                </div>
-              </div>
-              <div className="relative w-7 h-7 rounded-full border border-zinc-200 bg-white flex items-center justify-center shadow-sm">
-                <Bell className="w-3 h-3 text-zinc-600" />
-                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
-              </div>
-            </div>
-
-            {/* ── Featured banner ── */}
-            <div className="mx-3 mt-3 rounded-2xl overflow-hidden relative" style={{ height: 120 }}>
-              <Image
-                src="/assets/about.jpg"
-                alt="Education loan banner"
-                fill
-                className="object-cover object-top"
-                sizes="280px"
-              />
-              {/* Gradient overlay */}
-              <div className="absolute inset-0 " />
-              {/* Content */}
-              <div className="absolute inset-0 flex flex-col justify-between p-3.5">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-4 rounded-sm bg-white/20 flex items-center justify-center">
-                    <GraduationCap className="w-2.5 h-2.5 text-white" />
-                  </div>
-                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-widest">Genz Loan</span>
-                </div>
-                <div>
-                  <p className="text-[9px] text-white/70 font-medium leading-none mb-0.5">Apply Now</p>
-                  <p className="text-[16px] font-bold text-white leading-tight">Education<br />Loan</p>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Search bar ── */}
-            <div className="mx-3 mt-3 flex items-center gap-2 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2">
-              <Search className="w-3 h-3 text-zinc-400 shrink-0" />
-              <span className="text-[10px] text-zinc-400 flex-1">Search by bank, course, country...</span>
-              <div className="w-5 h-5 rounded-md bg-primary flex items-center justify-center">
-                <SlidersHorizontal className="w-2.5 h-2.5 text-white" />
-              </div>
-            </div>
-
-            {/* ── Filter chips ── */}
-            <div className="flex gap-1.5 px-3 mt-2.5 overflow-x-hidden">
-              {[
-                { label: "Education", active: false },
-                { label: "For Nepali Students", active: true },
-                { label: "NRB Banks", active: false },
-                { label: "Online Apply", active: false },
-              ].map(({ label, active }) => (
-                <span
-                  key={label}
-                  className={`shrink-0 text-[8.5px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
-                    active
-                      ? "bg-primary text-white"
-                      : "bg-zinc-100 text-zinc-600"
-                  }`}
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-
-            {/* ── Partner Banks ── */}
-            <div className="px-3 mt-4">
-              <div className="flex items-center justify-between mb-2.5">
-                <p className="text-[11px] font-bold text-zinc-900">Loan Provider</p>
-                <button className="flex items-center gap-0.5 text-[9px] font-semibold text-primary">
-                  See all <ChevronRight className="w-2.5 h-2.5" />
-                </button>
-              </div>
-
-              {/* Bank card 1 */}
-              <div className="flex items-center gap-3 p-2.5 rounded-xl border border-zinc-100 bg-white mb-2 shadow-sm">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-                  <span className="text-white text-[8px] font-bold leading-tight text-center">Engineer</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-zinc-900">Engineer</p>
-                  <p className="text-[9px] text-zinc-500">Education Loan</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-primary">10.5%</p>
-                  <p className="text-[8px] text-zinc-400">p.a.</p>
-                </div>
-              </div>
-
-              {/* Bank card 2 */}
-              <div className="flex items-center gap-3 p-2.5 rounded-xl border border-zinc-100 bg-white shadow-sm">
-                <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
-                  <span className="text-white text-[8px] font-bold leading-tight text-center">Doctor</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-zinc-900">Doctor</p>
-                  <p className="text-[9px] text-zinc-500">Student Loan</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-primary">11%</p>
-                  <p className="text-[8px] text-zinc-400">p.a.</p>
-                </div>
-              </div>
-            </div>
+          {/* App screenshot pushed down below status bar */}
+          <div className="absolute inset-0 top-9">
+            <Image
+              src="/assets/mobile.png"
+              alt="App screenshot showing EMI calculator and loan features"
+              width={280}
+              height={574}
+              className="w-full h-full object-cover object-top"
+              sizes="280px"
+            />
           </div>
         </div>
       </div>
@@ -233,7 +117,7 @@ function StepCard({
 
 /* ─── Section ────────────────────────────────────────────────────────────── */
 export default function HowItWorks() {
-  const ref    = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
@@ -244,19 +128,17 @@ export default function HowItWorks() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-14 xl:gap-20 items-center">
-
           {/* ── Left: phone mockup ───────────────────────────────────────── */}
           <PhoneMockup inView={inView} />
 
           {/* ── Right: steps ─────────────────────────────────────────────── */}
           <div>
-
             {/* Eyebrow */}
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.3 }}
-              className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-4"
+              className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-3"
             >
               How It Works
             </motion.p>
@@ -286,13 +168,6 @@ export default function HowItWorks() {
                     strokeLinejoin="round"
                   />
                 </svg>
-                {/* Sparkle */}
-                <span
-                  aria-hidden="true"
-                  className="absolute -top-2.5 -right-5 text-green-400 text-sm font-bold select-none"
-                >
-                  ✦
-                </span>
               </span>
             </motion.h2>
 
@@ -304,11 +179,11 @@ export default function HowItWorks() {
               className="text-base text-zinc-500 leading-relaxed mb-8 max-w-md"
             >
               Three clear steps from profile to funded — every step backed by
-               partner banks built for Nepali students.
+              partner banks built for Nepali students.
             </motion.p>
 
             {/* Step cards */}
-            <div className="space-y-3">
+            <div className="space-y-7">
               {STEPS.map((step, i) => (
                 <StepCard
                   key={step.title}
@@ -319,7 +194,6 @@ export default function HowItWorks() {
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </section>

@@ -22,9 +22,15 @@ import AutoSaveIndicator from "./AutoSaveIndicator";
 import Step1AboutYou from "./steps/Step1AboutYou";
 import Step2Identity from "./steps/Step2Identity";
 import Step3FamilyEducation from "./steps/Step3FamilyEducation";
-import Step4ReviewSubmit, { type Step4Declaration } from "./steps/Step4ReviewSubmit";
+import Step4ReviewSubmit, {
+  type Step4Declaration,
+} from "./steps/Step4ReviewSubmit";
 import SubmissionSuccess from "./SubmissionSuccess";
-import type { Step1FormData, Step2FormData, Step3FormData } from "@/lib/validations/schemas";
+import type {
+  Step1FormData,
+  Step2FormData,
+  Step3FormData,
+} from "@/lib/validations/schemas";
 import { GraduationCap, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -55,7 +61,8 @@ export default function ApplicationWizard() {
   const [saveStep1, { isLoading: isSaving1 }] = useSaveStep1Mutation();
   const [saveStep2, { isLoading: isSaving2 }] = useSaveStep2Mutation();
   const [saveStep3, { isLoading: isSaving3 }] = useSaveStep3Mutation();
-  const [submitApplication, { isLoading: isSubmitting }] = useSubmitApplicationMutation();
+  const [submitApplication, { isLoading: isSubmitting }] =
+    useSubmitApplicationMutation();
 
   const isSaving = isSaving1 || isSaving2 || isSaving3;
 
@@ -65,12 +72,16 @@ export default function ApplicationWizard() {
     createDraft()
       .unwrap()
       .then((app) => {
-        dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
+        dispatch(
+          setApplicationId({ id: app.id, number: app.applicationNumber }),
+        );
       })
       .catch(() => {
-        toast.error("Failed to start application. Please refresh and try again.");
+        toast.error(
+          "Failed to start application. Please refresh and try again.",
+        );
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save — fires 3 s after the last form change
@@ -80,11 +91,20 @@ export default function ApplicationWizard() {
     try {
       // Save whichever step the user is currently on
       if (currentStep === 1 && formData.step1) {
-        await saveStep1({ id: applicationId, data: formData.step1 as Step1FormData }).unwrap();
+        await saveStep1({
+          id: applicationId,
+          data: formData.step1 as Step1FormData,
+        }).unwrap();
       } else if (currentStep === 2 && formData.step2) {
-        await saveStep2({ id: applicationId, data: formData.step2 as Step2FormData }).unwrap();
+        await saveStep2({
+          id: applicationId,
+          data: formData.step2 as Step2FormData,
+        }).unwrap();
       } else if (currentStep === 3 && formData.step3) {
-        await saveStep3({ id: applicationId, data: formData.step3 as Step3FormData }).unwrap();
+        await saveStep3({
+          id: applicationId,
+          data: formData.step3 as Step3FormData,
+        }).unwrap();
       }
       dispatch(setAutoSaveStatus("saved"));
     } catch {
@@ -205,9 +225,12 @@ export default function ApplicationWizard() {
       <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-sm font-semibold text-foreground"
+            >
               <GraduationCap className="w-5 h-5 text-primary" />
-              Cliq Edu Loan
+              GenZ Loan Edu Loan
             </Link>
             <AutoSaveIndicator
               status={isSaving ? "saving" : autoSaveStatus}
@@ -215,7 +238,11 @@ export default function ApplicationWizard() {
               hasUnsavedChanges={hasUnsavedChanges}
               onSaveNow={triggerAutoSave}
             />
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-muted-foreground gap-1.5"
+            >
               <BookmarkCheck className="w-3.5 h-3.5" />
               Save & Exit
             </Button>
@@ -282,7 +309,9 @@ export default function ApplicationWizard() {
                   <Step1AboutYou
                     defaultValues={formData.step1}
                     onNext={handleStep1}
-                    onDataChange={(data) => dispatch(updateStepData({ step: "step1", data }))}
+                    onDataChange={(data) =>
+                      dispatch(updateStepData({ step: "step1", data }))
+                    }
                   />
                 )}
                 {currentStep === 2 && (
@@ -290,7 +319,9 @@ export default function ApplicationWizard() {
                     defaultValues={formData.step2}
                     onNext={handleStep2}
                     onPrev={() => goPrev(2)}
-                    onDataChange={(data) => dispatch(updateStepData({ step: "step2", data }))}
+                    onDataChange={(data) =>
+                      dispatch(updateStepData({ step: "step2", data }))
+                    }
                   />
                 )}
                 {currentStep === 3 && (
@@ -298,7 +329,9 @@ export default function ApplicationWizard() {
                     defaultValues={formData.step3}
                     onNext={handleStep3}
                     onPrev={() => goPrev(3)}
-                    onDataChange={(data) => dispatch(updateStepData({ step: "step3", data }))}
+                    onDataChange={(data) =>
+                      dispatch(updateStepData({ step: "step3", data }))
+                    }
                   />
                 )}
                 {currentStep === 4 && (

@@ -13,22 +13,22 @@ import StatsSection from "./StatsSection";
 const SLIDES = [
   {
     animatedWord: "Master's",
-    image: "/assets/banner-image 1.png",
+    image: "/assets/hero.png",
     alt: "Happy student in graduation cap and gown holding a diploma",
   },
   {
     animatedWord: "Bachelor's",
-    image: "/assets/banner-image 2.png",
+    image: "/assets/hero2.png",
     alt: "Students studying together in academic attire",
   },
   {
     animatedWord: "PhD",
-    image: "/assets/banner-image 3.png",
+    image: "/assets/hero3.png",
     alt: "Group of graduates celebrating at a ceremony",
   },
   {
-    animatedWord: "Skills Course",
-    image: "/assets/banner-image-4.png",
+    animatedWord: "SEE",
+    image: "/assets/hero4.png",
     alt: "Group of graduates celebrating at a ceremony",
   },
 ] as const;
@@ -114,7 +114,7 @@ export default function HeroSection() {
         <div className="relative flex flex-col justify-center w-full lg:w-[55%] xl:w-[52%] pr-6 lg:pr-10">
 
           {/* Eyebrow */}
-          <p className="text-[10.5px] font-bold text-primary uppercase tracking-[0.2em] mb-6">
+          <p className="text-[10.5px] font-bold text-primary uppercase tracking-[0.2em] mb-3">
             Education Loan Platform · Nepal
           </p>
 
@@ -123,12 +123,12 @@ export default function HeroSection() {
             id="hero-heading"
             className="text-[2.5rem] sm:text-5xl lg:text-[3.1rem] font-bold tracking-tight text-zinc-900 leading-[1.09] mb-5 min-h-[2.2em]"
           >
-            Apply for education{" "}
+            Apply for loan that{" "}
             <span className="relative inline-block ">
-              loans
+              funds
               <ThreeLine className="hidden lg:block absolute -top-2 -right-7 w-9 h-9 text-primary" />
             </span>
-            {" "}from{" "}
+            {" "}your{" "}
             <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent">{typed}</span>
             <span
               aria-hidden="true"
@@ -137,7 +137,7 @@ export default function HeroSection() {
           </h1>
 
           {/* Sub-copy */}
-          <p className="text-base text-zinc-600 leading-relaxed max-w-115 mb-2">
+          <p className="text-base text-zinc-600 leading-relaxed max-w-115 mb-3">
             {STATIC_SUB}
           </p>
 
@@ -202,7 +202,7 @@ export default function HeroSection() {
         </div>
     
       </div>
-    <div className="-mt-24">
+    <div className="mt-0 lg:-mt-27">
     <StatsSection />
     </div>
       

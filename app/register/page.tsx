@@ -5,7 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { GraduationCap, Eye, EyeOff, Loader2, CheckCircle2 } from "lucide-react";
+import {
+  GraduationCap,
+  Eye,
+  EyeOff,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,7 +59,13 @@ export default function RegisterPage() {
   ];
   const strengthScore = strength.filter(Boolean).length;
   const strengthLabel = ["", "Weak", "Fair", "Good", "Strong"][strengthScore];
-  const strengthColor = ["", "bg-destructive", "bg-orange-400", "bg-yellow-400", "bg-green-500"][strengthScore];
+  const strengthColor = [
+    "",
+    "bg-destructive",
+    "bg-orange-400",
+    "bg-yellow-400",
+    "bg-green-500",
+  ][strengthScore];
 
   const onSubmit = async (data: RegisterForm) => {
     try {
@@ -76,11 +88,15 @@ export default function RegisterPage() {
           <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-8 h-8 text-green-500" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Check your inbox</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Check your inbox
+          </h1>
           <p className="text-sm text-muted-foreground mb-1">
             We sent a verification link to
           </p>
-          <p className="text-sm font-semibold text-foreground mb-6">{submittedEmail}</p>
+          <p className="text-sm font-semibold text-foreground mb-6">
+            {submittedEmail}
+          </p>
           <p className="text-xs text-muted-foreground mb-8">
             Click the link in the email to verify your account, then sign in.
             The link expires in 24 hours.
@@ -107,10 +123,12 @@ export default function RegisterPage() {
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-foreground tracking-tight">
-              Cliq Edu Loan
+              GenZ Loan Edu Loan
             </span>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Create your account
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Start your education loan application
           </p>
@@ -118,7 +136,11 @@ export default function RegisterPage() {
 
         {/* Card */}
         <div className="bg-card border border-border rounded-2xl shadow-sm px-6 py-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-5"
+            noValidate
+          >
             {/* Email */}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm font-medium">
@@ -133,7 +155,9 @@ export default function RegisterPage() {
                 {...field("email")}
               />
               {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -157,7 +181,11 @@ export default function RegisterPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
 
@@ -182,10 +210,10 @@ export default function RegisterPage() {
                           strengthScore <= 1
                             ? "text-destructive"
                             : strengthScore === 2
-                            ? "text-orange-500"
-                            : strengthScore === 3
-                            ? "text-yellow-600"
-                            : "text-green-600"
+                              ? "text-orange-500"
+                              : strengthScore === 3
+                                ? "text-yellow-600"
+                                : "text-green-600"
                         }
                       >
                         {strengthLabel}
@@ -196,7 +224,9 @@ export default function RegisterPage() {
               )}
 
               {errors.password && (
-                <p className="text-xs text-destructive">{errors.password.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
@@ -220,11 +250,17 @@ export default function RegisterPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={showConfirm ? "Hide password" : "Show password"}
                 >
-                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showConfirm ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
 
@@ -235,15 +271,24 @@ export default function RegisterPage() {
                 { ok: /[A-Z]/.test(password), label: "One uppercase letter" },
                 { ok: /[0-9]/.test(password), label: "One number" },
               ].map(({ ok, label }) => (
-                <li key={label} className={`flex items-center gap-1.5 text-xs transition-colors ${ok ? "text-green-600" : "text-muted-foreground"}`}>
-                  <div className={`w-1 h-1 rounded-full ${ok ? "bg-green-500" : "bg-border"}`} />
+                <li
+                  key={label}
+                  className={`flex items-center gap-1.5 text-xs transition-colors ${ok ? "text-green-600" : "text-muted-foreground"}`}
+                >
+                  <div
+                    className={`w-1 h-1 rounded-full ${ok ? "bg-green-500" : "bg-border"}`}
+                  />
                   {label}
                 </li>
               ))}
             </ul>
 
             {/* Submit */}
-            <Button type="submit" className="w-full h-10 mt-1" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-10 mt-1"
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -259,13 +304,19 @@ export default function RegisterPage() {
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary font-medium hover:underline">
+          <Link
+            href="/login"
+            className="text-primary font-medium hover:underline"
+          >
             Sign in
           </Link>
         </p>
 
         <p className="text-center mt-4">
-          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            href="/"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
             ← Back to home
           </Link>
         </p>
