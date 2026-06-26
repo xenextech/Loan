@@ -7,12 +7,18 @@ const PHONE_DISPLAY = "+977 980-000-0000";
 const PHONE_HREF    = "tel:+9779800000000";
 
 export default function ContactWidget() {
-  const [open, setOpen] = useState(false);
+  // Defaults to open so the contact card is visible right away,
+  // sitting to the left of the FAB (it's the first child in the
+  // flex row, which is anchored to the right edge via right-6 on
+  // the parent — so the button stays right-most and the card
+  // occupies the space to its left). Clicking the FAB still
+  // toggles it closed/open.
+  const [open, setOpen] = useState(true);
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex items-end gap-3">
 
-      {/* ── Contact card — slides in to the left of the button ─────────────── */}
+      {/* ── Contact card — sits to the left of the button ──────────────────── */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -21,23 +27,19 @@ export default function ContactWidget() {
             animate={{ opacity: 1, x: 0,  scale: 1    }}
             exit={{   opacity: 0, x: 16, scale: 0.96  }}
             transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="bg-white rounded-2xl shadow-2xl shadow-black/12 border border-zinc-100 overflow-hidden w-60"
+            className="bg-white rounded-2xl shadow-2xl shadow-black/12 border border-zinc-100 overflow-hidden w-60 relative"
           >
-            {/* Card header */}
-            <div
-              className="px-4 py-3"
-              style={{ background: "linear-gradient(135deg, #005f87 0%, #0089c0 100%)" }}
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute top-2 right-2 p-1.5 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors z-10"
+              aria-label="Close"
             >
-              <p className="text-[10px] font-bold text-white/60 uppercase tracking-[0.2em]">
-                Contact Us
-              </p>
-              <p className="text-sm font-semibold text-white mt-0.5">
-                We&apos;re here to help
-              </p>
-            </div>
+              <X className="w-3.5 h-3.5" />
+            </button>
 
             {/* Phone number row */}
-            <div className="px-4 py-4">
+            <div className="px-4 pb-4 pt-5">
               <a
                 href={PHONE_HREF}
                 className="flex items-center gap-3 group"
@@ -56,20 +58,6 @@ export default function ContactWidget() {
                   </div>
                 </div>
               </a>
-            </div>
-
-            {/* Divider + footer note */}
-            <div className="px-4 pb-4 border-t border-zinc-100 pt-3">
-              <p className="text-[11px] text-zinc-400 leading-relaxed">
-                Prefer not to call?{" "}
-                <a
-                  href="/apply"
-                  className="text-primary font-semibold hover:underline underline-offset-2"
-                >
-                  Apply online
-                </a>{" "}
-                — takes under 5 minutes.
-              </p>
             </div>
           </motion.div>
         )}
@@ -102,7 +90,7 @@ export default function ContactWidget() {
               exit={{   rotate:  90, opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <X className="w-5 h-5" />
+              <Phone className="w-5 h-5" />
             </motion.span>
           ) : (
             <motion.span

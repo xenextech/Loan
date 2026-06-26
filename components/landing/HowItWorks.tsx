@@ -1,6 +1,6 @@
 "use client";
-import { useState, useRef } from "react";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -8,10 +8,6 @@ import {
   Bell,
   Search,
   SlidersHorizontal,
-  ClipboardList,
-  FileUp,
-  Building2,
-  CheckCircle2,
   GraduationCap,
   ChevronRight,
   Wifi,
@@ -22,27 +18,20 @@ import {
 /* ─── Step data ──────────────────────────────────────────────────────────── */
 const STEPS = [
   {
-    num: "01",
-    Icon: ClipboardList,
     title: "Check Eligibility",
     description:
       "Use our eligibility checker to see if you meet the basic criteria for an education loan. This step helps you understand your chances before applying.",
   },
   {
-    num: "02",
-    Icon: FileUp,
     title: "Apply & Compare",
     description:
       "Submit your application through our platform and compare offers from multiple partner banks. Upload documents digitally and track your application status in one place.",
   },
   {
-    num: "03",
-    Icon: Building2,
     title: "Get Approved & Funded",
     description:
       "Once your application is approved, the bank will disburse the funds directly to your account. You can manage your loan and repayment schedule through our platform.",
   },
-
 ] as const;
 
 /* ─── Phone mockup ───────────────────────────────────────────────────────── */
@@ -115,14 +104,14 @@ function PhoneMockup({ inView }: { inView: boolean }) {
                 sizes="280px"
               />
               {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/85 via-primary/60 to-transparent" />
+              <div className="absolute inset-0 " />
               {/* Content */}
               <div className="absolute inset-0 flex flex-col justify-between p-3.5">
                 <div className="flex items-center gap-1.5">
                   <div className="w-4 h-4 rounded-sm bg-white/20 flex items-center justify-center">
                     <GraduationCap className="w-2.5 h-2.5 text-white" />
                   </div>
-                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-widest">Cliq</span>
+                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-widest">Genz Loan</span>
                 </div>
                 <div>
                   <p className="text-[9px] text-white/70 font-medium leading-none mb-0.5">Apply Now</p>
@@ -200,31 +189,9 @@ function PhoneMockup({ inView }: { inView: boolean }) {
                 </div>
               </div>
             </div>
-
-            {/* Bottom gradient fade */}
-            <div className="absolute bottom-0 left-[10px] right-[10px] h-14 bg-gradient-to-t from-[#F7F8FA] to-transparent rounded-b-[44px] pointer-events-none" />
           </div>
         </div>
       </div>
-
-      {/* ── Below-phone CTA ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={inView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.4, delay: 0.5 }}
-        className="mt-6 text-center"
-      >
-        <p className="text-xs text-zinc-500 mb-3">
-          An all-in-one platform for your education loan needs.
-        </p>
-        <Link
-          href="/apply"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-primary hover:bg-primary/90 transition-colors px-5 py-2.5 rounded-xl shadow-md shadow-primary/20"
-        >
-          Start Application
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </motion.div>
     </motion.div>
   );
 }
@@ -233,96 +200,39 @@ function PhoneMockup({ inView }: { inView: boolean }) {
 function StepCard({
   step,
   index,
-  active,
-  onClick,
   inView,
 }: {
   step: (typeof STEPS)[number];
   index: number;
-  active: boolean;
-  onClick: () => void;
   inView: boolean;
 }) {
   return (
-    <motion.button
-      type="button"
-      onClick={onClick}
+    <motion.div
       initial={{ opacity: 0, x: 24 }}
       animate={inView ? { opacity: 1, x: 0 } : {}}
       transition={{ duration: 0.4, delay: 0.1 + index * 0.08, ease: "easeOut" }}
-      className={`w-full flex gap-4 items-start p-6 rounded-tr-2xl rounded-bl-2xl border text-left cursor-pointer transition-all duration-300 ${
-        active
-          ? "border-[2px] border-green-400 bg-white shadow-md shadow-green-100/60"
-          : "border border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"
-      }`}
+      className="w-full flex gap-4 items-start p-6 rounded-2xl border border-zinc-200 bg-white shadow-sm"
     >
-      {/* Icon container + number badge */}
-      <div className="relative shrink-0">
-        <div
-          className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-300 ${
-            active ? "bg-primary/10" : "bg-zinc-100"
-          }`}
-        >
-          <step.Icon
-            className={`w-5 h-5 transition-colors duration-300 ${
-              active ? "text-primary" : "text-zinc-500"
-            }`}
-          />
-        </div>
-        {/* Number badge */}
-        <div
-          className={`absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full flex items-center justify-center text-[8px] font-bold transition-colors duration-300 ${
-            active ? "bg-primary text-white" : "bg-zinc-300 text-zinc-600"
-          }`}
-        >
-          {step.num}
-        </div>
+      {/* Step number */}
+      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+        <span className="text-xl font-bold text-primary">{index + 1}</span>
       </div>
 
       {/* Text */}
-      <div className="flex-1 min-w-0 pt-0.5">
-        <p
-          className={`text-sm font-bold leading-snug mb-1 transition-colors duration-300 ${
-            active ? "text-primary" : "text-zinc-900"
-          }`}
-        >
+      <div className="flex-1 min-w-0 pt-1">
+        <p className="text-sm font-bold text-zinc-900 leading-snug mb-1.5">
           {step.title}
         </p>
-        <AnimatePresence>
-          {active && (
-            <motion.p
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="text-xs text-zinc-500 leading-relaxed overflow-hidden"
-            >
-              {step.description}
-            </motion.p>
-          )}
-        </AnimatePresence>
-        {!active && (
-          <p className="text-xs text-zinc-400 leading-relaxed line-clamp-1">
-            {step.description}
-          </p>
-        )}
+        <p className="text-xs text-zinc-500 leading-relaxed">
+          {step.description}
+        </p>
       </div>
-
-      {/* Arrow indicator when active */}
-      <div
-        className={`shrink-0 self-center transition-opacity duration-300 ${
-          active ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <ChevronRight className="w-4 h-4 text-primary" />
-      </div>
-    </motion.button>
+    </motion.div>
   );
 }
 
 /* ─── Section ────────────────────────────────────────────────────────────── */
 export default function HowItWorks() {
-  const [activeStep, setActiveStep] = useState(0);
   const ref    = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
@@ -358,8 +268,8 @@ export default function HowItWorks() {
               transition={{ duration: 0.4, delay: 0.06 }}
               className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight leading-tight mb-4"
             >
-              Apply with{" "}
-              <span className="relative inline-block text-primary">
+              Apply with Your{" "}
+              <span className="relative inline-block bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent">
                 confidence
                 {/* Green squiggle underline */}
                 <svg
@@ -393,39 +303,21 @@ export default function HowItWorks() {
               transition={{ duration: 0.4, delay: 0.12 }}
               className="text-base text-zinc-500 leading-relaxed mb-8 max-w-md"
             >
-              Four clear steps from profile to funded — every step backed by
-              NRB-regulated partner banks built for Nepali students.
+              Three clear steps from profile to funded — every step backed by
+               partner banks built for Nepali students.
             </motion.p>
 
             {/* Step cards */}
             <div className="space-y-3">
               {STEPS.map((step, i) => (
                 <StepCard
-                  key={step.num}
+                  key={step.title}
                   step={step}
                   index={i}
-                  active={activeStep === i}
-                  onClick={() => setActiveStep(i)}
                   inView={inView}
                 />
               ))}
             </div>
-
-            {/* Bottom CTA link */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={inView ? { opacity: 1 } : {}}
-              transition={{ duration: 0.4, delay: 0.44 }}
-              className="mt-8"
-            >
-              <Link
-                href="/apply"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/70 transition-colors"
-              >
-                Start your application now
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </motion.div>
           </div>
 
         </div>

@@ -3,32 +3,29 @@ import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { GraduationCap, Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 /* ─── Data ───────────────────────────────────────────────────────────────── */
 const LINKS = {
   Product: [
-    { label: "How It Works",     href: "#how-it-works"   },
-    { label: "EMI Calculator",   href: "#emi-calculator" },
-    { label: "Interest Rates",   href: "#faq"            },
-    { label: "Partner Banks",    href: "#about"          },
+    { label: "How It Works",     href: "/#how-it-works"   },
+    { label: "EMI Calculator",   href: "/#emi-calculator" },
+    {label:"Check Eligibility", href:"/#check-eligibility"}
+    // { label: "Interest Rates",   href: "/#faq"            },
+    // { label: "Partner Banks",    href: "/#about"          },
   ],
   Company: [
-    { label: "About Cliq",       href: "#about"          },
-    { label: "Careers",          href: "#"               },
-    { label: "Press",            href: "#"               },
-    { label: "Contact",          href: "mailto:support@cliqedu.com.np" },
+    { label: "About Cliq",       href: "/#about"          },
+    // { label: "Careers",          href: "#"               },
+    // { label: "Press",            href: "#"               },
+    // { label: "Contact",          href: "mailto:support@cliqedu.com.np" },
   ],
-  Support: [
-    { label: "Help Center",      href: "#"               },
-    { label: "Application Status", href: "#"             },
-    { label: "Track Application",href: "#"               },
-    { label: "Report an Issue",  href: "#"               },
-  ],
+
   Legal: [
-    { label: "Privacy Policy",   href: "#"               },
-    { label: "Terms of Service", href: "#"               },
-    { label: "Cookie Policy",    href: "#"               },
-    { label: "Compliance",       href: "#"               },
+    { label: "Privacy Policy",   href: "/privacy-policy"  },
+    { label: "Terms of Service", href: "/terms-of-service"},
+    // { label: "Cookie Policy",    href: "#"               },
+    // { label: "Compliance",       href: "#"               },
   ],
 } as const;
 
@@ -38,7 +35,7 @@ const CONTACT = [
   { icon: MapPin, value: "Kathmandu, Bagmati, Nepal", href: "#"                              },
 ] as const;
 
-const BADGES = ["NRB Approved", "ISO 27001", "256-bit SSL"] as const;
+
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 export default function SiteFooter() {
@@ -46,7 +43,7 @@ export default function SiteFooter() {
   const inView = useInView(ref, { once: true, margin: "-40px" });
 
   return (
-    <footer ref={ref} className="bg-zinc-950">
+    <footer ref={ref} className="bg-[#0E1E14]">
 
       {/* ── Main content ──────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
@@ -60,10 +57,7 @@ export default function SiteFooter() {
           >
             {/* Logo — matches LandingNav */}
             <Link href="/" className="inline-flex items-center gap-2 mb-5 group">
-              <GraduationCap className="w-5 h-5 text-primary shrink-0" />
-              <span className="text-[17px] font-bold text-white tracking-tight leading-none">
-                Cliq<span className="text-primary">.</span>
-              </span>
+             <Image src="/logo.svg" alt="Logo" width={100} height={100} />
             </Link>
 
             <p className="text-sm text-zinc-400 leading-relaxed mb-7 max-w-[230px]">
@@ -138,7 +132,7 @@ export default function SiteFooter() {
             href="/apply"
             className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0"
           >
-            Start Application
+            Apply For Loan
             <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
@@ -153,21 +147,12 @@ export default function SiteFooter() {
           transition={{ duration: 0.4, delay: 0.38 }}
           className="flex flex-col sm:flex-row items-center justify-between gap-4"
         >
-          <p className="text-xs text-zinc-600 text-center sm:text-left">
+          <p className="text-xs text-white text-center sm:text-left">
             © {new Date().getFullYear()} Cliq Education Loan Platform. All rights reserved.
-            Regulated by Nepal Rastra Bank.
+            Regulated by Deerx.
           </p>
 
-          <div className="flex items-center gap-2 flex-wrap justify-center">
-            {BADGES.map((label) => (
-              <span
-                key={label}
-                className="text-[10px] font-medium border border-zinc-800 text-zinc-600 rounded-full px-2.5 py-1"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+    
         </motion.div>
       </div>
     </footer>

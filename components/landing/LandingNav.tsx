@@ -24,6 +24,7 @@ import {
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 /* ─── Tools dropdown items ───────────────────────────────────────────────── */
 const TOOLS = [
@@ -44,14 +45,13 @@ const NAV_ITEMS = [
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 export default function LandingNav() {
-  const [bannerVisible, setBannerVisible] = useState(true);
   const [scrolled,      setScrolled]      = useState(false);
   const [mobileOpen,    setMobileOpen]    = useState(false);
   const [hidden,        setHidden]        = useState(false);
   const lastScrollY = useRef(0);
 
   const { isAuthenticated, user } = useAppSelector((s) => s.auth);
-  const dispatch                  = useAppDispatch();
+  const dispatch                  = useAppDispatch()
   const router                    = useRouter();
 
   useEffect(() => {
@@ -98,41 +98,7 @@ export default function LandingNav() {
       transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
 
-      {/* ── Announcement banner ─────────────────────────────────────────── */}
-      <AnimatePresence>
-        {bannerVisible && (
-          <motion.div
-            key="banner"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="overflow-hidden"
-            style={{ background: "linear-gradient(90deg, #00527a 0%, #0074A3 50%, #0089c0 100%)" }}
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center gap-3 h-10 relative">
-              <Megaphone className="w-3.5 h-3.5 text-white/70 shrink-0" aria-hidden="true" />
-              <p className="text-[12.5px] text-white/90 font-medium text-center">
-                Education loan applications now open for 2025–26 academic year.{" "}
-                <Link
-                  href="/apply"
-                  className="font-bold text-white underline underline-offset-2 hover:text-white/80 transition-colors inline-flex items-center gap-0.5"
-                >
-                  Apply now <ArrowRight className="w-3 h-3 inline" />
-                </Link>
-              </p>
-              <button
-                type="button"
-                onClick={() => setBannerVisible(false)}
-                aria-label="Dismiss banner"
-                className="absolute right-4 sm:right-6 lg:right-8 p-1 rounded text-white/60 hover:text-white transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       {/* ── Main nav bar ────────────────────────────────────────────────── */}
       <motion.header
@@ -149,17 +115,8 @@ export default function LandingNav() {
 
           {/* ── Logo ──────────────────────────────────────────────────── */}
           <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="Cliq home">
-            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <GraduationCap className="w-4 h-4 text-white" />
-            </div>
-            <div className="leading-none">
-              <span className="text-[16px] font-bold text-zinc-900 tracking-tight">
-                Cliq<span className="text-primary">.</span>
-              </span>
-              <span className="block text-[8.5px] font-semibold text-zinc-400 tracking-[0.12em] uppercase -mt-0.5">
-                Scholarship First
-              </span>
-            </div>
+            <Image src="/logo.svg" width={180} height={180} alt="Genz Logo" />
+            
           </Link>
 
           {/* ── Center nav (desktop) ──────────────────────────────────── */}
@@ -256,7 +213,7 @@ export default function LandingNav() {
                       size="sm"
                       className="text-[13px] font-semibold h-9 px-5 gap-1.5 rounded-lg shadow-none"
                     >
-                      Start Application
+                      Apply For Loan
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Button>
                   </Link>
