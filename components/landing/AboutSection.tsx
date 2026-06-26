@@ -34,12 +34,12 @@ export default function AboutSection() {
           {/* ── Left: text content ─────────────────────────────────────── */}
           <div>
             <motion.p {...anim(0)} className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-4">
-              About Cliq
+              About Genz Loan
             </motion.p>
 
             <motion.h2 {...anim(0.07)} className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight leading-tight mb-5 max-w-md">
               A simpler path to education{" "}
-              <span className="text-zinc-400 font-medium">financing in Nepal</span>
+              <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-medium">financing in Nepal</span>
             </motion.h2>
 
             <motion.p {...anim(0.13)} className="text-base text-zinc-600 leading-relaxed mb-4">
@@ -56,21 +56,7 @@ export default function AboutSection() {
               right documentation.
             </motion.p>
 
-            {/* Regulatory callout */}
-            <motion.div
-              {...anim(0.25)}
-              className="flex gap-3 items-start bg-[#F8F6F1] border border-zinc-200 rounded-xl px-4 py-4 mb-8"
-            >
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Building2 className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-              </div>
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                All partner banks are regulated by{" "}
-                <span className="font-semibold text-zinc-700">Nepal Rastra Bank (NRB)</span>{" "}
-                and operate under the Banks and Financial Institutions Act{" "}
-                <span className="font-semibold text-zinc-700">(BAFIA) 2073</span>.
-              </p>
-            </motion.div>
+      
 
             {/* CTA */}
             <motion.button
@@ -99,7 +85,7 @@ export default function AboutSection() {
           >
             {/* Main image */}
             <Image
-              src="/assets/about.jpg"
+              src="/assets/abour.jpeg"
               alt="Students on a university campus in Nepal"
               fill
               className="object-cover"
@@ -109,35 +95,7 @@ export default function AboutSection() {
             {/* Gradient — darker at bottom so chips are readable */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
 
-            {/* ── Floating chip: top-left ── */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.4, delay: 0.45 }}
-              className="absolute top-6 left-6 bg-white/95 backdrop-blur-sm rounded-2xl px-5 py-4 shadow-lg"
-            >
-              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
-                Partner Banks
-              </p>
-              <p className="text-3xl font-bold text-zinc-900 leading-none tabular-nums">
-                12<span className="text-primary">+</span>
-              </p>
-              <p className="text-[11px] text-zinc-500 mt-1">NRB-regulated</p>
-            </motion.div>
-
-            {/* ── Floating chip: top-right ── */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.4, delay: 0.52 }}
-              className="absolute top-6 right-6 bg-primary rounded-2xl px-5 py-4 shadow-lg shadow-primary/25"
-            >
-              <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-1">
-                Branch Visits
-              </p>
-              <p className="text-3xl font-bold text-white leading-none tabular-nums">0</p>
-              <p className="text-[11px] text-white/70 mt-1">100% online</p>
-            </motion.div>
+          
 
             {/* ── Bottom caption ── */}
             <div className="absolute bottom-0 left-0 right-0 px-7 py-7">

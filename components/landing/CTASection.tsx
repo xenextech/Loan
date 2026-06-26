@@ -57,19 +57,21 @@ export default function CTASection() {
   return (
     <section
       ref={ref}
-      className="py-16 bg-[#F8F6F1] border-b border-zinc-200"
+      className="py-16"
     >
       {/* Constrained to same width as HowItWorks / other sections */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      {/* Rounded card with gradient */}
+      {/* Rounded card with background image */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={inView ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative rounded-3xl overflow-hidden"
-        style={{ background: "linear-gradient(135deg, #005f87 0%, #0074A3 45%, #0089c0 100%)" }}
+        className="relative rounded-3xl overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url("/assets/person-images.png")' }}
       >
+        {/* Dark overlay to keep text readable */}
+        <div className="absolute inset-0 bg-black/30" />
         <DecoPattern />
 
       {/* Two-column layout: text left, illustration right */}
@@ -83,7 +85,7 @@ export default function CTASection() {
             initial={{ opacity: 0, y: 10 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.35 }}
-            className="text-[10.5px] font-bold text-white/60 uppercase tracking-[0.22em] mb-5"
+            className="text-[10.5px] font-bold text-white uppercase tracking-[0.22em] mb-5"
           >
             Get Started Today
           </motion.p>
@@ -93,26 +95,31 @@ export default function CTASection() {
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.45, delay: 0.06 }}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-[1.08] mb-5"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight leading-[1.08] mb-5 max-w-lg"
           >
-            Ready to fund your{" "}
-            <span className="relative inline-block">
-              future?
-              <ThreeLine className="absolute -top-4 -right-5 w-9 h-9 text-white/70" />
+            Ready to fund your future{" "}
+            <span className="relative inline-block py-1">
+              education
+
+              <ThreeLine className="absolute -top-2 -right-15 w-9 h-9 text-white/70" />
+
+              {/* Green squiggle underline — scoped to just this word */}
               <svg
                 className="absolute -bottom-1 left-0 w-full overflow-visible"
-                viewBox="0 0 80 8"
+                viewBox="0 0 140 8"
                 fill="none"
                 aria-hidden="true"
               >
                 <path
-                  d="M2 5.5 Q16 1.5 30 5.5 Q44 9.5 58 5.5 Q68 2.5 78 5.5"
-                  stroke="rgba(255,255,255,0.45)"
+                  d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
+                  stroke="#22C55E"
                   strokeWidth="2.5"
                   strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
             </span>
+            {" "}?
           </motion.h2>
 
           {/* Sub-copy */}
@@ -137,7 +144,7 @@ export default function CTASection() {
               href="/apply"
               className="inline-flex items-center gap-2 bg-white text-primary font-bold text-sm px-8 py-3.5 rounded-xl shadow-lg shadow-black/15 hover:bg-white/90 transition-colors"
             >
-              Start Application
+              Apply For Loan
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -156,21 +163,7 @@ export default function CTASection() {
 
         </div>
 
-        {/* Right: graduate illustration anchored to bottom */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.55, delay: 0.2 }}
-          className="hidden lg:flex flex-col justify-end w-72 xl:w-80 shrink-0"
-        >
-          <Image
-            src="/assets/cta.png"
-            alt="Happy graduate celebrating with diploma"
-            width={320}
-            height={380}
-            className="w-full h-auto object-contain object-bottom mix-blend-multiply select-none pointer-events-none"
-          />
-        </motion.div>
+     
 
       </div>
       </motion.div>

@@ -57,7 +57,7 @@ const BRANCHES = [
 ];
 
 /* ─── Eligibility form (inside dialog) ──────────────────────────────────── */
-function EligibilityForm({ onDone }: { onDone: () => void }) {
+export function EligibilityForm({ onDone }: { onDone: () => void }) {
   const [form, setForm]           = useState<FormState>(INITIAL_FORM);
   const [confirmed, setConfirmed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -337,8 +337,8 @@ export default function EligibilityChecker() {
   return (
     <section
       ref={ref}
-      className="py-16 border-b border-zinc-200 overflow-hidden"
-      style={{ background: "linear-gradient(135deg, #EDF8FF 0%, #F0F7FF 50%, #EBF3F8 100%)" }}
+      id="check-eligibility"
+      className="py-16 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Dialog>
@@ -351,17 +351,17 @@ export default function EligibilityChecker() {
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
               {/* Badge */}
-              <div className="inline-flex items-center gap-1.5 border border-zinc-300/70 bg-white/60 backdrop-blur-sm rounded-full px-3 py-1 mb-5">
+              <div className="inline-flex items-center gap-1.5 border border-zinc-300/70  rounded-full px-3 py-1 mb-5">
                 <Zap className="w-3 h-3 text-primary" />
                 <span className="text-[10.5px] font-bold text-zinc-600 uppercase tracking-[0.15em]">
-                  30-Second Snapshot
+                  Check Your Eligibility
                 </span>
               </div>
 
               {/* Headline */}
               <h2 className="text-3xl sm:text-4xl lg:text-[2.7rem] font-bold text-zinc-900 tracking-tight leading-[1.08] mb-4">
                 See if you{" "}
-                <span className="text-primary">qualify</span>
+                <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent">qualify</span>
                 {" "}— before<br className="hidden sm:block" /> you apply.
               </h2>
 

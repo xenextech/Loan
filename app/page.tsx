@@ -1,5 +1,6 @@
 import LandingNav          from "@/components/landing/LandingNav";
 import HeroSection         from "@/components/landing/HeroSection";
+import StatsSection        from "@/components/landing/StatsSection";
 import HowItWorks          from "@/components/landing/HowItWorks";
 import EligibilityChecker  from "@/components/landing/EligibilityChecker";
 import EmiCalculator       from "@/components/landing/EmiCalculator";
