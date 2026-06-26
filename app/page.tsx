@@ -1,10 +1,12 @@
-import LandingNav from "@/components/landing/LandingNav";
-import HeroSection from "@/components/landing/HeroSection";
-import HowItWorks from "@/components/landing/HowItWorks";
-import EmiCalculator from "@/components/landing/EmiCalculator";
-import AboutSection from "@/components/landing/AboutSection";
-import FAQSection from "@/components/landing/FAQSection";
-import SiteFooter from "@/components/landing/SiteFooter";
+import LandingNav          from "@/components/landing/LandingNav";
+import HeroSection         from "@/components/landing/HeroSection";
+import HowItWorks          from "@/components/landing/HowItWorks";
+import EligibilityChecker  from "@/components/landing/EligibilityChecker";
+import EmiCalculator       from "@/components/landing/EmiCalculator";
+import AboutSection        from "@/components/landing/AboutSection";
+import FAQSection          from "@/components/landing/FAQSection";
+import CTASection          from "@/components/landing/CTASection";
+import SiteFooter          from "@/components/landing/SiteFooter";
 
 export default function HomePage() {
   return (
@@ -13,9 +15,11 @@ export default function HomePage() {
       <main className="flex-1">
         <HeroSection />
         <HowItWorks />
+        <EligibilityChecker />
         <EmiCalculator />
         <AboutSection />
         <FAQSection />
+        <CTASection />
       </main>
       <SiteFooter />
     </div>
