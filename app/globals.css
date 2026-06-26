@@ -145,6 +145,16 @@
 }
 
 @layer utilities {
+  .bg-hero-gradient {
+    background: linear-gradient(135deg, #dceef7 0%, #edf6fb 22%, #F8F6F1 52%, #F4F1EC 100%);
+  }
+  .bg-hero-glow-right {
+    background: radial-gradient(circle, rgba(0, 116, 163, 0.10) 0%, transparent 68%);
+  }
+  .bg-hero-glow-left {
+    background: radial-gradient(circle, rgba(0, 137, 192, 0.07) 0%, transparent 65%);
+  }
+
   /* EMI slider track: fill up to --emi-fill using design tokens */
   .emi-slider {
     background: linear-gradient(
