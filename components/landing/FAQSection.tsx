@@ -10,7 +10,7 @@ import {
 
 const FAQS = [
   {
-    q: "Who is eligible to apply for a Cliq education loan?",
+    q: "Who is eligible to apply for a GenZ Loan education loan?",
     a: "Any Nepalese citizen who has secured admission or is enrolled in a recognised educational institution — domestically or abroad — can apply. You must be between 18 and 35 years of age and have a guarantor (typically a parent or guardian).",
   },
   {
@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: "Can I save my application and complete it later?",
-    a: "Yes. Cliq automatically saves your progress as a draft every 30 seconds. You can also click 'Save & Continue Later' at any step. Your draft is securely stored for 30 days.",
+    a: "Yes. GenZ Loan automatically saves your progress as a draft every 30 seconds. You can also click 'Save & Continue Later' at any step. Your draft is securely stored for 30 days.",
   },
   {
     q: "Are there any processing fees?",
@@ -47,7 +47,6 @@ export default function FAQSection() {
   return (
     <section id="faq" ref={ref} className="py-24">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-
         {/* Header — single centered block, no sticky/duplicate version */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -59,8 +58,26 @@ export default function FAQSection() {
             FAQ
           </p>
           <h2 className="text-3xl font-bold text-zinc-900 tracking-tight leading-tight mb-3">
-            Got questions?{" "}
-            <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-medium">We&apos;ve got answers.</span>
+            Got questions?  We&apos;ve{" "}
+            <span className="relative inline-block">
+              <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">
+               got answers.
+              </span>
+              <svg
+                className="absolute -bottom-1 left-0 w-full overflow-visible"
+                viewBox="0 0 140 8"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
+                  stroke="#22C55E"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
           </h2>
         </motion.div>
 
@@ -71,7 +88,11 @@ export default function FAQSection() {
               key={faq.q}
               initial={{ opacity: 0, y: 14 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.38, delay: 0.06 + i * 0.05, ease: "easeOut" }}
+              transition={{
+                duration: 0.38,
+                delay: 0.06 + i * 0.05,
+                ease: "easeOut",
+              }}
             >
               <AccordionItem
                 value={`faq-${i}`}
@@ -119,13 +140,12 @@ export default function FAQSection() {
         >
           Still have questions?{" "}
           <a
-            href="mailto:support@cliqedu.com.np"
+            href="mailto:support@GenZ Loanedu.com.np"
             className="text-primary font-medium hover:underline"
           >
             Email our support team
           </a>
         </motion.p>
-
       </div>
     </section>
   );

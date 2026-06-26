@@ -30,9 +30,12 @@ function VerifyEmailContent() {
             <XCircle className="w-7 h-7 text-destructive" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground mb-1">Invalid Link</h1>
+            <h1 className="text-lg font-bold text-foreground mb-1">
+              Invalid Link
+            </h1>
             <p className="text-sm text-muted-foreground">
-              This verification link is missing a token. Please use the link sent to your email.
+              This verification link is missing a token. Please use the link
+              sent to your email.
             </p>
           </div>
           <Link href="/register">
@@ -48,8 +51,12 @@ function VerifyEmailContent() {
             <Loader2 className="w-7 h-7 text-primary animate-spin" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground mb-1">Verifying your email…</h1>
-            <p className="text-sm text-muted-foreground">Please wait a moment.</p>
+            <h1 className="text-lg font-bold text-foreground mb-1">
+              Verifying your email…
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Please wait a moment.
+            </p>
           </div>
         </>
       )}
@@ -61,7 +68,9 @@ function VerifyEmailContent() {
             <CheckCircle2 className="w-7 h-7 text-emerald-600" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground mb-1">Email Verified!</h1>
+            <h1 className="text-lg font-bold text-foreground mb-1">
+              Email Verified!
+            </h1>
             <p className="text-sm text-muted-foreground">
               Your email has been confirmed. Redirecting you to sign in…
             </p>
@@ -79,7 +88,9 @@ function VerifyEmailContent() {
             <XCircle className="w-7 h-7 text-destructive" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-foreground mb-1">Verification Failed</h1>
+            <h1 className="text-lg font-bold text-foreground mb-1">
+              Verification Failed
+            </h1>
             <p className="text-sm text-muted-foreground">
               {(error as { data?: { message?: string } })?.data?.message ??
                 "This link has expired or has already been used."}
@@ -90,7 +101,9 @@ function VerifyEmailContent() {
               <Button className="w-full">Create a New Account</Button>
             </Link>
             <Link href="/login">
-              <Button variant="ghost" className="w-full">Sign In</Button>
+              <Button variant="ghost" className="w-full">
+                Sign In
+              </Button>
             </Link>
           </div>
         </>
@@ -106,7 +119,9 @@ function VerifyEmailFallback() {
         <Loader2 className="w-7 h-7 text-primary animate-spin" />
       </div>
       <div>
-        <h1 className="text-lg font-bold text-foreground mb-1">Verifying your email…</h1>
+        <h1 className="text-lg font-bold text-foreground mb-1">
+          Verifying your email…
+        </h1>
         <p className="text-sm text-muted-foreground">Please wait a moment.</p>
       </div>
     </div>
@@ -123,7 +138,9 @@ export default function VerifyEmailPage() {
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-bold text-foreground tracking-tight">Cliq Edu Loan</span>
+            <span className="text-lg font-bold text-foreground tracking-tight">
+              GenZ Loan Edu Loan
+            </span>
           </Link>
         </div>
 

@@ -4,7 +4,10 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { setApplicationId, resetApplication } from "@/lib/store/applicationSlice";
+import {
+  setApplicationId,
+  resetApplication,
+} from "@/lib/store/applicationSlice";
 import { useGetMyApplicationsQuery } from "@/lib/api/applicationApi";
 import { useDeleteDraftMutation } from "@/lib/api/applicationApi";
 import { formatNPR, toNumber } from "@/lib/formatters";
@@ -52,13 +55,19 @@ function StatusBadge({ status }: { status: "DRAFT" | "SUBMITTED" }) {
   );
 }
 
-function ApplicationCard({ app, onContinue, onDelete }: {
+function ApplicationCard({
+  app,
+  onContinue,
+  onDelete,
+}: {
   app: LoanApplication;
   onContinue: (app: LoanApplication) => void;
   onDelete: (id: string) => void;
 }) {
   const isSubmitted = app.status === "SUBMITTED";
-  const studyLabel = app.studyType ? (STUDY_TYPE_LABELS[app.studyType] ?? app.studyType) : null;
+  const studyLabel = app.studyType
+    ? (STUDY_TYPE_LABELS[app.studyType] ?? app.studyType)
+    : null;
 
   return (
     <motion.div
@@ -71,14 +80,22 @@ function ApplicationCard({ app, onContinue, onDelete }: {
           {/* Header */}
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                isSubmitted ? "bg-emerald-500/10" : "bg-amber-500/10"
-              }`}>
-                <FileText className={`w-5 h-5 ${isSubmitted ? "text-emerald-600" : "text-amber-600"}`} />
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  isSubmitted ? "bg-emerald-500/10" : "bg-amber-500/10"
+                }`}
+              >
+                <FileText
+                  className={`w-5 h-5 ${isSubmitted ? "text-emerald-600" : "text-amber-600"}`}
+                />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-medium">Application No.</p>
-                <p className="text-sm font-bold text-foreground tracking-wide">{app.applicationNumber}</p>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Application No.
+                </p>
+                <p className="text-sm font-bold text-foreground tracking-wide">
+                  {app.applicationNumber}
+                </p>
               </div>
             </div>
             <StatusBadge status={app.status} />
@@ -91,7 +108,9 @@ function ApplicationCard({ app, onContinue, onDelete }: {
                 <BookOpen className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Course</p>
-                  <p className="text-xs font-semibold text-foreground truncate max-w-[120px]">{app.courseName}</p>
+                  <p className="text-xs font-semibold text-foreground truncate max-w-[120px]">
+                    {app.courseName}
+                  </p>
                 </div>
               </div>
             )}
@@ -100,7 +119,9 @@ function ApplicationCard({ app, onContinue, onDelete }: {
                 <GraduationCap className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Type</p>
-                  <p className="text-xs font-semibold text-foreground">{studyLabel}</p>
+                  <p className="text-xs font-semibold text-foreground">
+                    {studyLabel}
+                  </p>
                 </div>
               </div>
             )}
@@ -109,7 +130,9 @@ function ApplicationCard({ app, onContinue, onDelete }: {
                 <Wallet className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Loan Amount</p>
-                  <p className="text-xs font-semibold text-foreground">{formatNPR(toNumber(app.loanAmount))}</p>
+                  <p className="text-xs font-semibold text-foreground">
+                    {formatNPR(toNumber(app.loanAmount))}
+                  </p>
                 </div>
               </div>
             )}
@@ -120,8 +143,15 @@ function ApplicationCard({ app, onContinue, onDelete }: {
                   {isSubmitted ? "Submitted" : "Created"}
                 </p>
                 <p className="text-xs font-semibold text-foreground">
-                  {new Date(isSubmitted && app.submittedAt ? app.submittedAt : app.createdAt)
-                    .toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}
+                  {new Date(
+                    isSubmitted && app.submittedAt
+                      ? app.submittedAt
+                      : app.createdAt,
+                  ).toLocaleDateString("en-US", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
                 </p>
               </div>
             </div>
@@ -224,11 +254,19 @@ export default function DashboardPage() {
       {/* Top bar */}
       <div className="bg-card border-b border-border sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
+          <Link
+            href="/"
+            className="flex items-center gap-2 font-semibold text-foreground"
+          >
             <GraduationCap className="w-5 h-5 text-primary" />
-            Cliq Edu Loan
+            GenZ Loan Edu Loan
           </Link>
-          <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleSignOut}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground"
+            onClick={handleSignOut}
+          >
             <LogOut className="w-4 h-4" />
             Sign Out
           </Button>
@@ -243,7 +281,9 @@ export default function DashboardPage() {
               {user?.email ? `Welcome back` : "My Applications"}
             </h1>
             {user?.email && (
-              <p className="text-sm text-muted-foreground mt-0.5">{user.email}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {user.email}
+              </p>
             )}
           </div>
           <Link href="/apply">
@@ -258,14 +298,30 @@ export default function DashboardPage() {
         {!isLoading && applications.length > 0 && (
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Total", value: applications.length, color: "text-foreground" },
-              { label: "In Progress", value: drafts.length, color: "text-amber-600" },
-              { label: "Submitted", value: submitted.length, color: "text-emerald-600" },
+              {
+                label: "Total",
+                value: applications.length,
+                color: "text-foreground",
+              },
+              {
+                label: "In Progress",
+                value: drafts.length,
+                color: "text-amber-600",
+              },
+              {
+                label: "Submitted",
+                value: submitted.length,
+                color: "text-emerald-600",
+              },
             ].map((stat) => (
               <Card key={stat.label} className="border-border">
                 <CardContent className="p-4 text-center">
-                  <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
+                  <p className={`text-2xl font-bold ${stat.color}`}>
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {stat.label}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -275,7 +331,9 @@ export default function DashboardPage() {
         {/* Loading */}
         {isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(2)].map((_, i) => <CardSkeleton key={i} />)}
+            {[...Array(2)].map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
           </div>
         )}
 
@@ -285,9 +343,12 @@ export default function DashboardPage() {
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-5">
               <FileText className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="text-lg font-bold text-foreground mb-2">No applications yet</h2>
+            <h2 className="text-lg font-bold text-foreground mb-2">
+              No applications yet
+            </h2>
             <p className="text-sm text-muted-foreground max-w-xs mb-6">
-              Start your education loan application. It takes about 10 minutes to complete.
+              Start your education loan application. It takes about 10 minutes
+              to complete.
             </p>
             <Link href="/apply">
               <Button className="gap-2">

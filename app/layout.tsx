@@ -16,10 +16,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cliq Edu Loan — Student Loans Made Simple",
+  title: "GenZ Loan Edu Loan — Student Loans Made Simple",
   description:
-    "Apply for an education loan in minutes. Fast approval, flexible repayment, and transparent terms. Cliq Edu Loan — trusted by 18,000+ students.",
-  keywords: ["education loan", "student loan", "Nepal", "education finance", "Cliq"],
+    "Apply for an education loan in minutes. Fast approval, flexible repayment, and transparent terms. GenZ Loan Edu Loan — trusted by 18,000+ students.",
+  keywords: [
+    "education loan",
+    "student loan",
+    "Nepal",
+    "education finance",
+    "GenZ Loan",
+  ],
 };
 
 export default function RootLayout({

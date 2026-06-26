@@ -2,7 +2,11 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { useGetAdminApplicationsQuery, useGetAdminDashboardQuery, useLazyExportCsvQuery } from "@/lib/api/adminApi";
+import {
+  useGetAdminApplicationsQuery,
+  useGetAdminDashboardQuery,
+  useLazyExportCsvQuery,
+} from "@/lib/api/adminApi";
 import type { Application, ApplicationStatus } from "@/types/application";
 import type { AdminQuery, AppStatus } from "@/types/api";
 import { formatNPR, formatDate } from "@/lib/formatters";
@@ -47,12 +51,18 @@ const SORT_OPTIONS = [
   { value: "amount_asc", label: "Amount (Low → High)" },
 ];
 
-const sortToQuery = (sort: string): Pick<AdminQuery, "sortBy" | "sortOrder"> => {
+const sortToQuery = (
+  sort: string,
+): Pick<AdminQuery, "sortBy" | "sortOrder"> => {
   switch (sort) {
-    case "oldest":     return { sortBy: "createdAt",   sortOrder: "asc"  };
-    case "amount_desc":return { sortBy: "loanAmount",  sortOrder: "desc" };
-    case "amount_asc": return { sortBy: "loanAmount",  sortOrder: "asc"  };
-    default:           return { sortBy: "createdAt",   sortOrder: "desc" };
+    case "oldest":
+      return { sortBy: "createdAt", sortOrder: "asc" };
+    case "amount_desc":
+      return { sortBy: "loanAmount", sortOrder: "desc" };
+    case "amount_asc":
+      return { sortBy: "loanAmount", sortOrder: "asc" };
+    default:
+      return { sortBy: "createdAt", sortOrder: "desc" };
   }
 };
 
@@ -72,7 +82,9 @@ function StatCard({
       <CardContent className="px-5 py-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <div className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center`}>
+          <div
+            className={`w-8 h-8 rounded-lg ${color} flex items-center justify-center`}
+          >
             <Icon className="w-4 h-4" />
           </div>
         </div>
@@ -107,26 +119,35 @@ export default function AdminDashboard() {
 
   const debouncedSearch = useDebounce(search, 400);
 
-  const query: AdminQuery = useMemo(() => ({
-    search: debouncedSearch || undefined,
-    status: statusFilter !== "all" ? (statusFilter.toUpperCase() as AppStatus) : undefined,
-    page: 1,
-    limit: 100,
-    ...sortToQuery(sortBy),
-  }), [debouncedSearch, statusFilter, sortBy]);
+  const query: AdminQuery = useMemo(
+    () => ({
+      search: debouncedSearch || undefined,
+      status:
+        statusFilter !== "all"
+          ? (statusFilter.toUpperCase() as AppStatus)
+          : undefined,
+      page: 1,
+      limit: 100,
+      ...sortToQuery(sortBy),
+    }),
+    [debouncedSearch, statusFilter, sortBy],
+  );
 
   const { data, isLoading } = useGetAdminApplicationsQuery(query);
   const { data: dashStats } = useGetAdminDashboardQuery();
   const [triggerExport, { isLoading: isExporting }] = useLazyExportCsvQuery();
-  console.log("admin data",data)
+  console.log("admin data", data);
   const applications: Application[] = data?.items ?? [];
   const paginated = data?.paginated;
 
-  const stats = useMemo(() => ({
-    total:     (dashStats?.totalSubmitted ?? 0) + (dashStats?.totalDraft ?? 0),
-    drafts:    dashStats?.totalDraft      ?? 0,
-    submitted: dashStats?.totalSubmitted  ?? paginated?.meta?.total ?? 0,
-  }), [dashStats, paginated]);
+  const stats = useMemo(
+    () => ({
+      total: (dashStats?.totalSubmitted ?? 0) + (dashStats?.totalDraft ?? 0),
+      drafts: dashStats?.totalDraft ?? 0,
+      submitted: dashStats?.totalSubmitted ?? paginated?.meta?.total ?? 0,
+    }),
+    [dashStats, paginated],
+  );
 
   const openDrawer = (app: Application) => {
     setSelectedApp(app);
@@ -157,8 +178,13 @@ export default function AdminDashboard() {
               <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
                 <GraduationCap className="w-4 h-4 text-white" />
               </div>
-              <span className="text-sm font-bold text-foreground">Cliq Edu Loan</span>
-              <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary border-0">
+              <span className="text-sm font-bold text-foreground">
+                GenZ Loan Edu Loan
+              </span>
+              <Badge
+                variant="secondary"
+                className="text-[10px] bg-primary/10 text-primary border-0"
+              >
                 Admin
               </Badge>
             </div>
@@ -180,7 +206,11 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
           <h1 className="text-2xl font-bold text-foreground">Applications</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage and review student loan applications
@@ -264,7 +294,8 @@ export default function AdminDashboard() {
 
               <div className="flex items-center justify-between pt-3">
                 <p className="text-xs text-muted-foreground">
-                  Showing {applications.length} of {paginated?.meta?.total ?? 0} applications
+                  Showing {applications.length} of {paginated?.meta?.total ?? 0}{" "}
+                  applications
                 </p>
               </div>
             </CardHeader>
@@ -275,7 +306,9 @@ export default function AdminDashboard() {
               ) : applications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-3">
                   <TrendingUp className="w-8 h-8 text-muted-foreground" />
-                  <p className="text-sm font-medium text-foreground">No applications found</p>
+                  <p className="text-sm font-medium text-foreground">
+                    No applications found
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Try adjusting your search or filters
                   </p>
@@ -284,13 +317,23 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-border">
-                      <TableHead className="text-xs pl-6">Application #</TableHead>
+                      <TableHead className="text-xs pl-6">
+                        Application #
+                      </TableHead>
                       <TableHead className="text-xs">Applicant</TableHead>
-                      <TableHead className="text-xs hidden md:table-cell">Program</TableHead>
-                      <TableHead className="text-xs hidden sm:table-cell">Amount</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">
+                        Program
+                      </TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">
+                        Amount
+                      </TableHead>
                       <TableHead className="text-xs">Status</TableHead>
-                      <TableHead className="text-xs hidden lg:table-cell">Submitted</TableHead>
-                      <TableHead className="text-xs text-right pr-6">Action</TableHead>
+                      <TableHead className="text-xs hidden lg:table-cell">
+                        Submitted
+                      </TableHead>
+                      <TableHead className="text-xs text-right pr-6">
+                        Action
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -307,8 +350,12 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell className="py-3.5">
                           <div>
-                            <p className="text-sm font-semibold text-foreground">{app.fullName}</p>
-                            <p className="text-[11px] text-muted-foreground">{app.email}</p>
+                            <p className="text-sm font-semibold text-foreground">
+                              {app.fullName}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {app.email}
+                            </p>
                           </div>
                         </TableCell>
                         <TableCell className="py-3.5 hidden md:table-cell">
@@ -322,7 +369,9 @@ export default function AdminDashboard() {
                           </span>
                         </TableCell>
                         <TableCell className="py-3.5">
-                          <StatusBadge status={app.status as ApplicationStatus} />
+                          <StatusBadge
+                            status={app.status as ApplicationStatus}
+                          />
                         </TableCell>
                         <TableCell className="py-3.5 hidden lg:table-cell">
                           <span className="text-xs text-muted-foreground">

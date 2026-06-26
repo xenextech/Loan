@@ -3,8 +3,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, X, Clock3 } from "lucide-react";
 
-const PHONE_DISPLAY = "+977 980-000-0000";
-const PHONE_HREF    = "tel:+9779800000000";
+const PHONE_DISPLAY = "+977-9860005961";
+const PHONE_HREF    = "tel:+9779860005961";
 
 export default function ContactWidget() {
   // Defaults to open so the contact card is visible right away,
@@ -53,8 +53,8 @@ export default function ContactWidget() {
                     {PHONE_DISPLAY}
                   </p>
                   <div className="flex items-center gap-1 mt-0.5">
-                    <Clock3 className="w-2.5 h-2.5 text-zinc-400" />
-                    <p className="text-[11px] text-zinc-400">Mon – Fri, 9 am – 6 pm</p>
+      
+                    <p className="text-[11px] text-zinc-400">Mon – Fri, 9am – 6pm</p>
                   </div>
                 </div>
               </a>

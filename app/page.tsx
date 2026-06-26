@@ -4,6 +4,7 @@ import StatsSection        from "@/components/landing/StatsSection";
 import HowItWorks          from "@/components/landing/HowItWorks";
 import EligibilityChecker  from "@/components/landing/EligibilityChecker";
 import EmiCalculator       from "@/components/landing/EmiCalculator";
+import WhyChooseUs         from "@/components/landing/WhyChooseUs";
 import AboutSection        from "@/components/landing/AboutSection";
 import FAQSection          from "@/components/landing/FAQSection";
 import CTASection          from "@/components/landing/CTASection";
@@ -18,6 +19,7 @@ export default function HomePage() {
         <HowItWorks />
         <EligibilityChecker />
         <EmiCalculator />
+        <WhyChooseUs />
         <AboutSection />
         <FAQSection />
         <CTASection />

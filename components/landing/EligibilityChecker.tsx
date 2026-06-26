@@ -15,6 +15,7 @@ import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button }   from "@/components/ui/button";
+import Image from "next/image";
 
 /* ─── Form types & constants ─────────────────────────────────────────────── */
 const INITIAL_FORM = {
@@ -351,17 +352,32 @@ export default function EligibilityChecker() {
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
               {/* Badge */}
-              <div className="inline-flex items-center gap-1.5 border border-zinc-300/70  rounded-full px-3 py-1 mb-5">
-                <Zap className="w-3 h-3 text-primary" />
-                <span className="text-[10.5px] font-bold text-zinc-600 uppercase tracking-[0.15em]">
+              <div className="mb-5">
+                <span className="text-[10.5px] font-bold text-primary uppercase tracking-[0.15em]">
                   Check Your Eligibility
                 </span>
               </div>
 
               {/* Headline */}
-              <h2 className="text-3xl sm:text-4xl lg:text-[2.7rem] font-bold text-zinc-900 tracking-tight leading-[1.08] mb-4">
+              <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight leading-[1.08] mb-3">
                 See if you{" "}
-                <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent">qualify</span>
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent">qualify</span>
+                  <svg
+                    className="absolute -bottom-1 left-0 w-full overflow-visible"
+                    viewBox="0 0 140 8"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
+                      stroke="#22C55E"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
                 {" "}— before<br className="hidden sm:block" /> you apply.
               </h2>
 
@@ -396,73 +412,9 @@ export default function EligibilityChecker() {
               initial={{ opacity: 0, x: 24 }}
               animate={inView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.55, delay: 0.12, ease: "easeOut" }}
-              className="lg:ml-auto w-full max-w-sm"
+              className=" w-full max-w-lg"
             >
-              <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl shadow-zinc-200/60 border border-zinc-100/80 p-5">
-
-                {/* Card top: qualify status + timer */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-zinc-900 leading-tight">You may qualify</p>
-                      <p className="text-[11px] text-zinc-500">Preliminary result</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-[11px] font-mono font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2.5 py-1 shrink-0">
-                    <Clock className="w-3 h-3" />
-                    0:28
-                  </div>
-                </div>
-
-                <div className="border-t border-zinc-100 mb-4" />
-
-                {/* Indicative sanction */}
-                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.15em] mb-1">
-                  Indicative Sanction
-                </p>
-                <p className="text-[1.7rem] font-bold text-primary leading-none mb-3 tabular-nums">
-                  Rs. 8 – 15 L
-                </p>
-
-                {/* Eligibility score bar */}
-                <div className="w-full h-2 bg-zinc-100 rounded-full mb-1.5 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500"
-                    style={{ width: "78%" }}
-                  />
-                </div>
-                <div className="flex justify-between text-xs text-zinc-500 mb-4">
-                  <span>Eligibility score</span>
-                  <span className="font-bold text-zinc-900">78 / 100</span>
-                </div>
-
-                <div className="border-t border-zinc-100 mb-3" />
-
-                {/* Lender match row */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-sm font-semibold text-primary">
-                    <Zap className="w-3.5 h-3.5" />
-                    6 lenders match
-                  </div>
-                  <DialogTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex items-center gap-0.5 text-xs font-semibold text-zinc-500 hover:text-primary transition-colors"
-                    >
-                      View <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </DialogTrigger>
-                </div>
-
-              </div>
-
-              {/* Small disclaimer below card */}
-              <p className="text-[11px] text-zinc-400 text-center mt-3 leading-relaxed">
-                *Indicative only. Final sanction determined by partner bank.
-              </p>
+             <Image src="/assets/checker.png" alt="Checker" width={800} height={800} />
             </motion.div>
 
           </div>

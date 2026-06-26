@@ -39,20 +39,20 @@ const TOOLS = [
 /* ─── Static nav scroll items ────────────────────────────────────────────── */
 const NAV_ITEMS = [
   { label: "How It Works", id: "how-it-works" },
-  { label: "About",        id: "about"        },
-  { label: "FAQ",          id: "faq"          },
+  { label: "About", id: "about" },
+  { label: "FAQ", id: "faq" },
 ] as const;
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 export default function LandingNav() {
-  const [scrolled,      setScrolled]      = useState(false);
-  const [mobileOpen,    setMobileOpen]    = useState(false);
-  const [hidden,        setHidden]        = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const lastScrollY = useRef(0);
 
   const { isAuthenticated, user } = useAppSelector((s) => s.auth);
-  const dispatch                  = useAppDispatch()
-  const router                    = useRouter();
+  const dispatch = useAppDispatch();
+  const router = useRouter();
 
   useEffect(() => {
     const onScroll = () => {
@@ -87,7 +87,9 @@ export default function LandingNav() {
   };
 
   const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
     setMobileOpen(false);
   };
 
@@ -97,9 +99,6 @@ export default function LandingNav() {
       animate={{ y: hidden ? "-100%" : 0 }}
       transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-
-
-
       {/* ── Main nav bar ────────────────────────────────────────────────── */}
       <motion.header
         initial={{ opacity: 0 }}
@@ -112,16 +111,20 @@ export default function LandingNav() {
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center h-16 gap-8">
-
           {/* ── Logo ──────────────────────────────────────────────────── */}
-          <Link href="/" className="flex items-center gap-2 shrink-0" aria-label="Cliq home">
-            <Image src="/logo.svg" width={180} height={180} alt="Genz Logo" />
-            
+          <Link
+            href="/"
+            className="flex items-center gap-2 shrink-0"
+            aria-label="GenZ Loan home"
+          >
+            <Image src="/logo-white-bg.svg" width={180} height={180} alt="GenZ Logo" />
           </Link>
 
           {/* ── Center nav (desktop) ──────────────────────────────────── */}
-          <nav className="hidden md:flex items-center gap-1 flex-1" aria-label="Main navigation">
-
+          <nav
+            className="hidden md:flex items-center gap-1 flex-1"
+            aria-label="Main navigation"
+          >
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.id}
@@ -159,19 +162,21 @@ export default function LandingNav() {
                       <Icon className="w-3.5 h-3.5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-[13px] font-semibold text-zinc-900 leading-none mb-0.5">{label}</p>
-                      <p className="text-[11px] text-zinc-400 leading-snug">{description}</p>
+                      <p className="text-[13px] font-semibold text-zinc-900 leading-none mb-0.5">
+                        {label}
+                      </p>
+                      <p className="text-[11px] text-zinc-400 leading-snug">
+                        {description}
+                      </p>
                     </div>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-
           </nav>
 
           {/* ── Right: actions (desktop) + hamburger (mobile) ─────────── */}
           <div className="flex items-center gap-2 ml-auto">
-
             {/* Desktop buttons */}
             <div className="hidden md:flex items-center gap-2">
               {isAuthenticated && user ? (
@@ -228,13 +233,13 @@ export default function LandingNav() {
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
             >
-              {mobileOpen
-                ? <X className="w-5 h-5 text-zinc-700" />
-                : <Menu className="w-5 h-5 text-zinc-700" />
-              }
+              {mobileOpen ? (
+                <X className="w-5 h-5 text-zinc-700" />
+              ) : (
+                <Menu className="w-5 h-5 text-zinc-700" />
+              )}
             </button>
           </div>
-
         </div>
       </motion.header>
 
@@ -250,7 +255,6 @@ export default function LandingNav() {
             className="border-b border-zinc-200 bg-white shadow-lg shadow-black/6"
           >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-
               {/* Scroll nav items */}
               <div className="space-y-0.5 mb-3">
                 {NAV_ITEMS.map((item) => (
@@ -286,9 +290,15 @@ export default function LandingNav() {
                       className="flex-1"
                       onClick={() => setMobileOpen(false)}
                     >
-                      <Button variant="outline" size="sm" className="w-full gap-1.5 rounded-lg">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-1.5 rounded-lg"
+                      >
                         <LayoutDashboard className="w-4 h-4" />
-                        {user.role === "ADMIN" ? "Admin Panel" : "My Application"}
+                        {user.role === "ADMIN"
+                          ? "Admin Panel"
+                          : "My Application"}
                       </Button>
                     </Link>
                     <Button
@@ -303,13 +313,25 @@ export default function LandingNav() {
                   </>
                 ) : (
                   <>
-                    <Link href="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
-                      <Button variant="outline" size="sm" className="w-full gap-1.5 rounded-lg">
+                    <Link
+                      href="/login"
+                      className="flex-1"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-1.5 rounded-lg"
+                      >
                         <LogIn className="w-4 h-4" />
                         Sign In
                       </Button>
                     </Link>
-                    <Link href="/apply" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Link
+                      href="/apply"
+                      className="flex-1"
+                      onClick={() => setMobileOpen(false)}
+                    >
                       <Button size="sm" className="w-full rounded-lg gap-1.5">
                         Start Application
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -322,7 +344,6 @@ export default function LandingNav() {
           </motion.div>
         )}
       </AnimatePresence>
-
     </motion.div>
   );
 }

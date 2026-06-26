@@ -46,7 +46,7 @@ export default function LoginPage() {
         setCredentials({
           token: result.accessToken,
           user: result.user,
-        })
+        }),
       );
 
       toast.success("Welcome back!", {
@@ -73,7 +73,7 @@ export default function LoginPage() {
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold text-foreground tracking-tight">
-              Cliq Edu Loan
+              GenZ Loan Edu Loan
             </span>
           </Link>
           <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
@@ -84,7 +84,11 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-card border border-border rounded-2xl shadow-sm px-6 py-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-5"
+            noValidate
+          >
             {/* Email */}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm font-medium">
@@ -99,7 +103,9 @@ export default function LoginPage() {
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -139,7 +145,9 @@ export default function LoginPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-destructive">{errors.password.message}</p>
+                <p className="text-xs text-destructive">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
@@ -160,13 +168,19 @@ export default function LoginPage() {
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground mt-6">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="text-primary font-medium hover:underline">
+          <Link
+            href="/register"
+            className="text-primary font-medium hover:underline"
+          >
             Create one
           </Link>
         </p>
 
         <p className="text-center mt-4">
-          <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <Link
+            href="/"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
             ← Back to home
           </Link>
         </p>

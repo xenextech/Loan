@@ -6,8 +6,8 @@ import { motion, useInView } from "framer-motion";
 const STATS = [
   {
     title: "Financing Up To",
-    content: "10,00,000L",
-    description: "For Tuition + Education Loans",
+    content: "10 Lakhs",
+    description: "For Education Loans",
   },
   {
     title: "Approval Process",
@@ -64,7 +64,7 @@ export default function StatsSection() {
   const ref = useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={ref} className="w-full bg-white border-y border-zinc-100 py-10 relative z-20">
+    <div ref={ref} className="w-full bg-white border-y border-zinc-200 py-10 relative z-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Stat grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10">
