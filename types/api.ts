@@ -23,7 +23,7 @@ export interface PaginatedData<T> {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
-export type UserRole = 'STUDENT' | 'ADMIN';
+export type UserRole = 'STUDENT' | 'ADMIN' | 'PARENT' | 'COLLEGE';
 
 export interface AuthUser {
   id: string;
@@ -52,7 +52,97 @@ export type DocumentType =
   | 'IDENTITY_FRONT'
   | 'IDENTITY_BACK'
   | 'ACADEMIC_RECORD'
-  | 'FEE_STRUCTURE';
+  | 'FEE_STRUCTURE'
+  | 'STUDENT_APPLICATION'
+  | 'OFFER_LETTER'
+  | 'ENROLLMENT_DOCUMENT';
+
+// ─── Submission result (includes magic links) ────────────────────────────────
+
+export interface SubmitApplicationResult {
+  id: string;
+  applicationNumber: string;
+  status: AppStatus;
+  submittedAt: string;
+  parentLink: string;
+  collegeLink: string;
+}
+
+// ─── Parent verification (via magic link) ────────────────────────────────────
+
+export interface ParentVerification {
+  id: string;
+  applicationId: string;
+  name?: string;
+  phone?: string;
+  contact?: string;
+  citizenshipNumber?: string;
+  salaryBankName?: string;
+  bankAccountNumber?: string;
+  salarySheetPublicUrl?: string;
+  submittedAt?: string;
+}
+
+export interface ParentApplicationView {
+  applicationNumber: string;
+  studentName?: string;
+  email?: string;
+  phoneNumber?: string;
+  studyType?: string;
+  courseName?: string;
+  boardUniversity?: string;
+  courseDuration?: string;
+  loanAmount?: number;
+  submittedAt?: string;
+  verification?: ParentVerification;
+}
+
+// ─── College verification ────────────────────────────────────────────────────
+
+export interface CollegeVerification {
+  id: string;
+  applicationId: string;
+  collegeName?: string;
+  collegeEmail?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  isApplicationVerified: boolean;
+  verificationNotes?: string;
+  offerLetterPublicUrl?: string;
+  enrollmentDocPublicUrl?: string;
+  submittedAt?: string;
+}
+
+export interface CollegeApplicationView {
+  applicationNumber: string;
+  studentName?: string;
+  studentEmail?: string;
+  studentPhone?: string;
+  studyType?: string;
+  courseName?: string;
+  boardUniversity?: string;
+  courseDuration?: string;
+  loanAmount?: number;
+  submittedAt?: string;
+  verification?: CollegeVerification;
+}
+
+export interface CollegeMyVerification {
+  id: string;
+  applicationId: string;
+  applicationNumber: string;
+  studentName?: string;
+  courseName?: string;
+  boardUniversity?: string;
+  loanAmount?: number;
+  applicationStatus: AppStatus;
+  isApplicationVerified: boolean;
+  offerLetterUploaded: boolean;
+  enrollmentDocUploaded: boolean;
+  verificationSubmittedAt?: string;
+  linkToken: string;
+  linkExpiresAt: string;
+}
 
 // ─── Nested relation shapes (returned by Prisma include) ─────────────────────
 
@@ -181,4 +271,126 @@ export interface EligibilityRequest {
   loanAmount: number;
   monthlySalary?: number;
   tenureMonths?: number;
+}
+
+// ─── College Document Templates ───────────────────────────────────────────────
+
+export interface OfferLetterListItem {
+  id: string;
+  refNo: string;
+  collegeName: string;
+  studentFullName: string;
+  programName?: string;
+  issuedDateAD?: string;
+  issuedDateBS?: string;
+  qrToken?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OfferLetterRecord extends OfferLetterListItem {
+  createdByEmail: string;
+  collegeAddress?: string;
+  collegeRegNo?: string;
+  collegeAffiliation?: string;
+  collegePhone?: string;
+  collegeEmail?: string;
+  collegeWebsite?: string;
+  logoUrl?: string;
+  validUntilAD?: string;
+  validUntilBS?: string;
+  studentDobAD?: string;
+  studentDobBS?: string;
+  citizenshipNo?: string;
+  fatherName?: string;
+  motherName?: string;
+  permanentAddress?: string;
+  district?: string;
+  province?: string;
+  programFullName?: string;
+  programAffiliation?: string;
+  durationYears?: number;
+  totalSemesters?: number;
+  creditHours?: number;
+  academicYearBS?: string;
+  intakeMonthBS?: string;
+  admissionFee?: number;
+  tuitionPerSem?: number;
+  examFeePerSem?: number;
+  labFeePerSem?: number;
+  totalApprox?: number;
+  conditions?: string[];
+  signatories?: { name: string; designation: string; stampAreaLabel?: string }[];
+  qrVerifyUrl?: string;
+}
+
+export interface AgreementListItem {
+  id: string;
+  refNo: string;
+  collegeName: string;
+  studentFullName: string;
+  programName?: string;
+  issuedDateAD?: string;
+  issuedDateBS?: string;
+  isEnrolled: boolean;
+  qrToken?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgreementRecord extends AgreementListItem {
+  createdByEmail: string;
+  collegeAddress?: string;
+  collegeRegNo?: string;
+  collegeAffiliation?: string;
+  collegePhone?: string;
+  collegeEmail?: string;
+  collegeWebsite?: string;
+  logoUrl?: string;
+  tuRollNo?: string;
+  enrollmentNo?: string;
+  currentYear?: string;
+  currentSemester?: string;
+  academicYearBS?: string;
+  studentStatus?: string;
+  hasBacklogs: boolean;
+  disciplinaryHold: boolean;
+  feeDueRs?: number;
+  qrVerifyUrl?: string;
+}
+
+export interface EnrollmentCertListItem {
+  id: string;
+  refNo: string;
+  collegeName: string;
+  collegeCode?: string;
+  studentFullName: string;
+  tuRollNo?: string;
+  programName?: string;
+  issuedDateAD?: string;
+  issuedDateBS?: string;
+  isEnrolled: boolean;
+  qrToken?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EnrollmentCertRecord extends EnrollmentCertListItem {
+  createdByEmail: string;
+  collegeAddress?: string;
+  collegeRegNo?: string;
+  collegeAffiliation?: string;
+  collegePhone?: string;
+  collegeEmail?: string;
+  collegeWebsite?: string;
+  logoUrl?: string;
+  enrollmentNo?: string;
+  currentYear?: string;
+  currentSemester?: string;
+  academicYearBS?: string;
+  studentStatus?: string;
+  hasBacklogs: boolean;
+  disciplinaryHold: boolean;
+  feeDueRs?: number;
+  qrVerifyUrl?: string;
 }

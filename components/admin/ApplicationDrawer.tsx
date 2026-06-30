@@ -53,11 +53,14 @@ interface ApplicationDrawerProps {
 }
 
 const DOC_LABELS: Record<DocumentType, string> = {
-  APPLICANT_PHOTO: "Applicant Photo",
-  IDENTITY_FRONT:  "Identity — Front",
-  IDENTITY_BACK:   "Identity — Back",
-  ACADEMIC_RECORD: "Academic Records",
-  FEE_STRUCTURE:   "Fee Structure",
+  APPLICANT_PHOTO:      "Applicant Photo",
+  IDENTITY_FRONT:       "Identity — Front",
+  IDENTITY_BACK:        "Identity — Back",
+  ACADEMIC_RECORD:      "Academic Records",
+  FEE_STRUCTURE:        "Fee Structure",
+  STUDENT_APPLICATION:  "Student Application",
+  OFFER_LETTER:         "Offer Letter",
+  ENROLLMENT_DOCUMENT:  "Enrollment Document",
 };
 
 const IMAGE_TYPES: Set<DocumentType> = new Set([

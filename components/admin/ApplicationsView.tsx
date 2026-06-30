@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -10,7 +11,6 @@ import type { Application, ApplicationStatus } from "@/types/application";
 import type { AdminQuery, AppStatus } from "@/types/api";
 import { formatNPR, formatDate } from "@/lib/formatters";
 import StatusBadge from "./StatusBadge";
-import ApplicationDrawer from "./ApplicationDrawer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,11 +69,10 @@ function TableSkeleton() {
 }
 
 export default function ApplicationsView() {
-  const [search, setSearch]               = useState("");
-  const [statusFilter, setStatusFilter]   = useState<string>("all");
-  const [sortBy, setSortBy]               = useState("newest");
-  const [selectedApp, setSelectedApp]     = useState<Application | null>(null);
-  const [drawerOpen, setDrawerOpen]       = useState(false);
+  const router = useRouter();
+  const [search, setSearch]             = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy]             = useState("newest");
 
   const debouncedSearch = useDebounce(search, 400);
 
@@ -90,11 +89,6 @@ export default function ApplicationsView() {
 
   const applications: Application[] = data?.items ?? [];
   const total                        = data?.paginated?.meta?.total ?? 0;
-
-  const openDrawer = (app: Application) => {
-    setSelectedApp(app);
-    setDrawerOpen(true);
-  };
 
   const handleExport = useCallback(async () => {
     try {
@@ -216,7 +210,7 @@ export default function ApplicationsView() {
                     <TableRow
                       key={app.id}
                       className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
-                      onClick={() => openDrawer(app)}
+                      onClick={() => router.push(`/admin/applications/${app.id}`)}
                     >
                       <TableCell className="pl-5 py-3.5">
                         <span className="text-xs font-mono font-semibold text-foreground">
@@ -252,7 +246,7 @@ export default function ApplicationsView() {
                           variant="ghost"
                           size="sm"
                           className="h-7 text-xs text-primary hover:bg-primary/10 hover:text-primary"
-                          onClick={(e) => { e.stopPropagation(); openDrawer(app); }}
+                          onClick={(e) => { e.stopPropagation(); router.push(`/admin/applications/${app.id}`); }}
                         >
                           Review
                         </Button>
@@ -266,11 +260,6 @@ export default function ApplicationsView() {
         </Card>
       </motion.div>
 
-      <ApplicationDrawer
-        application={selectedApp}
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-      />
     </div>
   );
 }

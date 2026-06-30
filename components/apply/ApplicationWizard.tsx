@@ -7,7 +7,6 @@ import {
   setStep,
   setApplicationId,
   updateStepData,
-  setAutoSaveStatus,
   setSubmitted,
 } from "@/lib/store/applicationSlice";
 import {
@@ -18,22 +17,17 @@ import {
   useSubmitApplicationMutation,
 } from "@/lib/api/applicationApi";
 import WizardProgress from "./WizardProgress";
-import AutoSaveIndicator from "./AutoSaveIndicator";
 import Step1AboutYou from "./steps/Step1AboutYou";
 import Step2Identity from "./steps/Step2Identity";
 import Step3FamilyEducation from "./steps/Step3FamilyEducation";
-import Step4ReviewSubmit, {
-  type Step4Declaration,
-} from "./steps/Step4ReviewSubmit";
+import Step4ReviewSubmit, { type Step4Declaration } from "./steps/Step4ReviewSubmit";
 import SubmissionSuccess from "./SubmissionSuccess";
-import type {
-  Step1FormData,
-  Step2FormData,
-  Step3FormData,
-} from "@/lib/validations/schemas";
-import { GraduationCap, BookmarkCheck } from "lucide-react";
+import ContactGateModal, { type ContactEmails } from "./ContactGateModal";
+import type { Step1FormData, Step2FormData, Step3FormData } from "@/lib/validations/schemas";
+import { BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 
 const slideVariants = {
   enter: { opacity: 0, x: 48 },
@@ -47,113 +41,77 @@ export default function ApplicationWizard() {
     applicationId,
     currentStep,
     formData,
-    autoSaveStatus,
-    lastSavedAt,
-    hasUnsavedChanges,
     submittedApplicationNumber,
+    submissionLinks,
   } = useAppSelector((s) => s.application);
 
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [direction, setDirection] = useState<1 | -1>(1);
-  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [showContactGate, setShowContactGate] = useState(false);
+  const [contactEmails, setContactEmails] = useState<ContactEmails>({});
+  const lastScrollY = useRef(0);
 
   const [createDraft, { isLoading: isCreating }] = useCreateDraftMutation();
   const [saveStep1, { isLoading: isSaving1 }] = useSaveStep1Mutation();
   const [saveStep2, { isLoading: isSaving2 }] = useSaveStep2Mutation();
   const [saveStep3, { isLoading: isSaving3 }] = useSaveStep3Mutation();
-  const [submitApplication, { isLoading: isSubmitting }] =
-    useSubmitApplicationMutation();
+  const [submitApplication, { isLoading: isSubmitting }] = useSubmitApplicationMutation();
 
-  const isSaving = isSaving1 || isSaving2 || isSaving3;
-
-  // Create a new draft application when the wizard first mounts
+  // Create draft on mount
   useEffect(() => {
     if (applicationId) return;
     createDraft()
       .unwrap()
       .then((app) => {
-        dispatch(
-          setApplicationId({ id: app.id, number: app.applicationNumber }),
-        );
+        dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
       })
       .catch(() => {
-        toast.error(
-          "Failed to start application. Please refresh and try again.",
-        );
+        toast.error("Failed to start application. Please refresh and try again.");
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-save — fires 3 s after the last form change
-  const triggerAutoSave = useCallback(async () => {
-    if (!hasUnsavedChanges || !applicationId) return;
-    dispatch(setAutoSaveStatus("saving"));
-    try {
-      // Save whichever step the user is currently on
-      if (currentStep === 1 && formData.step1) {
-        await saveStep1({
-          id: applicationId,
-          data: formData.step1 as Step1FormData,
-        }).unwrap();
-      } else if (currentStep === 2 && formData.step2) {
-        await saveStep2({
-          id: applicationId,
-          data: formData.step2 as Step2FormData,
-        }).unwrap();
-      } else if (currentStep === 3 && formData.step3) {
-        await saveStep3({
-          id: applicationId,
-          data: formData.step3 as Step3FormData,
-        }).unwrap();
-      }
-      dispatch(setAutoSaveStatus("saved"));
-    } catch {
-      dispatch(setAutoSaveStatus("error"));
-    }
-  }, [
-    hasUnsavedChanges,
-    applicationId,
-    currentStep,
-    formData,
-    dispatch,
-    saveStep1,
-    saveStep2,
-    saveStep3,
-  ]);
-
   useEffect(() => {
-    if (hasUnsavedChanges) {
-      autoSaveTimer.current && clearTimeout(autoSaveTimer.current);
-      autoSaveTimer.current = setTimeout(triggerAutoSave, 3000);
-    }
-    return () => {
-      autoSaveTimer.current && clearTimeout(autoSaveTimer.current);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 8);
+      if (y < 10) {
+        setHidden(false);
+      } else if (y > lastScrollY.current + 4 && y > 80) {
+        setHidden(true);
+      } else if (y < lastScrollY.current - 4) {
+        setHidden(false);
+      }
+      lastScrollY.current = y;
     };
-  }, [hasUnsavedChanges, triggerAutoSave]);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // ─── Navigation helpers ───────────────────────────────────────────────────
 
-  const goNext = (step: number) => {
+  const goNext = useCallback((step: number) => {
     setDirection(1);
     setCompletedSteps((prev) => [...new Set([...prev, step])]);
     dispatch(setStep(step + 1));
-  };
+  }, [dispatch]);
 
   const goPrev = (step: number) => {
     setDirection(-1);
     dispatch(setStep(step - 1));
   };
 
-  // ─── Step handlers (save to backend then advance) ─────────────────────────
+  // ─── Step handlers — save fires ONLY on Continue click ───────────────────
 
   const handleStep1 = async (data: Step1FormData) => {
     dispatch(updateStepData({ step: "step1", data }));
     if (applicationId) {
       try {
         await saveStep1({ id: applicationId, data }).unwrap();
-        dispatch(setAutoSaveStatus("saved"));
       } catch {
-        toast.error("Failed to save step 1. Your data is kept locally.");
+        toast.error("Failed to save. Your data is kept locally.");
       }
     }
     goNext(1);
@@ -164,25 +122,33 @@ export default function ApplicationWizard() {
     if (applicationId) {
       try {
         await saveStep2({ id: applicationId, data }).unwrap();
-        dispatch(setAutoSaveStatus("saved"));
       } catch {
-        toast.error("Failed to save step 2. Your data is kept locally.");
+        toast.error("Failed to save. Your data is kept locally.");
       }
     }
     goNext(2);
   };
 
+  // Step 3 → save, then open the contact-gate before advancing to Step 4
   const handleStep3 = async (data: Step3FormData) => {
     dispatch(updateStepData({ step: "step3", data }));
     if (applicationId) {
       try {
         await saveStep3({ id: applicationId, data }).unwrap();
-        dispatch(setAutoSaveStatus("saved"));
       } catch {
-        toast.error("Failed to save step 3. Your data is kept locally.");
+        toast.error("Failed to save. Your data is kept locally.");
       }
     }
-    goNext(3);
+    setCompletedSteps((prev) => [...new Set([...prev, 3])]);
+    // Open the contact-gate modal — it will call goNext(3) when done
+    setShowContactGate(true);
+  };
+
+  const handleContactGateComplete = (emails: ContactEmails) => {
+    setContactEmails(emails);
+    setShowContactGate(false);
+    setDirection(1);
+    dispatch(setStep(4));
   };
 
   const handleSubmit = async (decl: Step4Declaration) => {
@@ -199,8 +165,16 @@ export default function ApplicationWizard() {
         id: applicationId,
         informationAccurate: decl.informationAccurate,
         authorizeVerification: decl.authorizeVerification,
+        parentContactEmail: contactEmails.parentEmail,
+        collegeContactEmail: contactEmails.collegeEmail,
       }).unwrap();
-      dispatch(setSubmitted({ applicationNumber: result.applicationNumber }));
+      dispatch(
+        setSubmitted({
+          applicationNumber: result.applicationNumber,
+          parentLink: result.parentLink,
+          collegeLink: result.collegeLink,
+        })
+      );
     } catch {
       toast.error("Submission failed. Please try again.");
     }
@@ -215,40 +189,47 @@ export default function ApplicationWizard() {
         loanAmount={formData.step1?.loanAmount ?? 0}
         courseName={formData.step1?.courseName ?? ""}
         submittedAt={new Date().toISOString()}
+        parentLink={submissionLinks?.parentLink ?? undefined}
+        collegeLink={submissionLinks?.collegeLink ?? undefined}
       />
     );
   }
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-40 bg-card border-b border-border shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-sm font-semibold text-foreground"
-            >
-              <GraduationCap className="w-5 h-5 text-primary" />
-              GenZ Loan Edu Loan
-            </Link>
-            <AutoSaveIndicator
-              status={isSaving ? "saving" : autoSaveStatus}
-              lastSavedAt={lastSavedAt}
-              hasUnsavedChanges={hasUnsavedChanges}
-              onSaveNow={triggerAutoSave}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-muted-foreground gap-1.5"
-            >
-              <BookmarkCheck className="w-3.5 h-3.5" />
-              Save & Exit
-            </Button>
+      {/* Contact gate — shown after Step 3 Continue */}
+      <ContactGateModal isOpen={showContactGate} onComplete={handleContactGateComplete} />
+
+
+      {/* Fixed header with hide-on-scroll behaviour */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 z-40"
+        animate={{ y: hidden ? "-100%" : 0 }}
+        transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
+      >
+        <div
+          className={`transition-all duration-200 border-b border-border ${
+            scrolled
+              ? "bg-card/97 backdrop-blur-md shadow-sm shadow-black/6 border-zinc-200/80"
+              : "bg-card shadow-sm"
+          }`}
+        >
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-between h-14">
+              <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Image src="/logo-white-bg.svg" alt="Logo" width={180} height={180} />
+              </Link>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1.5">
+                <BookmarkCheck className="w-3.5 h-3.5" />
+                Save & Exit
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Spacer */}
+      <div className="h-14" />
 
       {/* Progress */}
       <div className="bg-card border-b border-border">
@@ -293,14 +274,10 @@ export default function ApplicationWizard() {
                   {currentStep === 4 && "Review & submit"}
                 </h2>
                 <p className="text-muted-foreground text-sm mt-1.5">
-                  {currentStep === 1 &&
-                    "Enter your personal contact information and your study plans."}
-                  {currentStep === 2 &&
-                    "Upload your identity documents. We'll auto-fill details using OCR."}
-                  {currentStep === 3 &&
-                    "Provide your family background and education fee information."}
-                  {currentStep === 4 &&
-                    "Review your application carefully before final submission."}
+                  {currentStep === 1 && "Enter your personal contact information and your study plans."}
+                  {currentStep === 2 && "Upload your identity documents. We'll auto-fill details using OCR."}
+                  {currentStep === 3 && "Provide your family background and education fee information."}
+                  {currentStep === 4 && "Review your application carefully before final submission."}
                 </p>
               </div>
 
@@ -309,9 +286,8 @@ export default function ApplicationWizard() {
                   <Step1AboutYou
                     defaultValues={formData.step1}
                     onNext={handleStep1}
-                    onDataChange={(data) =>
-                      dispatch(updateStepData({ step: "step1", data }))
-                    }
+                    onDataChange={(data) => dispatch(updateStepData({ step: "step1", data }))}
+                    isSaving={isSaving1}
                   />
                 )}
                 {currentStep === 2 && (
@@ -319,9 +295,8 @@ export default function ApplicationWizard() {
                     defaultValues={formData.step2}
                     onNext={handleStep2}
                     onPrev={() => goPrev(2)}
-                    onDataChange={(data) =>
-                      dispatch(updateStepData({ step: "step2", data }))
-                    }
+                    onDataChange={(data) => dispatch(updateStepData({ step: "step2", data }))}
+                    isSaving={isSaving2}
                   />
                 )}
                 {currentStep === 3 && (
@@ -329,9 +304,8 @@ export default function ApplicationWizard() {
                     defaultValues={formData.step3}
                     onNext={handleStep3}
                     onPrev={() => goPrev(3)}
-                    onDataChange={(data) =>
-                      dispatch(updateStepData({ step: "step3", data }))
-                    }
+                    onDataChange={(data) => dispatch(updateStepData({ step: "step3", data }))}
+                    isSaving={isSaving3}
                   />
                 )}
                 {currentStep === 4 && (

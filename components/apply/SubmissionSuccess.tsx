@@ -5,7 +5,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, Clock, ArrowRight, Copy, Home } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock,
+  ArrowRight,
+  Copy,
+  Home,
+  Users,
+  GraduationCap,
+  Check,
+} from "lucide-react";
 import { useState } from "react";
 import { formatNPR } from "@/lib/formatters";
 
@@ -14,6 +23,8 @@ interface SubmissionSuccessProps {
   loanAmount: number;
   courseName: string;
   submittedAt: string;
+  parentLink?: string;
+  collegeLink?: string;
 }
 
 const TIMELINE = [
@@ -24,11 +35,72 @@ const TIMELINE = [
   { label: "Disbursement", status: "pending" as const },
 ];
 
+function CopyLinkCard({
+  icon: Icon,
+  label,
+  hint,
+  link,
+  color,
+}: {
+  icon: React.ElementType;
+  label: string;
+  hint: string;
+  link: string;
+  color: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = () => {
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/30 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
+            <Icon className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">{label}</p>
+            <p className="text-xs text-muted-foreground">{hint}</p>
+          </div>
+        </div>
+        <Button
+          variant={copied ? "default" : "outline"}
+          size="sm"
+          className="shrink-0 h-8 px-3 gap-1.5 transition-all"
+          onClick={copy}
+        >
+          {copied ? (
+            <>
+              <Check className="w-3 h-3" />
+              Copied
+            </>
+          ) : (
+            <>
+              <Copy className="w-3 h-3" />
+              Copy link
+            </>
+          )}
+        </Button>
+      </div>
+      <p className="mt-2.5 text-xs font-mono text-muted-foreground break-all bg-background rounded-lg px-3 py-2 border border-border">
+        {link}
+      </p>
+    </div>
+  );
+}
+
 export default function SubmissionSuccess({
   applicationNumber,
   loanAmount,
   courseName,
   submittedAt,
+  parentLink,
+  collegeLink,
 }: SubmissionSuccessProps) {
   const [copied, setCopied] = useState(false);
 
@@ -37,6 +109,8 @@ export default function SubmissionSuccess({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const hasLinks = parentLink || collegeLink;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-16">
@@ -60,12 +134,7 @@ export default function SubmissionSuccess({
                 className="absolute inset-0 rounded-full border-2 border-[oklch(0.62_0.18_145)]/30"
                 initial={{ scale: 1, opacity: 0.5 }}
                 animate={{ scale: 1.5 + i * 0.3, opacity: 0 }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  delay: i * 0.3,
-                  ease: "easeOut",
-                }}
+                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3, ease: "easeOut" }}
               />
             ))}
           </div>
@@ -77,21 +146,15 @@ export default function SubmissionSuccess({
           transition={{ delay: 0.25 }}
           className="text-center mb-8"
         >
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            Application Submitted!
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Application Submitted!</h1>
           <p className="text-muted-foreground text-sm">
             We&apos;ll review your application and get back to you within 3–5 business days.
           </p>
         </motion.div>
 
-        {/* Application details card */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-        >
-          <Card className="shadow-sm mb-6">
+        {/* Application details */}
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+          <Card className="shadow-sm mb-4">
             <CardContent className="p-6 space-y-5">
               {/* Application number */}
               <div className="flex items-center justify-between bg-muted/50 rounded-xl px-4 py-3">
@@ -99,19 +162,12 @@ export default function SubmissionSuccess({
                   <p className="text-xs text-muted-foreground">Application Number</p>
                   <p className="text-base font-bold text-foreground font-mono">{applicationNumber}</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={copyRef}
-                >
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={copyRef}>
                   <Copy className="w-3.5 h-3.5" />
                 </Button>
               </div>
               {copied && (
-                <p className="text-xs text-center text-[oklch(0.62_0.18_145)] -mt-3">
-                  Copied to clipboard!
-                </p>
+                <p className="text-xs text-center text-[oklch(0.62_0.18_145)] -mt-3">Copied to clipboard!</p>
               )}
 
               <Separator />
@@ -173,23 +229,14 @@ export default function SubmissionSuccess({
                             : "bg-border"
                         }`}
                       />
-                      <span
-                        className={`text-xs ${
-                          item.status === "pending"
-                            ? "text-muted-foreground"
-                            : "text-foreground font-medium"
-                        }`}
-                      >
+                      <span className={`text-xs ${item.status === "pending" ? "text-muted-foreground" : "text-foreground font-medium"}`}>
                         {item.label}
                       </span>
                       {item.status === "completed" && (
                         <CheckCircle2 className="w-3 h-3 text-[oklch(0.62_0.18_145)] ml-auto" />
                       )}
                       {item.status === "current" && (
-                        <Badge
-                          variant="outline"
-                          className="ml-auto text-[10px] border-primary/30 text-primary"
-                        >
+                        <Badge variant="outline" className="ml-auto text-[10px] border-primary/30 text-primary">
                           In progress
                         </Badge>
                       )}
@@ -199,6 +246,45 @@ export default function SubmissionSuccess({
               </div>
             </CardContent>
           </Card>
+
+          {/* Verification links */}
+          {hasLinks && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mb-4"
+            >
+              <Card className="shadow-sm">
+                <CardContent className="p-6 space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Verification Links</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Share these links with your contacts. They expire in 30 days.
+                    </p>
+                  </div>
+                  {parentLink && (
+                    <CopyLinkCard
+                      icon={Users}
+                      label="Parent / Guardian"
+                      hint="Share this with your parent so they can view the application"
+                      link={parentLink}
+                      color="bg-blue-500/10 text-blue-600"
+                    />
+                  )}
+                  {collegeLink && (
+                    <CopyLinkCard
+                      icon={GraduationCap}
+                      label="College / Institution"
+                      hint="Share this with your college to upload their documents"
+                      link={collegeLink}
+                      color="bg-teal-500/10 text-teal-600"
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           <div className="flex gap-3">
             <Link href="/" className="flex-1">

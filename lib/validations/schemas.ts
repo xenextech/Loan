@@ -12,8 +12,8 @@ export const step1Schema = z.object({
   courseDuration: z.string().min(1, "Course duration is required"),
   loanAmount: z
     .number()
-    .min(100000, "Minimum loan amount is NPR 1,00,000")
-    .max(5000000, "Maximum loan amount is NPR 50,00,000"),
+    .min(50000, "Minimum loan amount is NPR 50,000")
+    .max(1000000, "Maximum loan amount is NPR 10,00,000"),
 });
 
 export const step2Schema = z.object({

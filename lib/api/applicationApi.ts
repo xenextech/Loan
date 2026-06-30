@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import type { LoanApplication } from "@/types/api";
+import type { LoanApplication, SubmitApplicationResult } from "@/types/api";
 import type { Step1FormData, Step2FormData, Step3FormData } from "@/lib/validations/schemas";
 import {
   toStudyType,
@@ -105,15 +105,21 @@ export const applicationApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, { id }) => [{ type: "Application", id }],
     }),
 
-    // Final submission — changes status to SUBMITTED
+    // Final submission — returns SUBMITTED application + parent/college magic links
     submitApplication: builder.mutation<
-      LoanApplication,
-      { id: string; informationAccurate: boolean; authorizeVerification: boolean }
+      SubmitApplicationResult,
+      {
+        id: string;
+        informationAccurate: boolean;
+        authorizeVerification: boolean;
+        parentContactEmail?: string;
+        collegeContactEmail?: string;
+      }
     >({
-      query: ({ id, informationAccurate, authorizeVerification }) => ({
+      query: ({ id, informationAccurate, authorizeVerification, parentContactEmail, collegeContactEmail }) => ({
         url: `/applications/${id}/submit`,
         method: "POST",
-        body: { informationAccurate, authorizeVerification },
+        body: { informationAccurate, authorizeVerification, parentContactEmail, collegeContactEmail },
       }),
       invalidatesTags: ["Application"],
     }),
