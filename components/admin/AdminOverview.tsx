@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   useGetAdminDashboardQuery,
@@ -7,7 +8,6 @@ import {
 } from "@/lib/api/adminApi";
 import { formatNPR, formatDate } from "@/lib/formatters";
 import StatusBadge from "./StatusBadge";
-import ApplicationDrawer from "./ApplicationDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -31,6 +31,7 @@ import {
   Activity,
 } from "lucide-react";
 import Link from "next/link";
+
 
 function StatCard({
   icon: Icon,
@@ -82,6 +83,7 @@ function StatSkeleton() {
 }
 
 export default function AdminOverview() {
+  const router = useRouter();
   const { data: dashStats, isLoading: statsLoading } = useGetAdminDashboardQuery();
   const { data: appData, isLoading: appsLoading } = useGetAdminApplicationsQuery({
     page: 1,
@@ -90,11 +92,8 @@ export default function AdminOverview() {
     sortOrder: "desc",
   });
 
-  const [selectedApp, setSelectedApp] = useState<Application | null>(null);
-  const [drawerOpen, setDrawerOpen]   = useState(false);
-
-  const recentItems = appData?.items ?? [];
-  const total       = (dashStats?.totalSubmitted ?? 0) + (dashStats?.totalDraft ?? 0);
+  const recentItems  = appData?.items ?? [];
+  const total        = (dashStats?.totalSubmitted ?? 0) + (dashStats?.totalDraft ?? 0);
   const recentCount = dashStats?.recentSubmissions?.length ?? 0;
 
   const submittedPct = total > 0
@@ -107,11 +106,6 @@ export default function AdminOverview() {
     month:   "long",
     day:     "numeric",
   });
-
-  const openDrawer = (app: Application) => {
-    setSelectedApp(app);
-    setDrawerOpen(true);
-  };
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl">
@@ -271,7 +265,7 @@ export default function AdminOverview() {
                     <TableRow
                       key={app.id}
                       className="border-border hover:bg-muted/30 transition-colors cursor-pointer"
-                      onClick={() => openDrawer(app)}
+                      onClick={() => router.push(`/admin/applications/${app.id}`)}
                     >
                       <TableCell className="pl-5 py-3.5">
                         <span className="text-xs font-mono font-semibold text-foreground">
@@ -306,11 +300,6 @@ export default function AdminOverview() {
         </Card>
       </motion.div>
 
-      <ApplicationDrawer
-        application={selectedApp}
-        open={drawerOpen}
-        onOpenChange={setDrawerOpen}
-      />
     </div>
   );
 }

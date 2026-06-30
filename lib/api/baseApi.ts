@@ -43,6 +43,6 @@ const baseQueryWithUnwrap: BaseQueryFn<
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: baseQueryWithUnwrap,
-  tagTypes: ["Application", "Document", "AdminApp", "Dashboard", "Notification"],
+  tagTypes: ["Application", "Document", "AdminApp", "Dashboard", "Notification", "CollegeTemplate"],
   endpoints: () => ({}),
 });

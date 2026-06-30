@@ -28,13 +28,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { step3Schema, type Step3FormData } from "@/lib/validations/schemas";
 import FileUploadZone from "@/components/apply/fields/FileUploadZone";
-import { ArrowRight, ArrowLeft, Users, GraduationCap, Receipt, Heart } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, Users, GraduationCap, Receipt, Heart, Info } from "lucide-react";
 
 interface Step3Props {
   defaultValues?: Partial<Step3FormData>;
   onNext: (data: Step3FormData) => void;
   onPrev: () => void;
   onDataChange?: (data: Partial<Step3FormData>) => void;
+  isSaving?: boolean;
 }
 
 const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
@@ -57,6 +58,7 @@ export default function Step3FamilyEducation({
   onNext,
   onPrev,
   onDataChange,
+  isSaving,
 }: Step3Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
@@ -348,15 +350,45 @@ export default function Step3FamilyEducation({
           </AnimatePresence>
         </motion.div>
 
+        {/* College documents notice */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.16 }}
+        >
+          <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 px-5 py-4">
+            <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                Offer letter &amp; enrollment documents
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Your institution will provide the admission offer letter and enrollment documents directly
+                through the GenZ Loan College Portal. You do not need to upload these yourself — your
+                college will verify your enrollment and submit the required documents on your behalf.
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Navigation */}
         <div className="flex justify-between pt-2">
           <Button type="button" variant="outline" size="lg" className="h-12 px-6" onClick={onPrev}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button type="submit" size="lg" className="h-12 px-8 text-base font-semibold">
-            Continue
-            <ArrowRight className="w-4 h-4 ml-2" />
+          <Button type="submit" size="lg" disabled={isSaving} className="h-12 px-8 text-base font-semibold">
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
           </Button>
         </div>
       </form>

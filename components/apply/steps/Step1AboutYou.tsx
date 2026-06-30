@@ -22,12 +22,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { step1Schema, type Step1FormData } from "@/lib/validations/schemas";
 import LoanAmountField from "@/components/apply/fields/LoanAmountField";
-import { ArrowRight, User, BookOpen, Wallet } from "lucide-react";
+import { ArrowRight, Loader2, User, BookOpen, Wallet } from "lucide-react";
 
 interface Step1Props {
   defaultValues?: Partial<Step1FormData>;
   onNext: (data: Step1FormData) => void;
   onDataChange?: (data: Partial<Step1FormData>) => void;
+  isSaving?: boolean;
 }
 
 const STUDY_TYPES = [
@@ -51,7 +52,7 @@ const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title:
   </div>
 );
 
-export default function Step1AboutYou({ defaultValues, onNext, onDataChange }: Step1Props) {
+export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isSaving }: Step1Props) {
   const form = useForm<Step1FormData>({
     resolver: zodResolver(step1Schema),
     defaultValues: {
@@ -62,7 +63,7 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange }: S
       courseName: "",
       boardUniversity: "",
       courseDuration: "",
-      loanAmount: 500000,
+      loanAmount: 100000,
       ...defaultValues,
     },
   });
@@ -230,9 +231,20 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange }: S
           <Button
             type="submit"
             size="lg"
+            disabled={isSaving}
             className="h-12 px-8 text-base font-semibold shadow-sm hover:shadow-md transition-all"
           >
-            Continue
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegisterMutation } from "@/lib/api/authApi";
+import Image from "next/image";
 
 const registerSchema = z
   .object({
@@ -118,13 +119,8 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <Link href="/" className="flex items-center gap-2.5 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-md">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">
-              GenZ Loan Edu Loan
-            </span>
+          <Link href="/" className="flex items-center gap-2.5 mb-2">
+              <Image src="/logo-white-bg.svg" alt="Logo" width={180} height={180} />
           </Link>
           <h1 className="text-2xl font-bold text-foreground">
             Create your account
@@ -135,7 +131,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-card border border-border rounded-2xl shadow-sm px-6 py-8">
+        <div className="border border-border rounded-2xl px-6 py-8">
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-5"

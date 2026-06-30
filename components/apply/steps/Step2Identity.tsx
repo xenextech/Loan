@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,46 +25,25 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { step2Schema, type Step2FormData } from "@/lib/validations/schemas";
 import FileUploadZone from "@/components/apply/fields/FileUploadZone";
-import OcrProcessor from "@/components/apply/fields/OcrProcessor";
-import { ArrowRight, ArrowLeft, IdCard, MapPin, User2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, IdCard, MapPin, User2 } from "lucide-react";
 import { useUploadDocumentMutation } from "@/lib/api/documentsApi";
 import { useAppSelector } from "@/lib/hooks";
 import type { DocumentType } from "@/types/api";
+
 
 interface Step2Props {
   defaultValues?: Partial<Step2FormData>;
   onNext: (data: Step2FormData) => void;
   onPrev: () => void;
   onDataChange?: (data: Partial<Step2FormData>) => void;
+  isSaving?: boolean;
 }
 
 const PROVINCES = [
   "Koshi", "Madhesh", "Bagmati", "Gandaki", "Lumbini", "Karnali", "Sudurpashchim",
 ];
 
-const OCR_MOCK_DATA = {
-  citizenship: {
-    identityName: "Ram Bahadur Thapa",
-    dob: "1999-03-15",
-    identityNumber: "25-02-77-03456",
-    issuedDistrict: "Kathmandu",
-    issuedDate: "2016-08-10",
-  },
-  passport: {
-    identityName: "Ram Bahadur Thapa",
-    dob: "1999-03-15",
-    identityNumber: "P0345678",
-    issuedDistrict: "Kathmandu",
-    issuedDate: "2020-01-15",
-  },
-  driving_license: {
-    identityName: "Ram Bahadur Thapa",
-    dob: "1999-03-15",
-    identityNumber: "09-01-780234",
-    issuedDistrict: "Kathmandu",
-    issuedDate: "2019-06-20",
-  },
-};
+
 
 const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
   <div className="flex items-center gap-2.5 mb-6">
@@ -75,9 +54,7 @@ const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title:
   </div>
 );
 
-export default function Step2Identity({ defaultValues, onNext, onPrev, onDataChange }: Step2Props) {
-  const [ocrProcessing, setOcrProcessing] = useState(false);
-  const [ocrDone, setOcrDone] = useState(false);
+export default function Step2Identity({ defaultValues, onNext, onPrev, onDataChange, isSaving }: Step2Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
 
@@ -118,21 +95,7 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
   }, [JSON.stringify(watchedValues)]);
 
   const handleIdentityFront = (file: File | null) => {
-    if (!file) return;
-    uploadFile(file, "IDENTITY_FRONT");
-    if (!identityType) return;
-    setOcrProcessing(true);
-    setOcrDone(false);
-    setTimeout(() => {
-      setOcrProcessing(false);
-      setOcrDone(true);
-      const data = OCR_MOCK_DATA[identityType as keyof typeof OCR_MOCK_DATA];
-      if (data) {
-        Object.entries(data).forEach(([key, value]) => {
-          form.setValue(key as keyof Step2FormData, value, { shouldValidate: true });
-        });
-      }
-    }, 3000);
+    if (file) uploadFile(file, "IDENTITY_FRONT");
   };
 
   const handleIdentityBack = (file: File | null) => {
@@ -223,7 +186,6 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
                   />
                 </div>
 
-                <OcrProcessor isProcessing={ocrProcessing} extractedData={ocrDone ? [] : undefined} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -444,9 +406,18 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button type="submit" size="lg" className="h-12 px-8 text-base font-semibold">
-            Continue
-            <ArrowRight className="w-4 h-4 ml-2" />
+          <Button type="submit" size="lg" disabled={isSaving} className="h-12 px-8 text-base font-semibold">
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving…
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
           </Button>
         </div>
       </form>

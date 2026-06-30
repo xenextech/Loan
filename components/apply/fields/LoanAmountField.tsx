@@ -17,8 +17,8 @@ interface LoanAmountFieldProps {
 }
 
 const INTEREST_RATE = 11;
-const MIN = 100000;
-const MAX = 5000000;
+const MIN = 50000;
+const MAX = 1000000;
 const STEP = 50000;
 
 function getMonthsFromDuration(duration: string): number {
@@ -114,8 +114,8 @@ export default function LoanAmountField({
           className="w-full"
         />
         <div className="flex justify-between mt-2">
-          <span className="text-xs text-muted-foreground">1 Lakh</span>
-          <span className="text-xs text-muted-foreground">50 Lakhs</span>
+          <span className="text-xs text-muted-foreground">50k</span>
+          <span className="text-xs text-muted-foreground">10 Lakhs</span>
         </div>
       </div>
 

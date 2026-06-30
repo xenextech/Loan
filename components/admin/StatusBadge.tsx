@@ -33,8 +33,14 @@ const STATUS_CONFIG: Record<
   },
 };
 
-export default function StatusBadge({ status }: { status: ApplicationStatus }) {
-  const { label, icon: Icon, className } = STATUS_CONFIG[status];
+export default function StatusBadge({ status }: { status: ApplicationStatus | string }) {
+  const key = (status ?? "").toLowerCase() as ApplicationStatus;
+  const config = STATUS_CONFIG[key] ?? {
+    label: status ?? "Unknown",
+    icon: FileText,
+    className: "bg-muted text-muted-foreground border-0",
+  };
+  const { label, icon: Icon, className } = config;
   return (
     <Badge className={`${className} font-semibold text-xs gap-1.5`}>
       <Icon className="w-3 h-3" />
