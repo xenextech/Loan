@@ -124,13 +124,21 @@ function FileUploadRow({
   );
 }
 
-export default function CollegeVerifyPage({ params }: { params: Promise<{ token: string }> }) {
+export default function CollegeVerifyPage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
   const { token } = use(params);
   const currentUser = useCurrentUser();
-  const { data, isLoading, isError } = useGetApplicationByCollegeTokenQuery(token);
-  const [submitForm, { isLoading: isSubmittingForm }] = useSubmitCollegeFormMutation();
-  const [uploadOfferLetter, { isLoading: isUploadingOL }] = useUploadOfferLetterMutation();
-  const [uploadEnrollment, { isLoading: isUploadingEnroll }] = useUploadEnrollmentDocsMutation();
+  const { data, isLoading, isError } =
+    useGetApplicationByCollegeTokenQuery(token);
+  const [submitForm, { isLoading: isSubmittingForm }] =
+    useSubmitCollegeFormMutation();
+  const [uploadOfferLetter, { isLoading: isUploadingOL }] =
+    useUploadOfferLetterMutation();
+  const [uploadEnrollment, { isLoading: isUploadingEnroll }] =
+    useUploadEnrollmentDocsMutation();
   const [formSubmitted, setFormSubmitted] = useState(false);
 
   const form = useForm<CollegeFormValues>({
@@ -163,9 +171,12 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
           <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-7 h-7 text-destructive" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">Invalid or Expired Link</h1>
+          <h1 className="text-xl font-bold text-foreground mb-2">
+            Invalid or Expired Link
+          </h1>
           <p className="text-sm text-muted-foreground mb-6">
-            This verification link is no longer valid. Please contact the loan applicant for a new link.
+            This verification link is no longer valid. Please contact the loan
+            applicant for a new link.
           </p>
           <Button asChild variant="outline">
             <Link href="/">Back to Home</Link>
@@ -187,7 +198,10 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
     }
   };
 
-  const handleFileUpload = async (type: "offer-letter" | "enrollment-docs", file: File) => {
+  const handleFileUpload = async (
+    type: "offer-letter" | "enrollment-docs",
+    file: File,
+  ) => {
     try {
       if (type === "offer-letter") {
         await uploadOfferLetter({ token, file }).unwrap();
@@ -207,22 +221,36 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
       <header className="bg-card border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
-            <Image src="/logo-white-bg.svg" alt="Cliq Edu Loan" width={140} height={40} />
+            <Image
+              src="/logo-white-bg.svg"
+              alt="Cliq Edu Loan"
+              width={140}
+              height={40}
+            />
           </Link>
-          <Badge variant="outline" className="text-xs">College Verification</Badge>
+          <Badge variant="outline" className="text-xs">
+            College Verification
+          </Badge>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-10 space-y-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
           {/* Intro */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 rounded-full bg-teal-500/10 flex items-center justify-center mx-auto mb-4">
               <GraduationCap className="w-8 h-8 text-teal-600" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">College Verification</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              College Verification
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Please review the student&apos;s application and complete the verification form below.
+              Please review the student&apos;s application and complete the
+              verification form below.
             </p>
           </div>
 
@@ -231,12 +259,20 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
             <div className="flex items-start gap-3 bg-teal-50 border border-teal-200 rounded-2xl px-4 py-3.5 mb-4">
               <CheckCircle2 className="w-5 h-5 text-teal-600 mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-teal-900">Signed in as {currentUser.email}</p>
+                <p className="text-sm font-semibold text-teal-900">
+                  Signed in as {currentUser.email}
+                </p>
                 <p className="text-xs text-teal-700 mt-0.5">
-                  You&apos;re logged in with a college account. Verifications you submit here will appear in your dashboard.
+                  You&apos;re logged in with a college account. Verifications
+                  you submit here will appear in your dashboard.
                 </p>
               </div>
-              <Button asChild size="sm" variant="outline" className="shrink-0 border-teal-300 text-teal-700 hover:bg-teal-100">
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-teal-300 text-teal-700 hover:bg-teal-100"
+              >
                 <Link href="/college">
                   Dashboard <ArrowRight className="w-3.5 h-3.5 ml-1 inline" />
                 </Link>
@@ -246,12 +282,20 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
             <div className="flex items-start gap-3 bg-teal-50 border border-teal-200 rounded-2xl px-4 py-3.5 mb-4">
               <UserPlus className="w-5 h-5 text-teal-600 mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-teal-900">Need a college portal account?</p>
+                <p className="text-sm font-semibold text-teal-900">
+                  Need a college portal account?
+                </p>
                 <p className="text-xs text-teal-700 mt-0.5">
-                  Register a college account to manage verifications and track all loan applications from your institution.
+                  Register a college account to manage verifications and track
+                  all loan applications from your institution.
                 </p>
               </div>
-              <Button asChild size="sm" variant="outline" className="shrink-0 border-teal-300 text-teal-700 hover:bg-teal-100">
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="shrink-0 border-teal-300 text-teal-700 hover:bg-teal-100"
+              >
                 <Link href="/register">Register</Link>
               </Button>
             </div>
@@ -261,23 +305,48 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
           <Card className="shadow-sm">
             <CardContent className="p-6 space-y-4">
               <div className="bg-muted/50 rounded-xl px-4 py-3">
-                <p className="text-xs text-muted-foreground">Application Number</p>
-                <p className="text-base font-bold font-mono text-foreground">{data.applicationNumber}</p>
+                <p className="text-xs text-muted-foreground">
+                  Application Number
+                </p>
+                <p className="text-base font-bold font-mono text-foreground">
+                  {data.applicationNumber}
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { icon: GraduationCap, label: "Student", value: data.studentName ?? "—" },
-                  { icon: BookOpen, label: "Course", value: data.courseName ?? "—" },
-                  { icon: GraduationCap, label: "Institution", value: data.boardUniversity ?? "—" },
+                  {
+                    icon: GraduationCap,
+                    label: "Student",
+                    value: data.studentName ?? "—",
+                  },
+                  {
+                    icon: BookOpen,
+                    label: "Course",
+                    value: data.courseName ?? "—",
+                  },
+                  {
+                    icon: GraduationCap,
+                    label: "Institution",
+                    value: data.boardUniversity ?? "—",
+                  },
                   {
                     icon: Banknote,
                     label: "Loan Amount",
-                    value: data.loanAmount ? formatNPR(Number(data.loanAmount)) : "—",
+                    value: data.loanAmount
+                      ? formatNPR(Number(data.loanAmount))
+                      : "—",
                   },
                 ].map((f) => (
-                  <div key={f.label} className="bg-muted/40 rounded-xl px-3 py-2.5">
-                    <p className="text-xs text-muted-foreground mb-0.5">{f.label}</p>
-                    <p className="text-sm font-semibold text-foreground truncate">{f.value}</p>
+                  <div
+                    key={f.label}
+                    className="bg-muted/40 rounded-xl px-3 py-2.5"
+                  >
+                    <p className="text-xs text-muted-foreground mb-0.5">
+                      {f.label}
+                    </p>
+                    <p className="text-sm font-semibold text-foreground truncate">
+                      {f.value}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -288,7 +357,12 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
                 </Badge>
                 {data.submittedAt && (
                   <span className="text-xs text-muted-foreground">
-                    Submitted {new Date(data.submittedAt).toLocaleDateString("en-NP", { day: "numeric", month: "short", year: "numeric" })}
+                    Submitted{" "}
+                    {new Date(data.submittedAt).toLocaleDateString("en-NP", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
                   </span>
                 )}
               </div>
@@ -300,18 +374,26 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
             <Card className="shadow-sm">
               <CardContent className="p-6 text-center">
                 <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
-                <p className="font-semibold text-foreground">Verification Submitted</p>
+                <p className="font-semibold text-foreground">
+                  Verification Submitted
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your verification details have been saved. You can still upload documents below.
+                  Your verification details have been saved. You can still
+                  upload documents below.
                 </p>
               </CardContent>
             </Card>
           ) : (
             <Card className="shadow-sm">
               <CardContent className="p-6">
-                <p className="text-sm font-semibold text-foreground mb-5">College Information & Verification</p>
+                <p className="text-sm font-semibold text-foreground mb-5">
+                  College Information & Verification
+                </p>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmitForm)} className="space-y-4">
+                  <form
+                    onSubmit={form.handleSubmit(onSubmitForm)}
+                    className="space-y-4"
+                  >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -320,7 +402,10 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
                           <FormItem className="sm:col-span-2">
                             <FormLabel>College / Institution Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Tribhuvan University" {...field} />
+                              <Input
+                                placeholder="Tribhuvan University"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -333,7 +418,11 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
                           <FormItem>
                             <FormLabel>Official Email</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="admissions@college.edu.np" {...field} />
+                              <Input
+                                type="email"
+                                placeholder="admissions@college.edu.np"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -359,7 +448,10 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
                           <FormItem className="sm:col-span-2">
                             <FormLabel>Contact Person Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Name of registrar / admissions officer" {...field} />
+                              <Input
+                                placeholder="Name of registrar / admissions officer"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -379,11 +471,15 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
                               Confirm student enrollment
                             </FormLabel>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              I confirm this student is enrolled / admitted at our institution
+                              I confirm this student is enrolled / admitted at
+                              our institution
                             </p>
                           </div>
                           <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
                           </FormControl>
                         </FormItem>
                       )}
@@ -407,33 +503,44 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
                       )}
                     />
                     <Card className="shadow-sm">
-            <CardContent className="p-6 space-y-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Required Documents</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Upload the documents requested by the loan officer. PDF or image files, max 5 MB each.
-                </p>
-              </div>
-              <FileUploadRow
-                label="Offer Letter"
-                hint="Official admission / offer letter from the institution"
-                accept=".pdf,.doc,.docx,image/*"
-                onUpload={(f) => handleFileUpload("offer-letter", f)}
-                isUploading={isUploadingOL}
-                existingUrl={data.verification?.offerLetterPublicUrl}
-              />
-              <FileUploadRow
-                label="Enrollment Documents"
-                hint="Proof of enrollment, registration card, or ID card"
-                accept=".pdf,.doc,.docx,image/*"
-                onUpload={(f) => handleFileUpload("enrollment-docs", f)}
-                isUploading={isUploadingEnroll}
-                existingUrl={data.verification?.enrollmentDocPublicUrl}
-              />
-            </CardContent>
-          </Card>
+                      <CardContent className="p-6 space-y-4">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Required Documents
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Upload the documents requested by the loan officer.
+                            PDF or image files, max 5 MB each.
+                          </p>
+                        </div>
+                        <FileUploadRow
+                          label="Offer Letter"
+                          hint="Official admission / offer letter from the institution"
+                          accept=".pdf,.doc,.docx,image/*"
+                          onUpload={(f) => handleFileUpload("offer-letter", f)}
+                          isUploading={isUploadingOL}
+                          existingUrl={data.verification?.offerLetterPublicUrl}
+                        />
+                        <FileUploadRow
+                          label="Enrollment Documents"
+                          hint="Proof of enrollment, registration card, or ID card"
+                          accept=".pdf,.doc,.docx,image/*"
+                          onUpload={(f) =>
+                            handleFileUpload("enrollment-docs", f)
+                          }
+                          isUploading={isUploadingEnroll}
+                          existingUrl={
+                            data.verification?.enrollmentDocPublicUrl
+                          }
+                        />
+                      </CardContent>
+                    </Card>
 
-                    <Button type="submit" className="w-full gap-2" disabled={isSubmittingForm}>
+                    <Button
+                      type="submit"
+                      className="w-full gap-2"
+                      disabled={isSubmittingForm}
+                    >
                       {isSubmittingForm ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
@@ -448,10 +555,10 @@ export default function CollegeVerifyPage({ params }: { params: Promise<{ token:
           )}
 
           {/* Document uploads */}
-        
 
           <p className="text-xs text-center text-muted-foreground px-4 pb-4">
-            This verification portal is provided by GenZ Loan. Data is encrypted and handled securely.
+            This verification portal is provided by GenZ Loan. Data is encrypted
+            and handled securely.
           </p>
         </motion.div>
       </main>
