@@ -33,7 +33,7 @@ export function calculateEMI(principal: number, annualRate: number, months: numb
   return Math.round((principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1));
 }
 
-export function formatDate(iso: string): string {
+export function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
