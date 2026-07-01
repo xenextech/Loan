@@ -23,7 +23,14 @@ export interface PaginatedData<T> {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
-export type UserRole = 'STUDENT' | 'ADMIN' | 'PARENT' | 'COLLEGE';
+export type UserRole =
+  | 'STUDENT'
+  | 'ADMIN'
+  | 'PARENT'
+  | 'COLLEGE'
+  | 'INITIATOR'
+  | 'SUPPORTER'
+  | 'APPROVER';
 
 export interface AuthUser {
   id: string;

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
+import { getDashboardPath } from "@/lib/roleRedirect";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -181,7 +182,7 @@ export default function LandingNav() {
             <div className="hidden md:flex items-center gap-2">
               {isAuthenticated && user ? (
                 <>
-                  <Link href={user.role === "ADMIN" ? "/admin" : "/dashboard"}>
+                  <Link href={getDashboardPath(user.role)}>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -286,7 +287,7 @@ export default function LandingNav() {
                 {isAuthenticated && user ? (
                   <>
                     <Link
-                      href={user.role === "ADMIN" ? "/admin" : "/dashboard"}
+                      href={getDashboardPath(user.role)}
                       className="flex-1"
                       onClick={() => setMobileOpen(false)}
                     >

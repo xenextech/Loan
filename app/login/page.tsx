@@ -58,6 +58,7 @@ export default function LoginPage() {
       const destination =
         result.user.role === "ADMIN" ? "/admin" :
         result.user.role === "COLLEGE" ? "/college" :
+        result.user.role === "INITIATOR" ? "/initiator" :
         "/apply";
       router.replace(destination);
     } catch (err: unknown) {
