@@ -175,6 +175,7 @@ export interface LoanApplication {
   // Nested relations (present when included by Prisma)
   studyInformation?: StudyInformation;
   loanInformation?: LoanInformation;
+  collegeVerification?: CollegeVerification;
   documents?: { id: string; documentType: DocumentType; publicUrl?: string }[];
   // Step 1 (flat fields — present on create/update responses)
   fullName?: string;
@@ -209,6 +210,7 @@ export interface LoanApplication {
   feeWebsiteLink?: string;
   feeManualAmount?: number;
   submittedAt?: string;
+  reviewComment?: string;
   createdAt: string;
   updatedAt: string;
 }
