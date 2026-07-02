@@ -1,4 +1,42 @@
-import type { InitiatorApplicationDetail } from "../types/initiator";
+import type { DocumentItem, InitiatorApplicationDetail, InitiatorDocumentSet } from "../types/initiator";
+
+const SAMPLE_PDF = "/assets/sample-document.pdf";
+
+/**
+ * Builds a realistic-looking document set for the review workspace.
+ * Images point at existing marketing assets purely as stand-ins so previews
+ * render without any external network dependency; PDFs share one local
+ * placeholder file. Swap for real signed upload URLs once storage exists.
+ */
+function buildMockDocuments(seed: string): InitiatorDocumentSet {
+  const img = (n: number) => `/assets/${["image1.png", "image2.png", "checker.png", "mobile.png", "hero2.png"][n % 5]}`;
+
+  const student: DocumentItem[] = [
+    { id: `${seed}-stu-citizenship`, label: "Citizenship", fileType: "image", url: img(0), uploadedAt: "2026-06-24T08:10:00.000Z" },
+    { id: `${seed}-stu-photo`, label: "Photo", fileType: "image", url: img(1), uploadedAt: "2026-06-24T08:11:00.000Z" },
+    { id: `${seed}-stu-academic`, label: "Academic Certificates", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-24T08:15:00.000Z" },
+    { id: `${seed}-stu-transcript`, label: "Transcript", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-24T08:16:00.000Z" },
+    { id: `${seed}-stu-character`, label: "Character Certificate", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-24T08:18:00.000Z" },
+  ];
+
+  const parent: DocumentItem[] = [
+    { id: `${seed}-par-citizenship`, label: "Citizenship", fileType: "image", url: img(2), uploadedAt: "2026-06-25T09:00:00.000Z" },
+    { id: `${seed}-par-income`, label: "Income Proof", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-25T09:05:00.000Z" },
+    { id: `${seed}-par-pan`, label: "PAN", fileType: "image", url: img(3), uploadedAt: "2026-06-25T09:08:00.000Z" },
+    { id: `${seed}-par-bank`, label: "Bank Statement", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-25T09:12:00.000Z" },
+    { id: `${seed}-par-salary`, label: "Salary Certificate", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-25T09:15:00.000Z" },
+  ];
+
+  const college: DocumentItem[] = [
+    { id: `${seed}-col-admission`, label: "Admission Letter", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-27T11:00:00.000Z" },
+    { id: `${seed}-col-fee`, label: "Fee Structure", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-27T11:05:00.000Z" },
+    { id: `${seed}-col-offer`, label: "Offer Letter", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-27T11:08:00.000Z" },
+    { id: `${seed}-col-enrollment`, label: "Enrollment Verification", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-28T09:00:00.000Z" },
+    { id: `${seed}-col-verification-form`, label: "College Verification Form", fileType: "pdf", url: SAMPLE_PDF, uploadedAt: "2026-06-28T09:12:00.000Z" },
+  ];
+
+  return { student, parent, college };
+}
 
 /**
  * Mock dataset standing in for a future
@@ -53,6 +91,9 @@ export const MOCK_INITIATOR_APPLICATIONS: InitiatorApplicationDetail[] = [
       offerLetterPublicUrl: "https://example.com/docs/offer-letter-1001.pdf",
       enrollmentDocPublicUrl: "https://example.com/docs/enrollment-1001.pdf",
     },
+    documents: buildMockDocuments("app-1001"),
+    submittedAt: "2026-06-24T08:20:00.000Z",
+    workflowStage: "Initiator Review",
   },
   {
     id: "app-1002",
@@ -98,6 +139,9 @@ export const MOCK_INITIATOR_APPLICATIONS: InitiatorApplicationDetail[] = [
       verificationNotes: "Fee dues cleared. Verified against academic records.",
       offerLetterPublicUrl: "https://example.com/docs/offer-letter-1002.pdf",
     },
+    documents: buildMockDocuments("app-1002"),
+    submittedAt: "2026-06-25T09:20:00.000Z",
+    workflowStage: "Initiator Review",
   },
   {
     id: "app-1003",
@@ -145,6 +189,9 @@ export const MOCK_INITIATOR_APPLICATIONS: InitiatorApplicationDetail[] = [
       offerLetterPublicUrl: "https://example.com/docs/offer-letter-1003.pdf",
       enrollmentDocPublicUrl: "https://example.com/docs/enrollment-1003.pdf",
     },
+    documents: buildMockDocuments("app-1003"),
+    submittedAt: "2026-06-29T14:00:00.000Z",
+    workflowStage: "Initiator Review",
   },
 ];
 
