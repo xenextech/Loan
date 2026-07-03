@@ -225,21 +225,6 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
               Your ward has submitted an education loan application. Review the details and fill in your information below.
             </p>
           </div>
-
-          {/* Self-register CTA */}
-          <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3.5">
-            <UserPlus className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-blue-900">Want ongoing access?</p>
-              <p className="text-xs text-blue-700 mt-0.5">
-                Create your own parent account to track updates and stay informed throughout the loan process.
-              </p>
-            </div>
-            <Button asChild size="sm" variant="outline" className="shrink-0 border-blue-300 text-blue-700 hover:bg-blue-100">
-              <Link href="/register">Create Account</Link>
-            </Button>
-          </div>
-
           {/* Application summary */}
           <Card className="shadow-sm">
             <CardContent className="p-6 space-y-5">

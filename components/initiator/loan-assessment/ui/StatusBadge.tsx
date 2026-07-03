@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Clock, Hourglass, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Eye, Hourglass, MapPinCheck, Undo2, XCircle } from "lucide-react";
 import type { ApprovalStatus } from "../types";
 import { cn } from "@/lib/utils";
 
-const CONFIG: Record<ApprovalStatus, { label: string; icon: React.ElementType; className: string }> = {
+export const APPROVAL_STATUS_CONFIG: Record<ApprovalStatus, { label: string; icon: React.ElementType; className: string }> = {
   PENDING: {
     label: "Pending",
     icon: Clock,
@@ -13,6 +13,16 @@ const CONFIG: Record<ApprovalStatus, { label: string; icon: React.ElementType; c
     label: "Waiting",
     icon: Hourglass,
     className: "bg-muted text-muted-foreground",
+  },
+  UNDER_REVIEW: {
+    label: "Under Review",
+    icon: Eye,
+    className: "bg-primary/10 text-primary",
+  },
+  FIELD_VERIFIED: {
+    label: "Field Verified",
+    icon: MapPinCheck,
+    className: "bg-primary/10 text-primary",
   },
   APPROVED: {
     label: "Approved",
@@ -24,10 +34,15 @@ const CONFIG: Record<ApprovalStatus, { label: string; icon: React.ElementType; c
     icon: XCircle,
     className: "bg-destructive/10 text-destructive",
   },
+  SENT_BACK: {
+    label: "Sent Back",
+    icon: Undo2,
+    className: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
+  },
 };
 
 export function ApprovalStatusBadge({ status, className }: { status: ApprovalStatus; className?: string }) {
-  const config = CONFIG[status];
+  const config = APPROVAL_STATUS_CONFIG[status];
   const Icon = config.icon;
   return (
     <Badge className={cn(config.className, "border-0 font-semibold text-xs gap-1.5", className)}>

@@ -33,13 +33,15 @@ export const applicantInfoSchema = z.object({
   customerName: z.string().min(1, "Customer name is required").max(200),
   relationshipStartDate: optionalText(20),
   group: optionalText(120),
-  obligorNumber: optionalText(60),
+  obligorNumber: optionalNumber,
   permanentAddress: optionalText(300),
   correspondenceAddress: optionalText(300),
   contactNumber: z.string().min(1, "Contact number is required").max(20),
   profession: optionalText(120),
   repaymentSource: optionalText(200),
-  citizenshipDetails: optionalText(120),
+  citizenshipNumber: optionalText(60),
+  citizenshipIssuedDate: optionalText(20),
+  citizenshipIssuedPlace: optionalText(120),
   nationalId: z.string().min(1, "National ID is required").max(60),
   pan: optionalText(30),
   license: optionalText(60),
@@ -122,24 +124,15 @@ export const nrbReportingSchema = z.object({
 
 // ─── Step 3 — Credit Assessment ────────────────────────────────────────────
 
-export const DSGIR_OPTIONS = [
-  { value: "BELOW_40_PERCENT", label: "Below 40%" },
-  { value: "RANGE_40_TO_45_PERCENT", label: "40% – 45%" },
-  { value: "ABOVE_45_PERCENT", label: "Above 45%" },
-] as const;
-
-export const PERFORMANCE_YEARS_OPTIONS = [
-  { value: "ABOVE_3_YEARS", label: "Above 3 Years" },
-  { value: "ONE_TO_3_YEARS", label: "1 – 3 Years" },
-  { value: "LESS_THAN_1_YEAR", label: "Less than 1 Year / New" },
-] as const;
-
 export const creditAssessmentSchema = z.object({
   creditLimit: optionalNumber,
   loanToValueRatio: optionalNumber,
-  dsgir: z.enum(["BELOW_40_PERCENT", "RANGE_40_TO_45_PERCENT", "ABOVE_45_PERCENT"]).optional(),
-  performanceYears: z.enum(["ABOVE_3_YEARS", "ONE_TO_3_YEARS", "LESS_THAN_1_YEAR"]).optional(),
+  dsgir: optionalNumber,
+  performanceYears: optionalNumber,
   bankingRelationshipScore: optionalNumber,
+  parentsBorrowingsWithBfis: optionalNumber,
+  sourceOfIncome: optionalNumber,
+  collegeOperations: optionalNumber,
 });
 
 // ─── Step 4 — Applicant Background ─────────────────────────────────────────

@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 interface ReviewCardProps {
   title: string;
   stepId: number;
-  onEdit: (stepId: number) => void;
+  /** Omit to render a pure read-only card with no Edit button (e.g. a Supporter/Approver review view). */
+  onEdit?: (stepId: number) => void;
   incomplete?: boolean;
   children: React.ReactNode;
   className?: string;
@@ -25,12 +26,14 @@ export function ReviewCard({ title, stepId, onEdit, incomplete, children, classN
             </span>
           )}
         </CardTitle>
-        <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => onEdit(stepId)}>
-          <Pencil className="w-3.5 h-3.5" />
-          Edit
-        </Button>
+        {onEdit && (
+          <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => onEdit(stepId)}>
+            <Pencil className="w-3.5 h-3.5" />
+            Edit
+          </Button>
+        )}
       </CardHeader>
-      <CardContent className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4">
+      <CardContent className="p-5 flex flex-col gap-4">
         {children}
       </CardContent>
     </Card>

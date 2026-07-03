@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Cloud, ClipboardCheck, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Cloud, ClipboardCheck, Loader2, Save } from "lucide-react";
 import { timeAgo } from "@/lib/formatters";
 import { Stepper } from "./ui/Stepper";
 import { STEPS, TOTAL_STEPS } from "./constants";
@@ -28,11 +28,22 @@ interface LoanAssessmentFormProps {
 }
 
 export function LoanAssessmentForm({ applicationId, initialValues, onSubmitted }: LoanAssessmentFormProps) {
-  const { form, currentStep, maxStepReached, goToStep, goNext, goPrev, saveDraft, submit, lastSavedAt } =
-    useLoanAssessmentForm(applicationId, initialValues);
+  const {
+    form,
+    currentStep,
+    maxStepReached,
+    goToStep,
+    goPrev,
+    submitStepAndAdvance,
+    isSyncingStep,
+    saveDraft,
+    submit,
+    lastSavedAt,
+  } = useLoanAssessmentForm(applicationId, initialValues);
 
   const step = STEPS[currentStep - 1];
   const isLastStep = currentStep === TOTAL_STEPS;
+  const isFirstStep = currentStep === 1;
 
   const handleSubmit = async () => {
     await submit(async (values) => {
@@ -81,7 +92,14 @@ export function LoanAssessmentForm({ applicationId, initialValues, onSubmitted }
 
         {/* Right padding on lg+ keeps the primary actions clear of the fixed ContactWidget bubble docked at bottom-right. */}
         <div className="sticky bottom-0 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/95 backdrop-blur px-4 py-3 shadow-sm lg:pr-24">
-          <Button type="button" variant="outline" size="sm" onClick={goPrev} disabled={currentStep === 1} className="gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={goPrev}
+            disabled={currentStep === 1 || isSyncingStep}
+            className="gap-1.5"
+          >
             <ArrowLeft className="w-3.5 h-3.5" />
             {currentStep === 1 ? "Back" : "Previous"}
           </Button>
@@ -96,7 +114,7 @@ export function LoanAssessmentForm({ applicationId, initialValues, onSubmitted }
           </div>
 
           <div className="flex items-center gap-2 order-2 sm:order-3">
-            <Button type="button" variant="ghost" size="sm" onClick={saveDraft} className="gap-1.5">
+            <Button type="button" variant="ghost" size="sm" onClick={saveDraft} disabled={isSyncingStep} className="gap-1.5">
               <Save className="w-3.5 h-3.5" />
               Save Draft
             </Button>
@@ -106,9 +124,18 @@ export function LoanAssessmentForm({ applicationId, initialValues, onSubmitted }
                 Submit Loan Assessment
               </Button>
             ) : (
-              <Button type="button" size="sm" onClick={goNext} className="gap-1.5">
-                Next
-                <ArrowRight className="w-3.5 h-3.5" />
+              <Button type="button" size="sm" onClick={submitStepAndAdvance} disabled={isSyncingStep} className="gap-1.5">
+                {isSyncingStep ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    {isFirstStep ? "Submitting…" : "Updating…"}
+                  </>
+                ) : (
+                  <>
+                    {isFirstStep ? "Next" : "Update"}
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
               </Button>
             )}
           </div>

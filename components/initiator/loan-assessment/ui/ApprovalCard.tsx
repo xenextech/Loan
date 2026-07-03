@@ -1,14 +1,24 @@
 "use client";
 
-import { CheckCircle2, Lock, ShieldCheck, ThumbsDown, User2, XCircle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Lock, ShieldCheck, User2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { ApprovalRole, ApprovalStatus } from "../types";
-import { ApprovalStatusBadge } from "./StatusBadge";
+import { TERMINAL_APPROVAL_STATUSES } from "../types";
+import { ApprovalStatusBadge, APPROVAL_STATUS_CONFIG } from "./StatusBadge";
 import { SignaturePlaceholder } from "./SignaturePlaceholder";
+
+/** One action button on an editable card — e.g. Approve/Reject, or Support's Review/Field Verify/Support/Send Back. */
+export interface ApprovalAction {
+  label: string;
+  status: ApprovalStatus;
+  icon: LucideIcon;
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost";
+}
 
 interface ApprovalCardProps {
   role: ApprovalRole;
@@ -23,10 +33,11 @@ interface ApprovalCardProps {
   /** Sequential gate: true once every prior role in the chain has approved. */
   isUnlocked: boolean;
   waitingMessage?: string;
+  /** Action buttons shown while the card is editable — role-specific (2 for Initiator/Approver, 4 for Support). */
+  actions: ApprovalAction[];
   onRemarksChange: (value: string) => void;
   onSignatureChange: (value: string) => void;
-  onApprove: () => void;
-  onReject: () => void;
+  onAction: (status: ApprovalStatus) => void;
 }
 
 export function ApprovalCard({
@@ -40,14 +51,15 @@ export function ApprovalCard({
   isCurrentUserRole,
   isUnlocked,
   waitingMessage,
+  actions,
   onRemarksChange,
   onSignatureChange,
-  onApprove,
-  onReject,
+  onAction,
 }: ApprovalCardProps) {
-  const isDecided = status === "APPROVED" || status === "REJECTED";
+  const isDecided = TERMINAL_APPROVAL_STATUSES.includes(status);
   const isEditable = isCurrentUserRole && isUnlocked && !isDecided;
   const isDisabledCard = !isCurrentUserRole || !isUnlocked;
+  const decidedConfig = APPROVAL_STATUS_CONFIG[status];
 
   return (
     <div
@@ -117,34 +129,30 @@ export function ApprovalCard({
         </div>
 
         {isDecided && (
-          <div
-            className={cn(
-              "flex items-start gap-2 rounded-lg px-3 py-2 text-xs",
-              status === "APPROVED" ? "bg-[var(--success)]/10 text-[oklch(0.42_0.18_145)]" : "bg-destructive/10 text-destructive",
-            )}
-          >
-            {status === "APPROVED" ? (
-              <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            ) : (
-              <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            )}
+          <div className={cn("flex items-start gap-2 rounded-lg px-3 py-2 text-xs", decidedConfig.className)}>
+            <decidedConfig.icon className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>
-              {status === "APPROVED" ? "Approved" : "Rejected"} by <strong>{approverName || roleLabel}</strong>
+              {decidedConfig.label} by <strong>{approverName || roleLabel}</strong>
               {approvedDate ? ` on ${approvedDate}` : ""}.
             </span>
           </div>
         )}
 
-        {isEditable && (
+        {isEditable && actions.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-1">
-            <Button type="button" size="sm" onClick={onApprove} className="gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Approve
-            </Button>
-            <Button type="button" size="sm" variant="destructive" onClick={onReject} className="gap-1.5">
-              <ThumbsDown className="w-3.5 h-3.5" />
-              Reject
-            </Button>
+            {actions.map((action) => (
+              <Button
+                key={action.label}
+                type="button"
+                size="sm"
+                variant={action.variant ?? "default"}
+                onClick={() => onAction(action.status)}
+                className="gap-1.5"
+              >
+                <action.icon className="w-3.5 h-3.5" />
+                {action.label}
+              </Button>
+            ))}
           </div>
         )}
       </div>

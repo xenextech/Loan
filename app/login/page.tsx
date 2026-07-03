@@ -59,6 +59,7 @@ export default function LoginPage() {
         result.user.role === "ADMIN" ? "/admin" :
         result.user.role === "COLLEGE" ? "/college" :
         result.user.role === "INITIATOR" ? "/initiator" :
+        result.user.role === "SUPPORTER" ? "/supporter" :
         "/apply";
       router.replace(destination);
     } catch (err: unknown) {

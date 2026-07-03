@@ -11,7 +11,7 @@ import { DocumentModal } from "./DocumentModal";
 import StudentInfoCard from "../components/StudentInfoCard";
 import FamilyInfoCard from "../components/FamilyInfoCard";
 import CollegeReviewCard from "../components/CollegeReviewCard";
-import type { DocumentItem, InitiatorApplicationDetail } from "../types/initiator";
+import type { ApplicationReviewSummary, DocumentItem } from "../types/initiator";
 
 const DOCUMENT_TABS = [
   { value: "student", label: "Student", icon: GraduationCap },
@@ -19,7 +19,7 @@ const DOCUMENT_TABS = [
   { value: "college", label: "College", icon: School },
 ] as const;
 
-export function DocumentReviewPanel({ detail }: { detail: InitiatorApplicationDetail }) {
+export function DocumentReviewPanel({ detail }: { detail: ApplicationReviewSummary }) {
   const [activeDocument, setActiveDocument] = useState<DocumentItem | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 

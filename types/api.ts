@@ -215,6 +215,64 @@ export interface LoanApplication {
   updatedAt: string;
 }
 
+// ─── Initiator ────────────────────────────────────────────────────────────────
+// Wire shapes for GET /applications/initiator/college-verified and
+// GET /applications/:applicationId/initiator (see applicationInitiator module).
+
+export interface CollegeVerifiedStudent {
+  id: string;
+  applicationNumber: string;
+  status: AppStatus;
+  fullName?: string;
+  email?: string;
+  phoneNumber?: string;
+  user: { id: string; email: string; role: UserRole };
+  studyInformation?: Pick<StudyInformation, 'courseName' | 'studyType'>;
+  loanInformation?: Pick<LoanInformation, 'loanAmount'>;
+}
+
+export interface CollegeVerifiedItem {
+  applicationId: string;
+  student: CollegeVerifiedStudent;
+  collegeVerification: CollegeVerification;
+}
+
+// Full record returned by GET /applications/:applicationId/initiator — a plain
+// LoanApplication row with every relation the initiator review screen needs.
+export interface InitiatorApplicationRecord {
+  id: string;
+  applicationNumber: string;
+  status: AppStatus;
+  fullName?: string;
+  email?: string;
+  phoneNumber?: string;
+  identityType?: IdentityType;
+  identityNumber?: string;
+  identityName?: string;
+  dateOfBirth?: string;
+  issuedDistrict?: string;
+  issuedDate?: string;
+  gender?: Gender;
+  occupation?: Occupation;
+  province?: string;
+  district?: string;
+  municipality?: string;
+  ward?: string;
+  fatherName?: string;
+  motherName?: string;
+  grandfatherName?: string;
+  maritalStatus?: MaritalStatus;
+  spouseName?: string;
+  submittedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  studyInformation?: StudyInformation;
+  loanInformation?: LoanInformation;
+  documents?: Document[];
+  collegeVerification?: CollegeVerification;
+  parentVerification?: ParentVerification;
+}
+
 // ─── Document ─────────────────────────────────────────────────────────────────
 
 export interface Document {

@@ -16,6 +16,13 @@ export function toNumber(v: unknown): number {
   return 0;
 }
 
+// Same as toNumber, but preserves "absent" as undefined instead of coercing to 0 —
+// for optional fields where callers hide the row entirely when there's no value.
+export function toOptionalNumber(v: unknown): number | undefined {
+  if (v === null || v === undefined) return undefined;
+  return toNumber(v);
+}
+
 export function formatNPR(amount: number): string {
   return `NPR ${new Intl.NumberFormat("en-US").format(Math.round(amount))}`;
 }

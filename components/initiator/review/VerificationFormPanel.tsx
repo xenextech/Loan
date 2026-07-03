@@ -26,9 +26,8 @@ export function VerificationFormPanel({ detail }: { detail: InitiatorApplication
               customerName: detail.studentName,
               contactNumber: detail.studentInfo.phoneNumber,
               nationalId: detail.studentInfo.identityNumber ?? "",
-              citizenshipDetails: detail.studentInfo.identityNumber
-                ? `${detail.studentInfo.identityNumber} (${detail.studentInfo.issuedDistrict ?? ""})`
-                : "",
+              citizenshipNumber: detail.studentInfo.identityNumber ?? "",
+              citizenshipIssuedPlace: detail.studentInfo.issuedDistrict ?? "",
               profession: detail.studentInfo.occupation ?? "",
             },
           }}

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Sheet,
@@ -12,59 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
 import {
-  GraduationCap,
   LayoutDashboard,
-  FileText,
-  HandshakeIcon,
-  Users,
-  Calculator,
-  BarChart3,
   LogOut,
-  Building2,
+  ClipboardCheck,
   Menu,
-  BadgeCheck,
 } from "lucide-react";
-import Image from "next/image";
 
 const NAV_ITEMS = [
-  { href: "/college", icon: LayoutDashboard, label: "Dashboard", exact: true },
-  {
-    href: "/college/offer-letter",
-    icon: FileText,
-    label: "Offer Letter",
-    exact: false,
-  },
-
-  {
-    href: "/college/enrollment",
-    icon: GraduationCap,
-    label: "Enrollment",
-    exact: false,
-  },
-  {
-    href: "/college/agreements",
-    icon: HandshakeIcon,
-    label: "Agreements",
-    exact: false,
-  },
-  {
-    href: "/college/students",
-    icon: Users,
-    label: "Student Directory",
-    exact: false,
-  },
-  {
-    href: "/college/fee-calculator",
-    icon: Calculator,
-    label: "Fee Calculator",
-    exact: false,
-  },
-  {
-    href: "/college/analytics",
-    icon: BarChart3,
-    label: "Analytics",
-    exact: false,
-  },
+  { href: "/supporter", icon: LayoutDashboard, label: "Dashboard", exact: true },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -109,16 +65,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2.5 px-5 h-14 border-b border-border shrink-0">
-        <Link href="/"><Image
-          src="/logo-white-bg.svg"
-          width={100}
-          height={100}
-          alt="GenZ Logo"
-        /></Link>
-        
-
+        <Link href="/" className="cursor-pointer">
+          <Image src="/logo-white-bg.svg" width={100} height={100} alt="GenZ Logo" />
+        </Link>
         <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 py-0.5 ml-auto shrink-0 font-bold tracking-wide">
-          COLLEGE
+          SUPPORTER
         </Badge>
       </div>
 
@@ -133,14 +84,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-3 pb-4 border-t border-border pt-4 shrink-0 space-y-0.5">
         <div className="flex items-center gap-2.5 px-3 py-2.5">
           <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-            <Building2 className="w-3.5 h-3.5 text-primary" />
+            <ClipboardCheck className="w-3.5 h-3.5 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-foreground truncate">
-              College Portal
-            </p>
+            <p className="text-xs font-semibold text-foreground truncate">Supporter Portal</p>
             <p className="text-[10px] text-muted-foreground truncate">
-              {user?.email ?? "Ace Institute of Management"}
+              {user?.email ?? "GenZ Loan Supporter"}
             </p>
           </div>
         </div>
@@ -156,7 +105,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export default function CollegeSidebar() {
+export default function SupporterSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -170,16 +119,11 @@ export default function CollegeSidebar() {
           <Menu className="w-5 h-5 text-foreground" />
         </button>
         <div className="flex items-center gap-2">
-          <Link href="/"><Image
-            src="/logo-white-bg.svg"
-            width={100}
-            height={100}
-            alt="GenZ Logo"
-          /></Link>
-          
-
+          <Link href="/" className="cursor-pointer">
+            <Image src="/logo-white-bg.svg" width={100} height={100} alt="GenZ Logo" />
+          </Link>
           <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 font-bold">
-            COLLEGE
+            SUPPORTER
           </Badge>
         </div>
       </header>
@@ -187,7 +131,7 @@ export default function CollegeSidebar() {
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-60 p-0">
           <SheetHeader className="sr-only">
-            <SheetTitle>College Navigation</SheetTitle>
+            <SheetTitle>Supporter Navigation</SheetTitle>
           </SheetHeader>
           <SidebarContent onNavigate={() => setMobileOpen(false)} />
         </SheetContent>

@@ -1,18 +1,18 @@
-import { getMockInitiatorApplicationById } from "../mock/mockApplications";
+import { useGetInitiatorApplicationDetailQuery } from "@/lib/api/initiatorApi";
 import type { InitiatorApplicationDetail } from "../types/initiator";
 
 /**
  * Returns the full application detail (student info + college verification
- * + initiator verification) for the details page. Shaped like an RTK Query
- * hook so it can be swapped for `useGetInitiatorApplicationDetailQuery(id)`
- * once the backend endpoint exists.
+ * + documents) for the review page — backed by GET /applications/:id/initiator.
  */
 export function useInitiatorApplicationDetail(id: string): {
   data: InitiatorApplicationDetail | undefined;
   isLoading: boolean;
 } {
+  const { data, isLoading } = useGetInitiatorApplicationDetailQuery(id, { skip: !id });
+
   return {
-    data: getMockInitiatorApplicationById(id),
-    isLoading: false,
+    data,
+    isLoading,
   };
 }

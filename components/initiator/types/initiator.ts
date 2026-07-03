@@ -76,3 +76,23 @@ export interface InitiatorApplicationDetail extends InitiatorApplicationListItem
   submittedAt: string;
   workflowStage: string;
 }
+
+/**
+ * Everything `DocumentReviewPanel` actually reads off a detail record — deliberately
+ * excludes `status`/`collegeVerifiedAt`/`id`, which differ by stage (e.g. Supporter's
+ * "APPROVED_BY_INITIATOR" vs Initiator's "VERIFIED_BY_COLLEGE"), so any stage's detail
+ * type can be passed to the same review panel without a status-literal mismatch.
+ */
+export type ApplicationReviewSummary = Pick<
+  InitiatorApplicationDetail,
+  | "studentName"
+  | "applicationNumber"
+  | "program"
+  | "collegeName"
+  | "loanAmount"
+  | "submittedAt"
+  | "workflowStage"
+  | "studentInfo"
+  | "collegeVerification"
+  | "documents"
+>;

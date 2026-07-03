@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GraduationCap, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVerifyEmailQuery } from "@/lib/api/authApi";
+import Image from "next/image";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -134,13 +135,8 @@ export default function VerifyEmailPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-bold text-foreground tracking-tight">
-              GenZ Loan Edu Loan
-            </span>
+           <Link href="/" className="flex items-center gap-2.5 mb-2">
+              <Image src="/logo-white-bg.svg" alt="Logo" width={180} height={180} />
           </Link>
         </div>
 

@@ -4,10 +4,23 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useCreateInitiatorApplicationMutation, useUpdateInitiatorApplicationMutation } from "@/lib/api/initiatorApi";
 import { loanAssessmentSchema, type LoanAssessmentFormValues, type LoanAssessmentSubmitValues } from "./schema";
 import { DEFAULT_LOAN_ASSESSMENT_VALUES, DRAFT_STORAGE_PREFIX, STEP_FIELD_PATHS, TOTAL_STEPS } from "./constants";
 
 const AUTOSAVE_DEBOUNCE_MS = 1500;
+
+function getApiErrorMessage(err: unknown): string | undefined {
+  if (err && typeof err === "object" && "data" in err) {
+    const data = (err as { data?: unknown }).data;
+    if (data && typeof data === "object" && "message" in data) {
+      const msg = (data as { message?: unknown }).message;
+      if (typeof msg === "string") return msg;
+      if (Array.isArray(msg)) return msg.join(", ");
+    }
+  }
+  return undefined;
+}
 
 function mergeDefaults(overrides?: Partial<LoanAssessmentFormValues>): LoanAssessmentFormValues {
   if (!overrides) return DEFAULT_LOAN_ASSESSMENT_VALUES;
@@ -43,6 +56,10 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
   const [maxStepReached, setMaxStepReached] = useState(1);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
+  const [createInitiatorApplication, { isLoading: isCreatingStep }] = useCreateInitiatorApplicationMutation();
+  const [updateInitiatorApplication, { isLoading: isUpdatingStep }] = useUpdateInitiatorApplicationMutation();
+  const isSyncingStep = isCreatingStep || isUpdatingStep;
 
   // Load a locally-saved draft on mount, if one exists (API integration point #1).
   useEffect(() => {
@@ -109,6 +126,44 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
   const goNext = useCallback(() => goToStep(currentStep + 1), [currentStep, goToStep]);
   const goPrev = useCallback(() => goToStep(currentStep - 1), [currentStep, goToStep]);
 
+  /**
+   * Drives the primary step button (Step 1 = "Next", every step after = "Update").
+   * Step 1 creates the initiator record on the backend; every following step (up to
+   * the Review step, which has its own Submit flow) PATCHes the same record with the
+   * current Applicant Information — that's the only section the backend module
+   * accepts today. Only advances to the next step once the request succeeds.
+   */
+  const submitStepAndAdvance = useCallback(async () => {
+    if (isSyncingStep) return false; // guard against double-submit while a request is in flight
+    if (currentStep >= TOTAL_STEPS) return false; // Review step submits via `submit()` instead
+
+    const fields = STEP_FIELD_PATHS[currentStep] ?? [];
+    const valid = fields.length ? await form.trigger(fields) : true;
+    if (!valid) {
+      toast.error("Please fix the highlighted fields before continuing.");
+      return false;
+    }
+
+    const applicantInfo = form.getValues("applicantInfo");
+    try {
+      if (currentStep === 1) {
+        await createInitiatorApplication({ applicationId, data: applicantInfo }).unwrap();
+      } else {
+        await updateInitiatorApplication({ applicationId, data: applicantInfo }).unwrap();
+      }
+    } catch (err) {
+      toast.error(currentStep === 1 ? "Failed to submit applicant information" : "Failed to update applicant information", {
+        description: getApiErrorMessage(err) ?? "Please try again.",
+      });
+      return false;
+    }
+
+    const next = Math.min(currentStep + 1, TOTAL_STEPS);
+    setCurrentStep(next);
+    setMaxStepReached((prev) => Math.max(prev, next));
+    return true;
+  }, [isSyncingStep, currentStep, form, applicationId, createInitiatorApplication, updateInitiatorApplication]);
+
   const saveDraft = useCallback(() => {
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(form.getValues()));
@@ -149,11 +204,26 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
       goToStep,
       goNext,
       goPrev,
+      submitStepAndAdvance,
+      isSyncingStep,
       saveDraft,
       submit,
       lastSavedAt,
       isDraftLoaded,
     }),
-    [form, currentStep, maxStepReached, goToStep, goNext, goPrev, saveDraft, submit, lastSavedAt, isDraftLoaded],
+    [
+      form,
+      currentStep,
+      maxStepReached,
+      goToStep,
+      goNext,
+      goPrev,
+      submitStepAndAdvance,
+      isSyncingStep,
+      saveDraft,
+      submit,
+      lastSavedAt,
+      isDraftLoaded,
+    ],
   );
 }

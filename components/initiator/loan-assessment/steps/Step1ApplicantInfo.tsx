@@ -17,7 +17,9 @@ export function Step1ApplicantInfo() {
           <TextField name="applicantInfo.contactNumber" label="Contact Number" placeholder="98XXXXXXXX" type="tel" required />
           <TextField name="applicantInfo.profession" label="Profession" placeholder="e.g. Student, Salaried" />
           <TextField name="applicantInfo.repaymentSource" label="Repayment Source" placeholder="e.g. Parental income, Salary" />
-          <TextField name="applicantInfo.citizenshipDetails" label="Citizenship Details" placeholder="Citizenship number & district" />
+          <TextField name="applicantInfo.citizenshipNumber" label="Citizenship Number" placeholder="e.g. 12-34-56-7890" />
+          <DateField name="applicantInfo.citizenshipIssuedDate" label="Citizenship Issued Date" />
+          <TextField name="applicantInfo.citizenshipIssuedPlace" label="Citizenship Issued Place" placeholder="District" />
         </FormSection>
       </SectionCard>
 

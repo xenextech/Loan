@@ -1,11 +1,11 @@
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
-import { GitBranch } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, Eye, GitBranch, ThumbsDown, Undo2 } from "lucide-react";
 import { SectionCard } from "../ui/SectionCard";
-import { ApprovalCard } from "../ui/ApprovalCard";
+import { ApprovalCard, type ApprovalAction } from "../ui/ApprovalCard";
 import type { LoanAssessmentFormValues } from "../schema";
-import type { ApprovalRole } from "../types";
+import type { ApprovalRole, ApprovalStatus } from "../types";
 import { CURRENT_USER_ROLE, CURRENT_USER_NAME } from "../constants";
 
 const ROLE_LABELS: Record<ApprovalRole, string> = {
@@ -20,9 +20,29 @@ const ROLE_KEY: Record<ApprovalRole, "initiator" | "support" | "approver"> = {
   APPROVER: "approver",
 };
 
+// Initiator/Approver make a single up-or-down call; Support has two non-terminal
+// checkpoints (Review, Field Verify) before its own final Support/Send Back decision.
+const APPROVE_REJECT_ACTIONS: ApprovalAction[] = [
+  { label: "Approve", status: "APPROVED", icon: CheckCircle2 },
+  { label: "Reject", status: "REJECTED", icon: ThumbsDown, variant: "destructive" },
+];
+
+const SUPPORT_ACTIONS: ApprovalAction[] = [
+  { label: "Mark Reviewed", status: "UNDER_REVIEW", icon: Eye, variant: "outline" },
+  { label: "Field Verify", status: "FIELD_VERIFIED", icon: ClipboardCheck, variant: "outline" },
+  { label: "Support", status: "APPROVED", icon: CheckCircle2 },
+  { label: "Send Back", status: "SENT_BACK", icon: Undo2, variant: "destructive" },
+];
+
 const todayISODate = () => new Date().toISOString().slice(0, 10);
 
-export function Step9Approval() {
+interface Step9ApprovalProps {
+  /** Defaults to the module-wide Initiator constants — Supporter/Approver views pass their own. */
+  currentUserRole?: ApprovalRole;
+  currentUserName?: string;
+}
+
+export function Step9Approval({ currentUserRole = CURRENT_USER_ROLE, currentUserName = CURRENT_USER_NAME }: Step9ApprovalProps) {
   const { control, setValue, getValues } = useFormContext<LoanAssessmentFormValues>();
   const approval = useWatch({ control, name: "approval" });
 
@@ -44,7 +64,7 @@ export function Step9Approval() {
     return undefined;
   };
 
-  const decide = (role: ApprovalRole, status: "APPROVED" | "REJECTED") => {
+  const decide = (role: ApprovalRole, status: ApprovalStatus) => {
     const key = ROLE_KEY[role];
     const current = getValues(`approval.${key}`);
     setValue(
@@ -52,7 +72,7 @@ export function Step9Approval() {
       {
         ...current,
         status,
-        approverName: current.approverName || CURRENT_USER_NAME,
+        approverName: current.approverName || currentUserName,
         approvedDate: todayISODate(),
       },
       { shouldDirty: true, shouldValidate: true },
@@ -79,7 +99,7 @@ export function Step9Approval() {
         title="Approval Chain"
         description="All three roles are shown so the full chain is visible. Approval is strictly sequential — no role can act before the previous one has approved."
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {roles.map((role) => {
             const key = ROLE_KEY[role];
             const entry = approval?.[key];
@@ -94,13 +114,13 @@ export function Step9Approval() {
                 approvedDate={entry.approvedDate}
                 remarks={entry.remarks}
                 signature={entry.signature}
-                isCurrentUserRole={role === CURRENT_USER_ROLE}
+                isCurrentUserRole={role === currentUserRole}
                 isUnlocked={isUnlocked(role)}
                 waitingMessage={waitingMessage(role)}
+                actions={role === "SUPPORT" ? SUPPORT_ACTIONS : APPROVE_REJECT_ACTIONS}
                 onRemarksChange={(value) => setValue(`approval.${key}.remarks`, value, { shouldDirty: true })}
                 onSignatureChange={(value) => setValue(`approval.${key}.signature`, value, { shouldDirty: true })}
-                onApprove={() => decide(role, "APPROVED")}
-                onReject={() => decide(role, "REJECTED")}
+                onAction={(status) => decide(role, status)}
               />
             );
           })}

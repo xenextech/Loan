@@ -242,12 +242,9 @@ export default function CollegeVerifyPage({
         >
           {/* Intro */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 rounded-full bg-teal-500/10 flex items-center justify-center mx-auto mb-4">
-              <GraduationCap className="w-8 h-8 text-teal-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              College Verification
-            </h1>
+            <Link href="/" className="flex items-center gap-2.5 mb-2">
+              <Image src="/logo-white-bg.svg" alt="Logo" width={180} height={180} />
+          </Link>
             <p className="text-sm text-muted-foreground">
               Please review the student&apos;s application and complete the
               verification form below.
