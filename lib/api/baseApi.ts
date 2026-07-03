@@ -29,6 +29,17 @@ const baseQueryWithUnwrap: BaseQueryFn<
   if (result.error) {
     if (result.error.status === 401) {
       api.dispatch(clearCredentials());
+      // clearCredentials only resets Redux state — the route gates (e.g.
+      // app/initiator/layout.tsx) read localStorage directly and only on mount,
+      // so a stale token there would otherwise keep the app "logged in" while
+      // every request silently 401s (surfacing as bogus "not found" pages).
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+      }
     }
     return result;
   }

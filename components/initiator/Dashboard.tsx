@@ -156,7 +156,7 @@ export default function InitiatorDashboard() {
                             router.push(`/initiator/applications/${app.id}`);
                           }}
                         >
-                          View
+                          Edit
                         </Button>
                       </TableCell>
                     </TableRow>

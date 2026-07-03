@@ -10,7 +10,7 @@ import { VerificationLayout } from "./review/VerificationLayout";
 
 export default function InitiatorApplicationDetails({ id }: { id: string }) {
   const router = useRouter();
-  const { data: detail, isLoading } = useInitiatorApplicationDetail(id);
+  const { data: detail, isLoading, errorStatus } = useInitiatorApplicationDetail(id);
 
   if (isLoading) {
     return (
@@ -36,11 +36,17 @@ export default function InitiatorApplicationDetails({ id }: { id: string }) {
   }
 
   if (!detail) {
+    const message =
+      errorStatus === 404
+        ? "This application has no initiator record yet — it may not have been picked up for review."
+        : errorStatus !== undefined
+          ? `Couldn't load this application (error ${errorStatus}). Please try again.`
+          : "Application not found";
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-3">
         <FileText className="w-8 h-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Application not found</p>
-        <Button variant="outline" size="sm" onClick={() => router.push("/initiator")}>
+        <p className="text-sm text-muted-foreground">{message}</p>
+        <Button variant="outline" size="sm" onClick={() => router.push("/initiator/applications")}>
           Back to list
         </Button>
       </div>

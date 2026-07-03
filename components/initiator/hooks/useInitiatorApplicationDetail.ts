@@ -8,11 +8,13 @@ import type { InitiatorApplicationDetail } from "../types/initiator";
 export function useInitiatorApplicationDetail(id: string): {
   data: InitiatorApplicationDetail | undefined;
   isLoading: boolean;
+  errorStatus: number | string | undefined;
 } {
-  const { data, isLoading } = useGetInitiatorApplicationDetailQuery(id, { skip: !id });
+  const { data, isLoading, error } = useGetInitiatorApplicationDetailQuery(id, { skip: !id });
 
   return {
     data,
     isLoading,
+    errorStatus: error && "status" in error ? error.status : undefined,
   };
 }

@@ -230,7 +230,15 @@ export const recommendationSchema = z.object({
 
 // ─── Step 9 — Approval ──────────────────────────────────────────────────────
 
-export const approvalStatusSchema = z.enum(["PENDING", "WAITING", "APPROVED", "REJECTED"]);
+export const approvalStatusSchema = z.enum([
+  "PENDING",
+  "WAITING",
+  "UNDER_REVIEW",
+  "FIELD_VERIFIED",
+  "APPROVED",
+  "REJECTED",
+  "SENT_BACK",
+]);
 
 export const approvalEntrySchema = z.object({
   approverName: optionalText(120),

@@ -21,6 +21,16 @@ import {
 
 const NAV_ITEMS = [
   { href: "/initiator", icon: LayoutDashboard, label: "Dashboard", exact: true },
+   { href: "/initiator/applications", icon: LayoutDashboard, label: "Applications", exact: false },
+   { href: "/initiator/approval", icon: LayoutDashboard, label: "Approval Work Flow", exact: true },
+   { href: "/initiator/disbursment", icon: LayoutDashboard, label: "Disbursement", exact: false },
+    { href: "/initiator/emi-schedule", icon: LayoutDashboard, label: "EMI Schedule", exact: true },
+    { href: "/initiator/notification", icon: LayoutDashboard, label: "Notification", exact: true },
+      { href: "/initiator/document-center", icon: LayoutDashboard, label: "Document Center", exact: true },
+      { href: "/initiator/insurance-checker", icon: LayoutDashboard, label: "Insurance Checker", exact: true },
+         { href: "/initiator/commission", icon: LayoutDashboard, label: "Commission", exact: true },
+         
+            { href: "/initiator/audit-ledger", icon: LayoutDashboard, label: "Audit Ledger", exact: true },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
