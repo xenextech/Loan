@@ -23,6 +23,16 @@ export interface OverdueAccount {
   actionLabel: string;
 }
 
+export type NotificationTier = "info" | "urgent" | "critical";
+
+/** One row in the EMI-reminder notification schedule — `channelsLit` of 4 dot slots are lit. */
+export interface NotificationRule {
+  trigger: string;
+  messageType: string;
+  tier: NotificationTier;
+  channelsLit: number;
+}
+
 export interface EmiScheduleDetail {
   id: string;
   loanRef: string;
@@ -37,6 +47,11 @@ export interface EmiScheduleDetail {
   emiDueTodayAccounts: number;
   overdue1to30Label: string;
   overdue1to30Accounts: number;
+  overdue31to90Label: string;
+  overdue31to90SubLabel: string;
+  collectionEfficiencyLabel: string;
+  collectionEfficiencySubLabel: string;
   schedule: EmiRow[];
   overdueAccounts: OverdueAccount[];
+  notificationRules: NotificationRule[];
 }

@@ -1,7 +1,7 @@
 import SupporterDashboard from "@/components/supporter/Dashboard";
 
 export const metadata = {
-  title: "Dashboard — GenZ Loan Supporter Portal",
+  title: "Dashboard — Unnati Supporter Portal",
   description: "Review applications approved by the Initiator.",
 };
 

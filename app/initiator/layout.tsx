@@ -9,7 +9,11 @@ import InitiatorSidebar from "@/components/initiator/InitiatorSidebar";
 
 type Gate = "checking" | "denied" | "ok";
 
-export default function InitiatorLayout({ children }: { children: React.ReactNode }) {
+export default function InitiatorLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const [gate, setGate] = useState<Gate>("checking");
 
@@ -30,7 +34,8 @@ export default function InitiatorLayout({ children }: { children: React.ReactNod
       } else {
         setGate("denied");
         toast.error("Access denied", {
-          description: "The initiator portal is restricted to authorized staff only.",
+          description:
+            "The initiator portal is restricted to authorized staff only.",
           duration: 5000,
         });
       }
@@ -62,14 +67,19 @@ export default function InitiatorLayout({ children }: { children: React.ReactNod
             <ShieldX className="w-8 h-8 text-destructive" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground mb-1">Access Restricted</h1>
+            <h1 className="text-xl font-bold text-foreground mb-1">
+              Access Restricted
+            </h1>
             <p className="text-sm text-muted-foreground">
-              The initiator portal is only accessible to authorized GenZ Loan staff.
+              The initiator portal is only accessible to authorized Unnati
+              staff.
             </p>
           </div>
           <div className="flex gap-3">
             <Link href="/">
-              <Button variant="outline" size="sm">Go Home</Button>
+              <Button variant="outline" size="sm">
+                Go Home
+              </Button>
             </Link>
           </div>
         </div>

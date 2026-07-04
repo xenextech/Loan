@@ -144,7 +144,7 @@ export default function CTASection() {
                 transition={{ duration: 0.4, delay: 0.12 }}
                 className="text-base sm:text-lg text-gray-600 leading-relaxed mb-10 max-w-lg"
               >
-                Fill in one application. Let GenZ Loan connect you with
+                Fill in one application. Let Unnati connect you with
                 NRB-regulated partner banks. No branch visit, no paper forms —
                 decisions in days, not weeks.
               </motion.p>

@@ -36,7 +36,7 @@ export default function AboutSection() {
               {...anim(0)}
               className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-3"
             >
-              About GenZ Loan
+              About Unnati
             </motion.p>
 
             <motion.h2
@@ -69,7 +69,7 @@ export default function AboutSection() {
               {...anim(0.13)}
               className="text-base text-zinc-600 leading-relaxed mb-4"
             >
-              GenZ Loan is a digital education loan application platform — not a
+              Unnati is a digital education loan application platform — not a
               bank, not a lender. We exist to make the loan application process
               clearer, faster, and less stressful for students and their
               families across Nepal.

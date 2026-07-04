@@ -46,7 +46,9 @@ import { formatNPR } from "@/lib/formatters";
 const nepaliPhone = z
   .string()
   .optional()
-  .refine((v) => !v || /^(\+977)?[0-9]{10}$/.test(v), { message: "Invalid phone number" });
+  .refine((v) => !v || /^(\+977)?[0-9]{10}$/.test(v), {
+    message: "Invalid phone number",
+  });
 
 const parentFormSchema = z.object({
   name: z.string().min(1, "Full name is required"),
@@ -103,7 +105,13 @@ function FileUploadRow({
               if (file) onUpload(file);
             }}
           />
-          <Button type="button" variant="outline" size="sm" className="gap-1.5 cursor-pointer" asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 cursor-pointer"
+            asChild
+          >
             <span>
               {isUploading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -119,11 +127,18 @@ function FileUploadRow({
   );
 }
 
-export default function ParentVerifyPage({ params }: { params: Promise<{ token: string }> }) {
+export default function ParentVerifyPage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
   const { token } = use(params);
-  const { data, isLoading, isError } = useGetApplicationByParentTokenQuery(token);
-  const [submitProfile, { isLoading: isSubmittingProfile }] = useSubmitParentProfileMutation();
-  const [uploadSalarySheet, { isLoading: isUploadingSS }] = useUploadParentSalarySheetMutation();
+  const { data, isLoading, isError } =
+    useGetApplicationByParentTokenQuery(token);
+  const [submitProfile, { isLoading: isSubmittingProfile }] =
+    useSubmitParentProfileMutation();
+  const [uploadSalarySheet, { isLoading: isUploadingSS }] =
+    useUploadParentSalarySheetMutation();
   const [formSubmitted, setFormSubmitted] = useState(false);
 
   const form = useForm<ParentFormValues>({
@@ -157,9 +172,12 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
           <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-7 h-7 text-destructive" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">Invalid or Expired Link</h1>
+          <h1 className="text-xl font-bold text-foreground mb-2">
+            Invalid or Expired Link
+          </h1>
           <p className="text-sm text-muted-foreground mb-6">
-            This verification link is no longer valid. Please ask the student to share a new link.
+            This verification link is no longer valid. Please ask the student to
+            share a new link.
           </p>
           <Button asChild variant="outline">
             <Link href="/">Back to Home</Link>
@@ -191,13 +209,21 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
   };
 
   const appFields = [
-    { icon: BookOpen, label: "Course / Program", value: data.courseName ?? "—" },
-    { icon: GraduationCap, label: "Institution", value: data.boardUniversity ?? "—" },
+    {
+      icon: BookOpen,
+      label: "Course / Program",
+      value: data.courseName ?? "—",
+    },
+    {
+      icon: GraduationCap,
+      label: "Institution",
+      value: data.boardUniversity ?? "—",
+    },
     { icon: Clock, label: "Duration", value: data.courseDuration ?? "—" },
     {
       icon: Banknote,
       label: "Loan Amount Requested",
-      value: data.loanAmount ? formatNPR(data.loanAmount) : "—"
+      value: data.loanAmount ? formatNPR(data.loanAmount) : "—",
     },
   ];
 
@@ -207,30 +233,48 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
       <header className="bg-card border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
-            <Image src="/logo-white-bg.svg" alt="Cliq Edu Loan" width={140} height={40} />
+            <Image
+              src="/logo-white-bg.svg"
+              alt="Cliq Edu Loan"
+              width={140}
+              height={40}
+            />
           </Link>
-          <Badge variant="outline" className="text-xs">Parent View</Badge>
+          <Badge variant="outline" className="text-xs">
+            Parent View
+          </Badge>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-10 space-y-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4"
+        >
           {/* Intro */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Education Loan Application</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              Education Loan Application
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Your ward has submitted an education loan application. Review the details and fill in your information below.
+              Your ward has submitted an education loan application. Review the
+              details and fill in your information below.
             </p>
           </div>
           {/* Application summary */}
           <Card className="shadow-sm">
             <CardContent className="p-6 space-y-5">
               <div className="bg-muted/50 rounded-xl px-4 py-3">
-                <p className="text-xs text-muted-foreground">Application Number</p>
-                <p className="text-base font-bold font-mono text-foreground">{data.applicationNumber}</p>
+                <p className="text-xs text-muted-foreground">
+                  Application Number
+                </p>
+                <p className="text-base font-bold font-mono text-foreground">
+                  {data.applicationNumber}
+                </p>
               </div>
 
               <Separator />
@@ -247,8 +291,12 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
                         <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Full Name</p>
-                        <p className="text-sm font-medium text-foreground">{data.studentName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Full Name
+                        </p>
+                        <p className="text-sm font-medium text-foreground">
+                          {data.studentName}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -259,7 +307,9 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Email</p>
-                        <p className="text-sm font-medium text-foreground">{data.email}</p>
+                        <p className="text-sm font-medium text-foreground">
+                          {data.email}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -270,7 +320,9 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Phone</p>
-                        <p className="text-sm font-medium text-foreground">{data.phoneNumber}</p>
+                        <p className="text-sm font-medium text-foreground">
+                          {data.phoneNumber}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -286,9 +338,16 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   {appFields.map((f) => (
-                    <div key={f.label} className="bg-muted/40 rounded-xl px-3 py-2.5">
-                      <p className="text-xs text-muted-foreground mb-0.5">{f.label}</p>
-                      <p className="text-sm font-semibold text-foreground">{f.value}</p>
+                    <div
+                      key={f.label}
+                      className="bg-muted/40 rounded-xl px-3 py-2.5"
+                    >
+                      <p className="text-xs text-muted-foreground mb-0.5">
+                        {f.label}
+                      </p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {f.value}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -326,9 +385,12 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
             <Card className="shadow-sm">
               <CardContent className="p-6 text-center">
                 <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
-                <p className="font-semibold text-foreground">Information Submitted</p>
+                <p className="font-semibold text-foreground">
+                  Information Submitted
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your details have been saved. You can still upload your salary sheet below.
+                  Your details have been saved. You can still upload your salary
+                  sheet below.
                 </p>
               </CardContent>
             </Card>
@@ -340,13 +402,21 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
                     <Users className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Parent / Guardian Information</p>
-                    <p className="text-xs text-muted-foreground">Please fill in your details to support the loan application.</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      Parent / Guardian Information
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Please fill in your details to support the loan
+                      application.
+                    </p>
                   </div>
                 </div>
 
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmitProfile)} className="space-y-4">
+                  <form
+                    onSubmit={form.handleSubmit(onSubmitProfile)}
+                    className="space-y-4"
+                  >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -355,7 +425,10 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
                           <FormItem className="sm:col-span-2">
                             <FormLabel>Full Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ram Prasad Sharma" {...field} />
+                              <Input
+                                placeholder="Ram Prasad Sharma"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -416,7 +489,10 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
                           <FormItem>
                             <FormLabel>Bank Name</FormLabel>
                             <FormControl>
-                              <Input placeholder="Nepal Bank Limited" {...field} />
+                              <Input
+                                placeholder="Nepal Bank Limited"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -437,26 +513,33 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
                       />
                     </div>
 
-                     {/* Salary sheet upload */}
-          <Card className="shadow-sm">
-            <CardContent className="p-6 space-y-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Required Document</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Upload your latest salary sheet or income proof. PDF or image, max 5 MB.
-                </p>
-              </div>
-              <FileUploadRow
-                label="Salary Sheet / Income Proof"
-                hint="Latest 3-month salary slip or bank statement"
-                onUpload={handleSalarySheetUpload}
-                isUploading={isUploadingSS}
-                existingUrl={data.verification?.salarySheetPublicUrl}
-              />
-            </CardContent>
-          </Card>
+                    {/* Salary sheet upload */}
+                    <Card className="shadow-sm">
+                      <CardContent className="p-6 space-y-4">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">
+                            Required Document
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Upload your latest salary sheet or income proof. PDF
+                            or image, max 5 MB.
+                          </p>
+                        </div>
+                        <FileUploadRow
+                          label="Salary Sheet / Income Proof"
+                          hint="Latest 3-month salary slip or bank statement"
+                          onUpload={handleSalarySheetUpload}
+                          isUploading={isUploadingSS}
+                          existingUrl={data.verification?.salarySheetPublicUrl}
+                        />
+                      </CardContent>
+                    </Card>
 
-                    <Button type="submit" className="w-full gap-2" disabled={isSubmittingProfile}>
+                    <Button
+                      type="submit"
+                      className="w-full gap-2"
+                      disabled={isSubmittingProfile}
+                    >
                       {isSubmittingProfile ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
@@ -470,10 +553,9 @@ export default function ParentVerifyPage({ params }: { params: Promise<{ token: 
             </Card>
           )}
 
-         
-
           <p className="text-xs text-center text-muted-foreground px-4 pb-4">
-            This verification portal is provided by GenZ Loan. Data is encrypted and handled securely.
+            This verification portal is provided by Unnati. Data is encrypted
+            and handled securely.
           </p>
         </motion.div>
       </main>

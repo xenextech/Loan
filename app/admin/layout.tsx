@@ -71,8 +71,8 @@ export default function AdminLayout({
               Access Restricted
             </h1>
             <p className="text-sm text-muted-foreground">
-              The admin portal is only accessible to authorized GenZ Loan Edu
-              Loan staff.
+              The admin portal is only accessible to authorized Unnati Edu Loan
+              staff.
             </p>
           </div>
           <div className="flex gap-3">

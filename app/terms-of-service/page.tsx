@@ -18,19 +18,19 @@ export default function TermsOfServicePage() {
             1. Agreement to Terms
           </h2>
           <p>
-            By accessing or using the GenZ Loan Education Loan Platform, you
-            agree to be bound by these Terms of Service. If you disagree with
-            any part of the terms, you may not access the service.
+            By accessing or using the Unnati Education Loan Platform, you agree
+            to be bound by these Terms of Service. If you disagree with any part
+            of the terms, you may not access the service.
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-800 mt-8 mb-4">
             2. Description of Service
           </h2>
           <p>
-            GenZ Loan acts as an intermediary platform connecting students in
-            Nepal with NRB-regulated partner banks. We are not a lender or a
-            financial institution. All final loan decisions, sanctions, and
-            terms are determined solely by the partner banks.
+            Unnati acts as an intermediary platform connecting students in Nepal
+            with NRB-regulated partner banks. We are not a lender or a financial
+            institution. All final loan decisions, sanctions, and terms are
+            determined solely by the partner banks.
           </p>
 
           <h2 className="text-2xl font-semibold text-zinc-800 mt-8 mb-4">
@@ -47,7 +47,7 @@ export default function TermsOfServicePage() {
             4. Limitation of Liability
           </h2>
           <p>
-            GenZ Loan shall not be liable for any indirect, incidental, special,
+            Unnati shall not be liable for any indirect, incidental, special,
             consequential or punitive damages, resulting from your access to or
             use of, or inability to access or use the service, or any decisions
             made by our partner banks.

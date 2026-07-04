@@ -15,10 +15,10 @@ const LINKS = {
     // { label: "Partner Banks",    href: "/#about"          },
   ],
   Company: [
-    { label: "About GenZ Loan", href: "/#about" },
+    { label: "About Unnati", href: "/#about" },
     // { label: "Careers",          href: "#"               },
     // { label: "Press",            href: "#"               },
-    // { label: "Contact",          href: "mailto:support@GenZ Loanedu.com.np" },
+    // { label: "Contact",          href: "mailto:support@Unnatiedu.com.np" },
   ],
 
   Legal: [
@@ -69,7 +69,9 @@ export default function SiteFooter() {
             </Link>
 
             <p className="text-sm text-zinc-400 leading-relaxed mb-7 max-w-[230px]">
-              We provide study loans for students and learners pursuing education with customized loan through a fully digital loan process.
+              We provide study loans for students and learners pursuing
+              education with customized loan through a fully digital loan
+              process.
             </p>
 
             {/* Contact items */}

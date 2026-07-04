@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { GraduationCap, Loader2 } from "lucide-react";
+import StudentSidebar from "@/components/student/StudentSidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -31,5 +32,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="flex bg-muted/30 min-h-screen lg:h-screen lg:overflow-hidden">
+      <StudentSidebar />
+      <main className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">{children}</main>
+    </div>
+  );
 }

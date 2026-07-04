@@ -116,9 +116,14 @@ export default function LandingNav() {
           <Link
             href="/"
             className="flex items-center gap-2 shrink-0"
-            aria-label="GenZ Loan home"
+            aria-label="Unnati home"
           >
-            <Image src="/logo-white-bg.svg" width={180} height={180} alt="GenZ Logo" />
+            <Image
+              src="/logo-white-bg.svg"
+              width={180}
+              height={180}
+              alt="GenZ Logo"
+            />
           </Link>
 
           {/* ── Center nav (desktop) ──────────────────────────────────── */}

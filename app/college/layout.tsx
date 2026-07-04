@@ -9,7 +9,11 @@ import CollegeSidebar from "@/components/college/CollegeSidebar";
 
 type Gate = "checking" | "denied" | "ok";
 
-export default function CollegeLayout({ children }: { children: React.ReactNode }) {
+export default function CollegeLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const [gate, setGate] = useState<Gate>("checking");
 
@@ -30,7 +34,8 @@ export default function CollegeLayout({ children }: { children: React.ReactNode 
       } else {
         setGate("denied");
         toast.error("Access denied", {
-          description: "The college portal is restricted to registered college accounts.",
+          description:
+            "The college portal is restricted to registered college accounts.",
           duration: 5000,
         });
       }
@@ -62,14 +67,19 @@ export default function CollegeLayout({ children }: { children: React.ReactNode 
             <ShieldX className="w-8 h-8 text-destructive" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground mb-1">Access Restricted</h1>
+            <h1 className="text-xl font-bold text-foreground mb-1">
+              Access Restricted
+            </h1>
             <p className="text-sm text-muted-foreground">
-              The college portal is only accessible to registered college accounts on GenZ Loan.
+              The college portal is only accessible to registered college
+              accounts on Unnati.
             </p>
           </div>
           <div className="flex gap-3">
             <Link href="/">
-              <Button variant="outline" size="sm">Go Home</Button>
+              <Button variant="outline" size="sm">
+                Go Home
+              </Button>
             </Link>
             <Link href="/register">
               <Button size="sm">Register College</Button>

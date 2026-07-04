@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage() {
             You have the right to access, correct, or request deletion of your
             personal data. If you wish to exercise these rights or have
             questions about our privacy practices, please contact us at
-            support@GenZ Loanedu.com.np.
+            support@Unnatiedu.com.np.
           </p>
         </div>
       </main>

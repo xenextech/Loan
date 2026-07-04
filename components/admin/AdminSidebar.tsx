@@ -77,7 +77,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <GraduationCap className="w-4 h-4 text-white" />
         </div>
         <span className="text-sm font-bold text-foreground leading-none">
-          GenZ Loan Edu Loan
+          Unnati Edu Loan
         </span>
         <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 py-0.5 ml-auto shrink-0 font-bold tracking-wide">
           ADMIN
@@ -104,7 +104,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               Administrator
             </p>
             <p className="text-[10px] text-muted-foreground truncate">
-              {user?.email ?? "GenZ Loan Admin Portal"}
+              {user?.email ?? "Unnati Admin Portal"}
             </p>
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function AdminSidebar() {
           <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
             <GraduationCap className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="text-sm font-bold text-foreground">GenZ Loan</span>
+          <span className="text-sm font-bold text-foreground">Unnati</span>
           <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 font-bold">
             ADMIN
           </Badge>

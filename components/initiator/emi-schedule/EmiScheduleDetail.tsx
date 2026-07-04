@@ -18,12 +18,18 @@ import { formatNPR } from "@/lib/formatters";
 import { useInitiatorApplicationDetail } from "@/components/initiator/hooks/useInitiatorApplicationDetail";
 import { useEmiScheduleDetail } from "./useEmiScheduleDetail";
 import { buildAmortizationSchedule, SHARED_FIELDS } from "./mockEmiSchedules";
-import type { EmiScheduleDetail as EmiScheduleDetailData, OverdueBucket } from "./types";
+import type { EmiScheduleDetail as EmiScheduleDetailData, NotificationTier, OverdueBucket } from "./types";
 
 const BUCKET_BADGE_CLASS: Record<OverdueBucket, string> = {
   "1-30d bucket": "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
   "31-90d bucket": "bg-[var(--warning)]/20 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
   "Near NPA": "bg-destructive/10 text-destructive",
+};
+
+const TIER_DOT_CLASS: Record<NotificationTier, string> = {
+  info: "bg-[var(--success)]",
+  urgent: "bg-[var(--warning)]",
+  critical: "bg-destructive",
 };
 
 const DEFAULT_RATE_PERCENT = 9.0;
@@ -111,7 +117,7 @@ export function EmiScheduleDetail({ id }: { id: string }) {
       )}
 
       {/* Portfolio stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-4">
         <div>
           <p className="text-xs text-muted-foreground mb-1">EMI due today</p>
           <p className="text-2xl font-bold text-foreground">{detail.emiDueTodayLabel}</p>
@@ -121,6 +127,16 @@ export function EmiScheduleDetail({ id }: { id: string }) {
           <p className="text-xs text-muted-foreground mb-1">Overdue 1-30 days</p>
           <p className="text-2xl font-bold text-destructive">{detail.overdue1to30Label}</p>
           <p className="text-xs text-destructive mt-0.5">{detail.overdue1to30Accounts} accounts</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Overdue 31-90 days</p>
+          <p className="text-2xl font-bold text-destructive">{detail.overdue31to90Label}</p>
+          <p className="text-xs text-destructive mt-0.5">{detail.overdue31to90SubLabel}</p>
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Collection efficiency</p>
+          <p className="text-2xl font-bold text-foreground">{detail.collectionEfficiencyLabel}</p>
+          <p className="text-xs text-[oklch(0.42_0.18_145)] dark:text-success mt-0.5">{detail.collectionEfficiencySubLabel}</p>
         </div>
       </div>
 
@@ -231,6 +247,46 @@ export function EmiScheduleDetail({ id }: { id: string }) {
             / 100%.
           </p>
         </div>
+      </div>
+
+      {/* Notification schedule */}
+      <div>
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+          <h3 className="text-sm font-bold text-foreground">Notification schedule — EMI reminders</h3>
+          <p className="text-xs text-muted-foreground">Per NRB collection protocol</p>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent border-border">
+              <TableHead className="text-xs">Trigger</TableHead>
+              <TableHead className="text-xs">Message type</TableHead>
+              <TableHead className="text-xs text-right pr-3">Channels</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {detail.notificationRules.map((rule) => (
+              <TableRow key={rule.trigger} className="border-border">
+                <TableCell className="text-xs font-medium text-foreground whitespace-nowrap">{rule.trigger}</TableCell>
+                <TableCell className="text-xs text-foreground">{rule.messageType}</TableCell>
+                <TableCell className="pr-3">
+                  <div className="flex items-center justify-end gap-1.5">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          "w-2.5 h-2.5 rounded-full",
+                          i < rule.channelsLit
+                            ? TIER_DOT_CLASS[rule.tier]
+                            : "bg-muted",
+                        )}
+                      />
+                    ))}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </motion.div>
   );

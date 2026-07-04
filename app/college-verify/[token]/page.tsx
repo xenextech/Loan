@@ -243,8 +243,13 @@ export default function CollegeVerifyPage({
           {/* Intro */}
           <div className="text-center mb-8">
             <Link href="/" className="flex items-center gap-2.5 mb-2">
-              <Image src="/logo-white-bg.svg" alt="Logo" width={180} height={180} />
-          </Link>
+              <Image
+                src="/logo-white-bg.svg"
+                alt="Logo"
+                width={180}
+                height={180}
+              />
+            </Link>
             <p className="text-sm text-muted-foreground">
               Please review the student&apos;s application and complete the
               verification form below.
@@ -554,7 +559,7 @@ export default function CollegeVerifyPage({
           {/* Document uploads */}
 
           <p className="text-xs text-center text-muted-foreground px-4 pb-4">
-            This verification portal is provided by GenZ Loan. Data is encrypted
+            This verification portal is provided by Unnati. Data is encrypted
             and handled securely.
           </p>
         </motion.div>

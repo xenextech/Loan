@@ -279,7 +279,7 @@ export default function Step4ReviewSubmit({
               htmlFor="agree2"
               className="text-sm text-foreground leading-relaxed cursor-pointer"
             >
-              I authorize GenZ Loan Edu Loan and its partner banks to verify my
+              I authorize Unnati Edu Loan and its partner banks to verify my
               identity, academic records, and financial information with
               relevant institutions and government agencies.
             </Label>

@@ -12,15 +12,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
-import {
-  LayoutDashboard,
-  LogOut,
-  ClipboardCheck,
-  Menu,
-} from "lucide-react";
+import { LayoutDashboard, LogOut, ClipboardCheck, Menu } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/supporter", icon: LayoutDashboard, label: "Dashboard", exact: true },
+  {
+    href: "/supporter",
+    icon: LayoutDashboard,
+    label: "Dashboard",
+    exact: true,
+  },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -66,7 +66,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2.5 px-5 h-14 border-b border-border shrink-0">
         <Link href="/" className="cursor-pointer">
-          <Image src="/logo-white-bg.svg" width={100} height={100} alt="GenZ Logo" />
+          <Image
+            src="/logo-white-bg.svg"
+            width={100}
+            height={100}
+            alt="GenZ Logo"
+          />
         </Link>
         <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 py-0.5 ml-auto shrink-0 font-bold tracking-wide">
           SUPPORTER
@@ -87,9 +92,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <ClipboardCheck className="w-3.5 h-3.5 text-primary" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-foreground truncate">Supporter Portal</p>
+            <p className="text-xs font-semibold text-foreground truncate">
+              Supporter Portal
+            </p>
             <p className="text-[10px] text-muted-foreground truncate">
-              {user?.email ?? "GenZ Loan Supporter"}
+              {user?.email ?? "Unnati Supporter"}
             </p>
           </div>
         </div>
@@ -120,7 +127,12 @@ export default function SupporterSidebar() {
         </button>
         <div className="flex items-center gap-2">
           <Link href="/" className="cursor-pointer">
-            <Image src="/logo-white-bg.svg" width={100} height={100} alt="GenZ Logo" />
+            <Image
+              src="/logo-white-bg.svg"
+              width={100}
+              height={100}
+              alt="GenZ Logo"
+            />
           </Link>
           <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 font-bold">
             SUPPORTER

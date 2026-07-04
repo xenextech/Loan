@@ -179,7 +179,7 @@ export default function AdminDashboard() {
                 <GraduationCap className="w-4 h-4 text-white" />
               </div>
               <span className="text-sm font-bold text-foreground">
-                GenZ Loan Edu Loan
+                Unnati Edu Loan
               </span>
               <Badge
                 variant="secondary"

@@ -1,8 +1,8 @@
 import AdminOverview from "@/components/admin/AdminOverview";
 
 export const metadata = {
-  title: "Overview — GenZ Loan Admin",
-  description: "Admin overview for GenZ Loan Edu Loan.",
+  title: "Overview — Unnati Admin",
+  description: "Admin overview for Unnati Edu Loan.",
 };
 
 export default function AdminPage() {

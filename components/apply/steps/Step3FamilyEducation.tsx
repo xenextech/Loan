@@ -28,7 +28,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { step3Schema, type Step3FormData } from "@/lib/validations/schemas";
 import FileUploadZone from "@/components/apply/fields/FileUploadZone";
-import { ArrowRight, ArrowLeft, Loader2, Users, GraduationCap, Receipt, Heart, Info } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Loader2,
+  Users,
+  GraduationCap,
+  Receipt,
+  Heart,
+  Info,
+} from "lucide-react";
 
 interface Step3Props {
   defaultValues?: Partial<Step3FormData>;
@@ -38,7 +47,13 @@ interface Step3Props {
   isSaving?: boolean;
 }
 
-const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
+const SectionHeading = ({
+  icon: Icon,
+  title,
+}: {
+  icon: React.ElementType;
+  title: string;
+}) => (
   <div className="flex items-center gap-2.5 mb-6">
     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
       <Icon className="w-4 h-4 text-primary" />
@@ -48,8 +63,16 @@ const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title:
 );
 
 const FEE_OPTIONS = [
-  { value: "upload", label: "Upload Document", desc: "PDF, DOC, DOCX of fee structure" },
-  { value: "website", label: "Website Link", desc: "URL to institution's fee page" },
+  {
+    value: "upload",
+    label: "Upload Document",
+    desc: "PDF, DOC, DOCX of fee structure",
+  },
+  {
+    value: "website",
+    label: "Website Link",
+    desc: "URL to institution's fee page",
+  },
   { value: "manual", label: "Manual Entry", desc: "Enter total fee amount" },
 ];
 
@@ -64,11 +87,16 @@ export default function Step3FamilyEducation({
   const [uploadDocument] = useUploadDocumentMutation();
 
   const uploadFile = async (file: File, documentType: DocumentType) => {
-    if (!applicationId) { toast.error("No active application. Please refresh."); return; }
+    if (!applicationId) {
+      toast.error("No active application. Please refresh.");
+      return;
+    }
     try {
       await uploadDocument({ applicationId, documentType, file }).unwrap();
     } catch {
-      toast.error(`Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`);
+      toast.error(
+        `Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`,
+      );
     }
   };
 
@@ -101,7 +129,10 @@ export default function Step3FamilyEducation({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onNext)} className="space-y-10">
         {/* Family Details */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <SectionHeading icon={Users} title="Family Details" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <FormField
@@ -137,7 +168,10 @@ export default function Step3FamilyEducation({
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Grandfather&apos;s Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Paternal grandfather's full name" {...field} />
+                    <Input
+                      placeholder="Paternal grandfather's full name"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -158,7 +192,10 @@ export default function Step3FamilyEducation({
             name="maritalStatus"
             render={({ field }) => (
               <FormItem>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger className="w-full sm:w-[280px]">
                       <SelectValue placeholder="Select marital status" />
@@ -226,14 +263,17 @@ export default function Step3FamilyEducation({
         >
           <SectionHeading icon={GraduationCap} title="Academic Records" />
           <p className="text-sm text-muted-foreground mb-4">
-            Upload your latest academic transcripts, marksheets, or certificates.
+            Upload your latest academic transcripts, marksheets, or
+            certificates.
           </p>
           <FileUploadZone
             label="Academic Records"
             hint="Transcripts, marksheets, certificates · PDF, DOC, DOCX"
             accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             maxSizeMB={10}
-            onFileSelect={(file) => { if (file) uploadFile(file, "ACADEMIC_RECORD"); }}
+            onFileSelect={(file) => {
+              if (file) uploadFile(file, "ACADEMIC_RECORD");
+            }}
           />
         </motion.div>
 
@@ -269,10 +309,16 @@ export default function Step3FamilyEducation({
                             : "border-border hover:border-primary/30"
                         }`}
                       >
-                        <RadioGroupItem value={opt.value} id={`fee-${opt.value}`} className="mt-0.5" />
+                        <RadioGroupItem
+                          value={opt.value}
+                          id={`fee-${opt.value}`}
+                          className="mt-0.5"
+                        />
                         <div>
                           <p className="text-sm font-semibold">{opt.label}</p>
-                          <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {opt.desc}
+                          </p>
                         </div>
                       </Label>
                     ))}
@@ -295,7 +341,9 @@ export default function Step3FamilyEducation({
                   label="Fee Structure Document"
                   hint="Upload fee breakdown from institution"
                   accept=".pdf,.doc,.docx"
-                  onFileSelect={(file) => { if (file) uploadFile(file, "FEE_STRUCTURE"); }}
+                  onFileSelect={(file) => {
+                    if (file) uploadFile(file, "FEE_STRUCTURE");
+                  }}
                 />
               </motion.div>
             )}
@@ -339,7 +387,11 @@ export default function Step3FamilyEducation({
                     <FormItem className="max-w-sm">
                       <FormLabel>Total Course Fee (NPR)</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. 1200000" inputMode="numeric" {...field} />
+                        <Input
+                          placeholder="e.g. 1200000"
+                          inputMode="numeric"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -363,9 +415,11 @@ export default function Step3FamilyEducation({
                 Offer letter &amp; enrollment documents
               </p>
               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                Your institution will provide the admission offer letter and enrollment documents directly
-                through the GenZ Loan College Portal. You do not need to upload these yourself — your
-                college will verify your enrollment and submit the required documents on your behalf.
+                Your institution will provide the admission offer letter and
+                enrollment documents directly through the Unnati College Portal.
+                You do not need to upload these yourself — your college will
+                verify your enrollment and submit the required documents on your
+                behalf.
               </p>
             </div>
           </div>
@@ -373,11 +427,22 @@ export default function Step3FamilyEducation({
 
         {/* Navigation */}
         <div className="flex justify-between pt-2">
-          <Button type="button" variant="outline" size="lg" className="h-12 px-6" onClick={onPrev}>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="h-12 px-6"
+            onClick={onPrev}
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button type="submit" size="lg" disabled={isSaving} className="h-12 px-8 text-base font-semibold">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={isSaving}
+            className="h-12 px-8 text-base font-semibold"
+          >
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

@@ -10,7 +10,7 @@ import {
 
 const FAQS = [
   {
-    q: "Who is eligible to apply for a GenZ Loan education loan?",
+    q: "Who is eligible to apply for a Unnati education loan?",
     a: "Any Nepalese citizen who has secured admission or is enrolled in a recognised educational institution — domestically or abroad — can apply. You must be between 18 and 35 years of age and have a guarantor (typically a parent or guardian).",
   },
   {
@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: "Can I save my application and complete it later?",
-    a: "Yes. GenZ Loan automatically saves your progress as a draft every 30 seconds. You can also click 'Save & Continue Later' at any step. Your draft is securely stored for 30 days.",
+    a: "Yes. Unnati automatically saves your progress as a draft every 30 seconds. You can also click 'Save & Continue Later' at any step. Your draft is securely stored for 30 days.",
   },
   {
     q: "Are there any processing fees?",
@@ -58,10 +58,10 @@ export default function FAQSection() {
             FAQ
           </p>
           <h2 className="text-3xl font-bold text-zinc-900 tracking-tight leading-tight mb-3">
-            Got questions?  We&apos;ve{" "}
+            Got questions? We&apos;ve{" "}
             <span className="relative inline-block">
               <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">
-               got answers.
+                got answers.
               </span>
               <svg
                 className="absolute -bottom-1 left-0 w-full overflow-visible"
@@ -140,7 +140,7 @@ export default function FAQSection() {
         >
           Still have questions?{" "}
           <a
-            href="mailto:support@GenZ Loanedu.com.np"
+            href="mailto:support@Unnatiedu.com.np"
             className="text-primary font-medium hover:underline"
           >
             Email our support team

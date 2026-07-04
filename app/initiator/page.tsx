@@ -1,7 +1,7 @@
 import InitiatorDashboard from "@/components/initiator/Dashboard";
 
 export const metadata = {
-  title: "Dashboard — GenZ Loan Initiator Portal",
+  title: "Dashboard — Unnati Initiator Portal",
   description: "Review applications verified by the college.",
 };
 

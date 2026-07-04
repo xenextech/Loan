@@ -1,5 +1,5 @@
 import { calculateEMI } from "@/lib/formatters";
-import type { EmiRow, EmiScheduleDetail, OverdueAccount } from "./types";
+import type { EmiRow, EmiScheduleDetail, NotificationRule, OverdueAccount } from "./types";
 
 /**
  * Standing in for a future EMI-schedule/repayment backend module (amortization,
@@ -70,12 +70,31 @@ const OVERDUE_ACCOUNTS: OverdueAccount[] = [
   },
 ];
 
+const NOTIFICATION_RULES: NotificationRule[] = [
+  { trigger: "1 month", messageType: "EMI due reminder (soft)", tier: "info", channelsLit: 3 },
+  { trigger: "15 days", messageType: "EMI due reminder (medium)", tier: "info", channelsLit: 4 },
+  { trigger: "7 days", messageType: "EMI due reminder (urgent)", tier: "info", channelsLit: 4 },
+  { trigger: "4 days", messageType: "Action required reminder", tier: "info", channelsLit: 3 },
+  { trigger: "3 days", messageType: "Final reminder before due", tier: "urgent", channelsLit: 3 },
+  { trigger: "2 days", messageType: "Urgent — pay to avoid penalty", tier: "urgent", channelsLit: 3 },
+  { trigger: "1 day", messageType: "Tomorrow is EMI day", tier: "critical", channelsLit: 1 },
+  { trigger: "Day 1 OD", messageType: "Overdue — penal interest starts", tier: "critical", channelsLit: 4 },
+  { trigger: "Day 7 OD", messageType: "Escalation + guarantor notice", tier: "critical", channelsLit: 4 },
+  { trigger: "Doc expiry", messageType: "Document / insurance expiry alert", tier: "info", channelsLit: 4 },
+  { trigger: "Marketing", messageType: "New product / interest rate change", tier: "info", channelsLit: 3 },
+];
+
 export const SHARED_FIELDS = {
   emiDueTodayLabel: "Rs 3.2L",
   emiDueTodayAccounts: 42,
   overdue1to30Label: "Rs 1.8L",
   overdue1to30Accounts: 18,
+  overdue31to90Label: "Rs 74K",
+  overdue31to90SubLabel: "6 — NPA risk",
+  collectionEfficiencyLabel: "97.1%",
+  collectionEfficiencySubLabel: "↑0.4% MoM",
   overdueAccounts: OVERDUE_ACCOUNTS,
+  notificationRules: NOTIFICATION_RULES,
 };
 
 export const MOCK_EMI_SCHEDULES: EmiScheduleDetail[] = [

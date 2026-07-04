@@ -1,7 +1,7 @@
 import ApplicationsView from "@/components/admin/ApplicationsView";
 
 export const metadata = {
-  title: "Applications — GenZ Loan Admin",
+  title: "Applications — Unnati Admin",
   description: "Review and manage all student loan applications.",
 };
 

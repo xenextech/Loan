@@ -1,7 +1,7 @@
 import CollegeAnalytics from "@/components/college/CollegeAnalytics";
 
 export const metadata = {
-  title: "Analytics — GenZ Loan College Portal",
+  title: "Analytics — Unnati College Portal",
   description: "Loan uptake, fee collection, and bank performance analytics.",
 };
 
