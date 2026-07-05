@@ -1,26 +1,87 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, FileText, Check, Undo2, XCircle, CheckCircle2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowLeft, FileText, Check, Undo2, XCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/formatters";
+import { useAppSelector } from "@/lib/hooks";
 import {
   useGetDashboardApplicationDetailQuery,
   useGetApprovalSummaryQuery,
   useGetApprovalCreditScoreQuery,
   useGetApprovalNrbChecklistQuery,
   useGetApprovalActivityQuery,
+  useSupportApplicationMutation,
+  useCheckApplicationMutation,
+  useApproveApplicationMutation,
+  useRejectApplicationMutation,
+  useSendBackApplicationMutation,
 } from "@/lib/api/dashboardApi";
 import { useGetInitiatorApplicationDetailQuery } from "@/lib/api/initiatorApi";
 import { CreditScoringSection } from "./CreditScoringSection";
-import { StageStepper } from "./StageStepper";
-import type { ApprovalStage } from "./types";
+import { StageStepper, type LinearStage } from "./StageStepper";
+import { STAGE_LABEL, STAGE_BADGE_CLASS, NO_STAGE_LABEL, NO_STAGE_BADGE_CLASS } from "./stageBadge";
+import { useActingRole, ROLE_OPTIONS } from "../hooks/useActingRole";
+import type { ApplicationStage, ApprovalActionRole } from "@/types/dashboard";
+
+// Mirrors the backend's `ALLOWED_FROM_STAGE` table (dashboard-approval.service.ts)
+// so the primary action button can be disabled client-side with a helpful hint —
+// the backend re-checks this itself regardless, so this is a UX nicety, not the
+// source of truth.
+const ALLOWED_FROM_STAGE: Record<"support" | "check" | "approve", (ApplicationStage | null)[]> = {
+  support: [null, "INITIATED", "SENT_BACK"],
+  check: ["SUPPORTED", "SENT_BACK"],
+  approve: ["CHECKING"],
+};
+
+const PRIMARY_ACTION: Record<ApprovalActionRole, "support" | "check" | "approve"> = {
+  SUPPORTER: "support",
+  CHECKER: "check",
+  CREDIT_MANAGER: "check",
+  APPROVER: "approve",
+};
+
+const PRIMARY_ACTION_LABEL: Record<"support" | "check" | "approve", string> = {
+  support: "Support",
+  check: "Check",
+  approve: "Approve",
+};
+
+/** REJECTED/SENT_BACK aren't linear steps — resolve the position to show on the
+ *  stepper (SENT_BACK rewinds to `sentBackToStage`; REJECTED has no position). */
+function resolveDisplayStage(stage: ApplicationStage | null | undefined, sentBackToStage: ApplicationStage | null | undefined): LinearStage | null {
+  if (!stage || stage === "REJECTED") return null;
+  if (stage === "SENT_BACK") {
+    return sentBackToStage && sentBackToStage !== "REJECTED" && sentBackToStage !== "SENT_BACK" ? sentBackToStage : null;
+  }
+  return stage;
+}
+
+function getErrorMessage(err: unknown): string | undefined {
+  if (err && typeof err === "object" && "data" in err) {
+    const data = (err as { data?: unknown }).data;
+    if (data && typeof data === "object" && "message" in data) {
+      const msg = (data as { message?: unknown }).message;
+      if (typeof msg === "string") return msg;
+      if (Array.isArray(msg)) return msg.join(", ");
+    }
+  }
+  return undefined;
+}
 
 function SummaryRow({ label, value, success }: { label: string; value: React.ReactNode; success?: boolean }) {
   return (
@@ -33,19 +94,16 @@ function SummaryRow({ label, value, success }: { label: string; value: React.Rea
   );
 }
 
-/** Illustrative — the backend has no persisted per-role workflow state yet.
- *  Initiator is shown done since the application reached submission; the rest
- *  are shown awaiting since there's no real Supporter/Checker/Approver sign-off field. */
-const realDataStages = (): ApprovalStage[] => [
-  { role: "INITIATOR", roleLabel: "Initiator", actorName: "Initiator", actorTitle: "RO", status: "DONE", comment: "Application submitted and picked up for review." },
-  { role: "SUPPORTER", roleLabel: "Supporter", actorName: "—", actorTitle: "Support", status: "AWAITING" },
-  { role: "CHECKER", roleLabel: "Checker", actorName: "—", actorTitle: "CRD", status: "AWAITING" },
-  { role: "APPROVER", roleLabel: "Approver", actorName: "—", actorTitle: "Approver", status: "AWAITING" },
-];
-
 export function ApprovalWorkflowDetail({ id }: { id: string }) {
   const router = useRouter();
-  const [checkerComment, setCheckerComment] = useState("");
+  const authUser = useAppSelector((s) => s.auth.user);
+
+  const [selectedRole, setSelectedRole] = useActingRole();
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [sendBackOpen, setSendBackOpen] = useState(false);
+  const [sendBackReason, setSendBackReason] = useState("");
+  const [sendBackToStage, setSendBackToStage] = useState<ApplicationStage>("INITIATED");
 
   const { data: application, isLoading: appLoading, error: appError } = useGetDashboardApplicationDetailQuery(id);
   const { data: summary, isLoading: summaryLoading } = useGetApprovalSummaryQuery(id);
@@ -54,7 +112,21 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
   const { data: activity, isLoading: activityLoading } = useGetApprovalActivityQuery({ applicationId: id, page: 1, limit: 15 });
   const { data: initiatorDetail } = useGetInitiatorApplicationDetailQuery(id, { skip: !id });
 
+  const [support, { isLoading: supporting }] = useSupportApplicationMutation();
+  const [check, { isLoading: checking }] = useCheckApplicationMutation();
+  const [approve, { isLoading: approving }] = useApproveApplicationMutation();
+  const [reject, { isLoading: rejecting }] = useRejectApplicationMutation();
+  const [sendBack, { isLoading: sendingBack }] = useSendBackApplicationMutation();
+
   const isLoading = appLoading || summaryLoading || scoreLoading || checklistLoading;
+  const isMutating = supporting || checking || approving || rejecting || sendingBack;
+
+  const currentStage = application?.stage ?? null;
+  const displayStage = useMemo(() => resolveDisplayStage(currentStage, application?.sentBackToStage), [currentStage, application?.sentBackToStage]);
+
+  const primaryAction = PRIMARY_ACTION[selectedRole];
+  const canReject = selectedRole !== "SUPPORTER";
+  const primaryAllowed = ALLOWED_FROM_STAGE[primaryAction].includes(currentStage);
 
   if (isLoading) {
     return (
@@ -91,6 +163,47 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
 
   const collegeVerification = initiatorDetail?.collegeVerification;
 
+  const runAction = async (action: "support" | "check" | "approve") => {
+    try {
+      if (action === "support") await support(id).unwrap();
+      else if (action === "check") await check(id).unwrap();
+      else await approve(id).unwrap();
+      toast.success(`Application ${action === "support" ? "supported" : action === "check" ? "checked" : "approved"}.`);
+    } catch (err) {
+      toast.error(`Failed to ${action} application`, { description: getErrorMessage(err) ?? "Please try again." });
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) {
+      toast.error("A reason is required to reject.");
+      return;
+    }
+    try {
+      await reject({ applicationId: id, data: { reason: rejectReason.trim() } }).unwrap();
+      toast.success("Application rejected.");
+      setRejectOpen(false);
+      setRejectReason("");
+    } catch (err) {
+      toast.error("Failed to reject application", { description: getErrorMessage(err) ?? "Please try again." });
+    }
+  };
+
+  const handleSendBack = async () => {
+    if (!sendBackReason.trim()) {
+      toast.error("A reason is required to send back.");
+      return;
+    }
+    try {
+      await sendBack({ applicationId: id, data: { reason: sendBackReason.trim(), toStage: sendBackToStage } }).unwrap();
+      toast.success("Application sent back.");
+      setSendBackOpen(false);
+      setSendBackReason("");
+    } catch (err) {
+      toast.error("Failed to send back application", { description: getErrorMessage(err) ?? "Please try again." });
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
       <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/approval")}>
@@ -99,7 +212,7 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
 
       <div>
         <h1 className="text-lg font-bold text-foreground">Approval Workflow</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Credit-Ops Review · Read-only</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Credit-Ops Review</p>
       </div>
 
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -111,12 +224,30 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
           <Badge variant="outline" className="text-xs font-medium">
             {application.branch ?? "—"}
           </Badge>
-          <Badge className="border-0 font-semibold text-xs bg-primary/10 text-primary">{summary.status}</Badge>
+          <Badge className={cn(currentStage ? STAGE_BADGE_CLASS[currentStage] : NO_STAGE_BADGE_CLASS, "border-0 font-semibold text-xs")}>
+            {currentStage ? STAGE_LABEL[currentStage] : NO_STAGE_LABEL}
+          </Badge>
         </div>
       </div>
 
-      {/* Stage tracker — illustrative, see note above realDataStages() */}
-      <StageStepper stages={realDataStages()} />
+      {currentStage === "REJECTED" && (
+        <div className="rounded-lg bg-destructive/10 border-l-4 border-destructive px-4 py-3">
+          <p className="text-xs font-semibold text-destructive mb-1">Rejected</p>
+          <p className="text-sm text-foreground">{application.rejectionReason ?? "No reason recorded."}</p>
+          {application.rejectedAt && <p className="text-[11px] text-muted-foreground mt-1">{formatDate(application.rejectedAt)}</p>}
+        </div>
+      )}
+      {currentStage === "SENT_BACK" && (
+        <div className="rounded-lg bg-[var(--warning)]/10 border-l-4 border-[var(--warning)] px-4 py-3">
+          <p className="text-xs font-semibold text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)] mb-1">
+            Sent back{application.sentBackToStage ? ` to ${STAGE_LABEL[application.sentBackToStage]}` : ""}
+          </p>
+          <p className="text-sm text-foreground">{application.sentBackReason ?? "No reason recorded."}</p>
+          {application.sentBackAt && <p className="text-[11px] text-muted-foreground mt-1">{formatDate(application.sentBackAt)}</p>}
+        </div>
+      )}
+
+      <StageStepper stage={displayStage} />
 
       <div>
         <h3 className="text-sm font-bold text-foreground mb-2.5">Borrower summary</h3>
@@ -166,32 +297,124 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
         </div>
       )}
 
-      {/* Checker comments + actions — visual only, no forward/send-back/reject
-          mutation exists on the backend yet; see the module README's note that
-          this screen is read-only by design. */}
+      {/* Approval actions — real, role-gated backend transitions. The dropdown only
+          decides which buttons this screen shows; the backend still enforces the
+          real permission from the logged-in user's JWT role. */}
       <div>
-        <h3 className="text-sm font-bold text-foreground mb-2">Checker comments</h3>
-        <Textarea
-          placeholder="Enter your credit assessment, conditions, or reason for send-back…"
-          value={checkerComment}
-          onChange={(e) => setCheckerComment(e.target.value)}
-          rows={3}
-          className="text-sm mb-3"
-        />
+        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+          <h3 className="text-sm font-bold text-foreground">Approval action</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Acting as</span>
+            <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as ApprovalActionRole)}>
+              <SelectTrigger className="h-8 w-44 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLE_OPTIONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {authUser && authUser.role !== selectedRole && (
+          <p className="text-[11px] text-muted-foreground mb-3">
+            You&apos;re signed in as <span className="font-medium text-foreground">{authUser.role}</span>. The backend will reject an action here
+            unless your account actually holds the <span className="font-medium text-foreground">{selectedRole}</span> role.
+          </p>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button disabled className="flex-1 gap-1.5 bg-[oklch(0.42_0.18_145)] text-white opacity-60">
-            <Check className="w-4 h-4" /> Forward to approver
+          <Button
+            disabled={!primaryAllowed || isMutating}
+            className="flex-1 gap-1.5 bg-[oklch(0.42_0.18_145)] hover:bg-[oklch(0.36_0.18_145)] text-white disabled:opacity-60"
+            onClick={() => runAction(primaryAction)}
+          >
+            {supporting || checking || approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            {PRIMARY_ACTION_LABEL[primaryAction]}
           </Button>
-          <Button disabled variant="outline" className="flex-1 gap-1.5 border-[oklch(0.5_0.16_80)]/40 bg-[oklch(0.5_0.16_80)]/10 text-[oklch(0.4_0.16_80)] opacity-60">
-            <Undo2 className="w-4 h-4" /> Send back to supporter
-          </Button>
-          <Button disabled variant="outline" className="flex-1 gap-1.5 border-destructive/30 bg-destructive/10 text-destructive opacity-60">
-            <XCircle className="w-4 h-4" /> Reject
+          {canReject && (
+            <Button
+              disabled={isMutating}
+              variant="outline"
+              className="flex-1 gap-1.5 border-destructive/30 bg-destructive/10 text-destructive"
+              onClick={() => setRejectOpen((v) => !v)}
+            >
+              <XCircle className="w-4 h-4" /> Reject
+            </Button>
+          )}
+          <Button
+            disabled={isMutating}
+            variant="outline"
+            className="flex-1 gap-1.5 border-[oklch(0.5_0.16_80)]/40 bg-[oklch(0.5_0.16_80)]/10 text-[oklch(0.4_0.16_80)]"
+            onClick={() => setSendBackOpen((v) => !v)}
+          >
+            <Undo2 className="w-4 h-4" /> Send Back
           </Button>
         </div>
-        <p className="text-[11px] text-muted-foreground mt-2">
-          Not wired to a backend workflow action yet — there&apos;s no forward/send-back/reject endpoint on the API.
-        </p>
+        {!primaryAllowed && (
+          <p className="text-[11px] text-muted-foreground mt-2">
+            {PRIMARY_ACTION_LABEL[primaryAction]} isn&apos;t valid from the current stage ({currentStage ? STAGE_LABEL[currentStage] : NO_STAGE_LABEL}).
+          </p>
+        )}
+
+        {rejectOpen && (
+          <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+            <Textarea
+              placeholder="Reason for rejection…"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={2}
+              className="text-sm"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" variant="destructive" disabled={rejecting} onClick={handleReject} className="gap-1.5">
+                {rejecting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Confirm Reject
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setRejectOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {sendBackOpen && (
+          <div className="mt-3 rounded-lg border border-[var(--warning)]/40 bg-[var(--warning)]/5 p-3 space-y-2">
+            <Textarea
+              placeholder="Reason for sending back…"
+              value={sendBackReason}
+              onChange={(e) => setSendBackReason(e.target.value)}
+              rows={2}
+              className="text-sm"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground shrink-0">Send back to:</span>
+              <Select value={sendBackToStage} onValueChange={(v) => setSendBackToStage(v as ApplicationStage)}>
+                <SelectTrigger className="h-8 w-40 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INITIATED">Initiator</SelectItem>
+                  <SelectItem value="SUPPORTED">Supporter</SelectItem>
+                  <SelectItem value="CHECKING">Checker</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" disabled={sendingBack} onClick={handleSendBack} className="gap-1.5">
+                {sendingBack && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Confirm Send Back
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSendBackOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {creditScore && checklist && <CreditScoringSection creditScore={creditScore} checklist={checklist.items} />}

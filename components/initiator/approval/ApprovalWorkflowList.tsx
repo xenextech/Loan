@@ -19,18 +19,7 @@ import { Search, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApprovalApplications } from "./useApprovalApplications";
 import { useDebounce } from "@/lib/useDebounce";
-import type { ApprovalStageLabel } from "./types";
-
-const STAGE_BADGE_CLASS: Record<ApprovalStageLabel, string> = {
-  "Awaiting Review": "bg-primary/10 text-primary",
-  Checking: "bg-primary/10 text-primary",
-  Approved: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-[var(--success)]",
-  "CICL Hold": "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
-  Escalated: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
-  Rejected: "bg-destructive/10 text-destructive",
-  "Sent Back": "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
-  Disbursed: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-[var(--success)]",
-};
+import { STAGE_LABEL, STAGE_BADGE_CLASS, NO_STAGE_LABEL, NO_STAGE_BADGE_CLASS } from "./stageBadge";
 
 function TableSkeleton() {
   return (
@@ -149,8 +138,8 @@ export function ApprovalWorkflowList() {
                           <span className="text-xs font-semibold text-foreground">{app.amountLabel}</span>
                         </TableCell>
                         <TableCell className="py-3.5">
-                          <Badge className={cn(STAGE_BADGE_CLASS[app.stageLabel], "border-0 text-[10px] font-semibold")}>
-                            {app.stageLabel}
+                          <Badge className={cn(app.stage ? STAGE_BADGE_CLASS[app.stage] : NO_STAGE_BADGE_CLASS, "border-0 text-[10px] font-semibold")}>
+                            {app.stage ? STAGE_LABEL[app.stage] : NO_STAGE_LABEL}
                           </Badge>
                         </TableCell>
                         <TableCell className="py-3.5 hidden md:table-cell">

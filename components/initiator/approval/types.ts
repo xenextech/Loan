@@ -1,12 +1,4 @@
-export type ApprovalStageLabel =
-  | "Awaiting Review"
-  | "Checking"
-  | "Approved"
-  | "CICL Hold"
-  | "Escalated"
-  | "Rejected"
-  | "Sent Back"
-  | "Disbursed";
+import type { ApplicationStage } from "@/types/dashboard";
 
 /** Row shown in the Approval Workflow queue. */
 export interface ApprovalListItem {
@@ -17,28 +9,10 @@ export interface ApprovalListItem {
   loanType: string;
   amountLabel: string;
   grade: string;
-  stageLabel: ApprovalStageLabel;
+  stage: ApplicationStage | null;
   dsgirLabel: string;
   ltvLabel: string;
   daysOpen: number;
-}
-
-/**
- * Visual-only stage tracker types. The backend has no persisted
- * INITIATOR/SUPPORTER/CHECKER/APPROVER workflow state yet — these render an
- * illustrative stage strip (Initiator done, rest awaiting), not live status.
- */
-export type ApprovalRoleKey = "INITIATOR" | "SUPPORTER" | "CHECKER" | "APPROVER";
-
-export type StageStatus = "DONE" | "ACTIVE" | "AWAITING";
-
-export interface ApprovalStage {
-  role: ApprovalRoleKey;
-  roleLabel: string;
-  actorName: string;
-  actorTitle: string;
-  status: StageStatus;
-  comment?: string;
 }
 
 /** Illustrative credit-scoring parameter row — reference only, not sourced from a

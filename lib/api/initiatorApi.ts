@@ -198,7 +198,25 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
 export const initiatorApi = baseApi.injectEndpoints({
   overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (builder) => ({
-    // Step 1 "Next" — creates the initiator record for this application (POST).
+    // "New Application" page — starts a brand new application from scratch, no
+    // pre-existing applicationId (POST /applications/initiator). Uses the same
+    // CreateInitiatorApplicationDto field mapping as the per-id create below, so
+    // the full Applicant Information set (not just 2-3 fields) is captured up
+    // front. Every later step continues via updateInitiatorApplication (PATCH).
+    createNewInitiatorApplication: builder.mutation<LoanApplication, ApplicantInfo>({
+      query: (data) => ({
+        url: "/applications/initiator",
+        method: "POST",
+        body: buildInitiatorCreateBody(data),
+      }),
+      invalidatesTags: [
+        { type: "Application", id: "initiator-college-verified-list" },
+        { type: "Dashboard", id: "applications-list" },
+      ],
+    }),
+
+    // Step 1 "Next" — sets initiator information on an application that already
+    // exists (student-submitted, or just created via createNewInitiatorApplication above).
     createInitiatorApplication: builder.mutation<LoanApplication, { applicationId: string; data: ApplicantInfo }>({
       query: ({ applicationId, data }) => ({
         url: `/applications/${applicationId}/initiator`,
@@ -250,6 +268,7 @@ export const initiatorApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useCreateNewInitiatorApplicationMutation,
   useCreateInitiatorApplicationMutation,
   useUpdateInitiatorApplicationMutation,
   useGetCollegeVerifiedApplicationsQuery,

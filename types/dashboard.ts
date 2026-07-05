@@ -17,6 +17,13 @@ export type CommissionEntryStatus = "PENDING" | "INVOICE_DUE" | "PAID";
 export type AuditCategory = "APPROVAL" | "DISBURSEMENT" | "REPAYMENT" | "COMMISSION" | "SYSTEM";
 export type InsurancePolicyStatus = "ACTIVE" | "EXPIRING_SOON" | "EXPIRED";
 
+// Bank approval workflow stage — separate from ApplicationStatus (DRAFT/SUBMITTED).
+// `null` means the application hasn't entered the workflow yet.
+export type ApplicationStage = "INITIATED" | "SUPPORTED" | "CHECKING" | "APPROVED" | "REJECTED" | "SENT_BACK";
+
+/** Roles that participate in the approval-transition endpoints (`/dashboard/approval/:id/...`). */
+export type ApprovalActionRole = "SUPPORTER" | "CHECKER" | "CREDIT_MANAGER" | "APPROVER";
+
 export interface AuditUserRef {
   id: string;
   email: string;
@@ -78,7 +85,8 @@ export interface DashboardApplicationRow {
   type: string | null;
   amount: number | null;
   grade: string | null;
-  stage: "DRAFT" | "SUBMITTED";
+  status: "DRAFT" | "SUBMITTED";
+  stage: ApplicationStage | null;
   dsgir: number | null;
   ltv: number | null;
   daysOpen: number;
@@ -100,6 +108,15 @@ export interface ApprovalSummary {
   riskGrade: string | null;
   collateralText: string | null;
   insuranceAttached: boolean;
+}
+
+export interface RejectApplicationBody {
+  reason: string;
+}
+
+export interface SendBackApplicationBody {
+  reason: string;
+  toStage?: ApplicationStage;
 }
 
 export interface CreditScoreResult {

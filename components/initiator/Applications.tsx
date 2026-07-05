@@ -28,6 +28,7 @@ import { formatNPR } from "@/lib/formatters";
 import { useInitiatorApplications } from "./hooks/useInitiatorApplications";
 import { useGetDashboardApplicationsQuery } from "@/lib/api/dashboardApi";
 import { useDebounce } from "@/lib/useDebounce";
+import { STAGE_LABEL, STAGE_BADGE_CLASS, NO_STAGE_LABEL, NO_STAGE_BADGE_CLASS } from "./approval/stageBadge";
 
 type TabKey = "all" | "my-queue" | "pending-approval" | "disbursed" | "rejected" | "sent-back";
 
@@ -99,7 +100,8 @@ function AllApplicationsTable({ search }: { search: string }) {
                 <TableHead className="text-xs hidden sm:table-cell">Amount</TableHead>
                 <TableHead className="text-xs hidden lg:table-cell">Grade</TableHead>
                 <TableHead className="text-xs hidden lg:table-cell">DSGIR / LTV</TableHead>
-                <TableHead className="text-xs">Days Open</TableHead>
+                <TableHead className="text-xs">Stage</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Days Open</TableHead>
                 <TableHead className="text-xs text-right pr-5">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -131,6 +133,11 @@ function AllApplicationsTable({ search }: { search: string }) {
                     </span>
                   </TableCell>
                   <TableCell className="py-3.5">
+                    <Badge className={cn(app.stage ? STAGE_BADGE_CLASS[app.stage] : NO_STAGE_BADGE_CLASS, "border-0 text-[10px] font-semibold")}>
+                      {app.stage ? STAGE_LABEL[app.stage] : NO_STAGE_LABEL}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-3.5 hidden md:table-cell">
                     <span className="text-xs text-muted-foreground">{app.daysOpen}d</span>
                   </TableCell>
                   <TableCell className="py-3.5 text-right pr-5">
@@ -215,7 +222,7 @@ export default function InitiatorApplications() {
             Every student loan application, across every stage of the review pipeline.
           </p>
         </div>
-        <Button size="sm" className="h-9 text-sm gap-1.5 shrink-0" onClick={() => router.push("/apply")}>
+        <Button size="sm" className="h-9 text-sm gap-1.5 shrink-0" onClick={() => router.push("/initiator/applications/new")}>
           <Plus className="w-4 h-4" />
           New Application
         </Button>

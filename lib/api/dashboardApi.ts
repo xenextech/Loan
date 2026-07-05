@@ -48,6 +48,8 @@ import type {
   CommissionEntryStatus,
   AuditQuery,
   ManualAuditEntryBody,
+  RejectApplicationBody,
+  SendBackApplicationBody,
 } from "@/types/dashboard";
 
 type Paged<Q> = (Q & { page?: number; limit?: number }) | void;
@@ -112,6 +114,16 @@ const mapApplicationDetail = (record: InitiatorApplicationRecord): InitiatorAppl
   },
   familyMember: record.familyMember?.map((m) => ({ ...m, age: toOptionalNumber(m.age) })),
 });
+
+// A stage transition changes the application's own detail/summary/activity,
+// and can shift it in/out of the checker queue and the applications list.
+const approvalTransitionTags = (applicationId: string) => [
+  { type: "Dashboard" as const, id: applicationId },
+  { type: "Dashboard" as const, id: `approval-summary-${applicationId}` },
+  { type: "Dashboard" as const, id: `approval-activity-${applicationId}` },
+  { type: "Dashboard" as const, id: "applications-list" },
+  { type: "Dashboard" as const, id: "overview" },
+];
 
 const mapEmiEntry = (e: EmiScheduleEntryRecord): EmiScheduleEntryRecord => ({
   ...e,
@@ -194,6 +206,37 @@ export const dashboardApi = baseApi.injectEndpoints({
     }),
     getApprovalActivity: builder.query<PaginatedData<AuditLogRow>, { applicationId: string; page?: number; limit?: number }>({
       query: ({ applicationId, ...params }) => ({ url: `/dashboard/approval/${applicationId}/activity`, params }),
+      providesTags: (_r, _e, { applicationId }) => [{ type: "Dashboard", id: `approval-activity-${applicationId}` }],
+    }),
+
+    // Stage transitions — each is guarded server-side by role (support: SUPPORTER;
+    // check: CREDIT_MANAGER/CHECKER; approve: APPROVER; reject/send-back: multiple
+    // roles). The frontend role picker only decides which buttons are shown —
+    // the backend still enforces the real permission from the JWT.
+    supportApplication: builder.mutation<InitiatorApplicationRecord, string>({
+      query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/support`, method: "POST" }),
+      transformResponse: mapApplicationDetail,
+      invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
+    }),
+    checkApplication: builder.mutation<InitiatorApplicationRecord, string>({
+      query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/check`, method: "POST" }),
+      transformResponse: mapApplicationDetail,
+      invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
+    }),
+    approveApplication: builder.mutation<InitiatorApplicationRecord, string>({
+      query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/approve`, method: "POST" }),
+      transformResponse: mapApplicationDetail,
+      invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
+    }),
+    rejectApplication: builder.mutation<InitiatorApplicationRecord, { applicationId: string; data: RejectApplicationBody }>({
+      query: ({ applicationId, data }) => ({ url: `/dashboard/approval/${applicationId}/reject`, method: "POST", body: data }),
+      transformResponse: mapApplicationDetail,
+      invalidatesTags: (_r, _e, { applicationId }) => approvalTransitionTags(applicationId),
+    }),
+    sendBackApplication: builder.mutation<InitiatorApplicationRecord, { applicationId: string; data: SendBackApplicationBody }>({
+      query: ({ applicationId, data }) => ({ url: `/dashboard/approval/${applicationId}/send-back`, method: "POST", body: data }),
+      transformResponse: mapApplicationDetail,
+      invalidatesTags: (_r, _e, { applicationId }) => approvalTransitionTags(applicationId),
     }),
 
     // ─── 4. Disbursement ──────────────────────────────────────────────────
@@ -476,6 +519,11 @@ export const {
   useGetApprovalCreditScoreQuery,
   useGetApprovalNrbChecklistQuery,
   useGetApprovalActivityQuery,
+  useSupportApplicationMutation,
+  useCheckApplicationMutation,
+  useApproveApplicationMutation,
+  useRejectApplicationMutation,
+  useSendBackApplicationMutation,
   useGetDisbursementPendingQuery,
   useGetDisbursementConditionsQuery,
   useAddDisbursementConditionMutation,

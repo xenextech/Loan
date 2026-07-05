@@ -29,8 +29,11 @@ export type UserRole =
   | 'PARENT'
   | 'COLLEGE'
   | 'INITIATOR'
+  // Deprecated: use CREDIT_MANAGER — kept because existing rows/JWTs may still reference it.
+  | 'CHECKER'
   | 'SUPPORTER'
-  | 'APPROVER';
+  | 'APPROVER'
+  | 'CREDIT_MANAGER';
 
 export interface AuthUser {
   id: string;
@@ -280,6 +283,12 @@ export interface InitiatorApplicationRecord {
   id: string;
   applicationNumber: string;
   status: AppStatus;
+  stage?: import('./dashboard').ApplicationStage | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
+  sentBackReason?: string | null;
+  sentBackAt?: string | null;
+  sentBackToStage?: import('./dashboard').ApplicationStage | null;
   branch?: string;
   fullName?: string;
   email?: string;

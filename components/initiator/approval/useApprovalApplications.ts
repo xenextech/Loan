@@ -4,9 +4,8 @@ import type { ApprovalListItem } from "./types";
 
 /**
  * Every submitted application in the credit-ops pipeline, presented in the
- * approval-workflow shape — backed by GET /dashboard/applications. There's no
- * persisted stage field yet, so every row shows a single "Awaiting Review" stage
- * (see the backend README's note on the approval-stage gap).
+ * approval-workflow shape — backed by GET /dashboard/applications, which now
+ * returns the real bank approval `stage` alongside `status`.
  */
 export function useApprovalApplications(page = 1, limit = 20): {
   data: ApprovalListItem[];
@@ -24,7 +23,7 @@ export function useApprovalApplications(page = 1, limit = 20): {
       loanType: app.type ?? "—",
       amountLabel: app.amount !== null ? formatNPR(app.amount) : "—",
       grade: app.grade ?? "—",
-      stageLabel: "Awaiting Review",
+      stage: app.stage,
       dsgirLabel: app.dsgir !== null ? `${app.dsgir}%` : "—",
       ltvLabel: app.ltv !== null ? `${app.ltv}%` : "—",
       daysOpen: app.daysOpen,

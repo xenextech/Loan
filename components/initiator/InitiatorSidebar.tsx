@@ -10,8 +10,16 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
+import { useActingRole, ROLE_OPTIONS } from "./hooks/useActingRole";
 import {
   LayoutDashboard,
   FileText,
@@ -156,6 +164,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
+  const [actingRole, setActingRole] = useActingRole();
 
   const handleSignOut = () => {
     dispatch(clearCredentials());
@@ -178,6 +187,23 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 py-0.5 ml-auto shrink-0 font-bold tracking-wide">
           INITIATOR
         </Badge>
+      </div>
+
+      <div className="px-3 pt-3 shrink-0 space-y-1">
+        <p className="px-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Acting as</p>
+        <Select value={actingRole} onValueChange={(v) => setActingRole(v as (typeof ROLE_OPTIONS)[number]["value"])}>
+          <SelectTrigger className="h-8 w-full text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ROLE_OPTIONS.map((r) => (
+              <SelectItem key={r.value} value={r.value}>
+                {r.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="px-1 text-[10px] text-muted-foreground/70">Decides which approval actions you see on Approval Workflow.</p>
       </div>
 
       <NavLinks onNavigate={onNavigate} />
