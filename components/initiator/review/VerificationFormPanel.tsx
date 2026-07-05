@@ -22,13 +22,17 @@ export function VerificationFormPanel({ detail }: { detail: InitiatorApplication
         <LoanAssessmentForm
           applicationId={detail.id}
           initialValues={{
+            ...detail.assessment,
             applicantInfo: {
-              customerName: detail.studentName,
-              contactNumber: detail.studentInfo.phoneNumber,
-              nationalId: detail.studentInfo.identityNumber ?? "",
-              citizenshipNumber: detail.studentInfo.identityNumber ?? "",
-              citizenshipIssuedPlace: detail.studentInfo.issuedDistrict ?? "",
-              profession: detail.studentInfo.occupation ?? "",
+              // Previously-saved initiator answers win; fall back to the student's
+              // own submission data for fields not yet filled in by the initiator.
+              ...detail.assessment.applicantInfo,
+              customerName: detail.assessment.applicantInfo?.customerName || detail.studentName,
+              contactNumber: detail.assessment.applicantInfo?.contactNumber || detail.studentInfo.phoneNumber,
+              nationalId: detail.assessment.applicantInfo?.nationalId || detail.studentInfo.identityNumber || "",
+              citizenshipNumber: detail.assessment.applicantInfo?.citizenshipNumber || detail.studentInfo.identityNumber || "",
+              citizenshipIssuedPlace: detail.assessment.applicantInfo?.citizenshipIssuedPlace || detail.studentInfo.issuedDistrict || "",
+              profession: detail.assessment.applicantInfo?.profession || detail.studentInfo.occupation || "",
             },
           }}
         />

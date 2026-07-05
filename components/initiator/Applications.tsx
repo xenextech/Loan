@@ -22,10 +22,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Filter, CheckCircle2, Plus, Inbox } from "lucide-react";
+import { Search, Filter, CheckCircle2, Plus, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNPR } from "@/lib/formatters";
 import { useInitiatorApplications } from "./hooks/useInitiatorApplications";
+import { useGetDashboardApplicationsQuery } from "@/lib/api/dashboardApi";
 import { useDebounce } from "@/lib/useDebounce";
 
 type TabKey = "all" | "my-queue" | "pending-approval" | "disbursed" | "rejected" | "sent-back";
@@ -39,8 +40,9 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "sent-back", label: "Sent Back" },
 ];
 
-// "All" and "My Queue" are backed by the real college-verified review queue.
-// The rest need a broader all-stage application endpoint the backend doesn't expose yet.
+// "All" is backed by GET /dashboard/applications (every submitted application);
+// "My Queue" is backed by the college-verified review queue scoped to this initiator.
+// The rest need a real approval-stage field the backend doesn't have yet.
 const LIVE_TABS: TabKey[] = ["all", "my-queue"];
 
 function TableSkeleton() {
@@ -59,6 +61,113 @@ function TableSkeleton() {
         </div>
       ))}
     </div>
+  );
+}
+
+/** "All" tab — every submitted application across the platform (GET /dashboard/applications). */
+function AllApplicationsTable({ search }: { search: string }) {
+  const router = useRouter();
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(search, 300);
+  const { data, isLoading, isFetching } = useGetDashboardApplicationsQuery({ page, limit: 20, search: debouncedSearch || undefined });
+
+  const rows = data?.data ?? [];
+
+  return (
+    <>
+      <div className="flex items-center justify-end px-5 py-2 border-b border-border">
+        <p className="text-xs text-muted-foreground">
+          {isLoading ? "Loading…" : `${data?.meta.total ?? 0} application${data?.meta.total !== 1 ? "s" : ""}`}
+        </p>
+      </div>
+      {isLoading ? (
+        <TableSkeleton />
+      ) : rows.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
+          <Inbox className="w-8 h-8 text-muted-foreground" />
+          <p className="text-sm font-medium text-foreground">No applications found</p>
+          <p className="text-xs text-muted-foreground">Try adjusting your search.</p>
+        </div>
+      ) : (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-border">
+                <TableHead className="text-xs w-44 pl-5">Ref No.</TableHead>
+                <TableHead className="text-xs">Borrower</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Branch</TableHead>
+                <TableHead className="text-xs hidden sm:table-cell">Amount</TableHead>
+                <TableHead className="text-xs hidden lg:table-cell">Grade</TableHead>
+                <TableHead className="text-xs hidden lg:table-cell">DSGIR / LTV</TableHead>
+                <TableHead className="text-xs">Days Open</TableHead>
+                <TableHead className="text-xs text-right pr-5">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((app) => (
+                <TableRow
+                  key={app.id}
+                  className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
+                  onClick={() => router.push(`/initiator/applications/${app.id}`)}
+                >
+                  <TableCell className="pl-5 py-3.5">
+                    <p className="text-sm font-semibold text-foreground leading-tight">{app.refNo ?? "—"}</p>
+                  </TableCell>
+                  <TableCell className="py-3.5">
+                    <p className="text-sm font-semibold text-foreground leading-tight">{app.borrower ?? "—"}</p>
+                  </TableCell>
+                  <TableCell className="py-3.5 hidden md:table-cell">
+                    <p className="text-xs text-foreground max-w-44 truncate">{app.branch ?? "—"}</p>
+                  </TableCell>
+                  <TableCell className="py-3.5 hidden sm:table-cell">
+                    <span className="text-xs font-semibold text-foreground">{app.amount !== null ? formatNPR(app.amount) : "—"}</span>
+                  </TableCell>
+                  <TableCell className="py-3.5 hidden lg:table-cell">
+                    <span className="text-xs text-foreground">{app.grade ?? "—"}</span>
+                  </TableCell>
+                  <TableCell className="py-3.5 hidden lg:table-cell">
+                    <span className="text-xs text-muted-foreground">
+                      {app.dsgir !== null ? `${app.dsgir}%` : "—"} / {app.ltv !== null ? `${app.ltv}%` : "—"}
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-3.5">
+                    <span className="text-xs text-muted-foreground">{app.daysOpen}d</span>
+                  </TableCell>
+                  <TableCell className="py-3.5 text-right pr-5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-primary hover:bg-primary/10 hover:text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/initiator/applications/${app.id}`);
+                      }}
+                    >
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {data && data.meta.totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-3 border-t border-border">
+              <p className="text-xs text-muted-foreground">
+                Page {data.meta.page} of {data.meta.totalPages}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" disabled={!data.meta.hasPrev || isFetching} onClick={() => setPage((p) => p - 1)}>
+                  <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" disabled={!data.meta.hasNext || isFetching} onClick={() => setPage((p) => p + 1)}>
+                  Next <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </>
   );
 }
 
@@ -91,7 +200,7 @@ export default function InitiatorApplications() {
   }, [applications, debouncedSearch, collegeFilter]);
 
   const isLiveTab = LIVE_TABS.includes(tab);
-  const rows = isLiveTab ? filtered : [];
+  const rows = tab === "my-queue" ? filtered : [];
 
   return (
     <div className="p-6 lg:p-8">
@@ -129,7 +238,6 @@ export default function InitiatorApplications() {
                   )}
                 >
                   {t.label}
-                  {t.key === "all" && ` (${applications.length})`}
                 </button>
               ))}
             </div>
@@ -138,44 +246,50 @@ export default function InitiatorApplications() {
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by student, college, program…"
+                  placeholder={tab === "my-queue" ? "Search by student, college, program…" : "Search by borrower, ref no., citizenship, phone…"}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 h-9 text-sm"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-                <Select value={collegeFilter} onValueChange={setCollegeFilter}>
-                  <SelectTrigger className="h-9 w-44 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Colleges</SelectItem>
-                    {colleges.map((college) => (
-                      <SelectItem key={college} value={college}>
-                        {college}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {tab === "my-queue" && (
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <Select value={collegeFilter} onValueChange={setCollegeFilter}>
+                    <SelectTrigger className="h-9 w-44 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Colleges</SelectItem>
+                      {colleges.map((college) => (
+                        <SelectItem key={college} value={college}>
+                          {college}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-              <p className="text-xs text-muted-foreground sm:ml-auto shrink-0">
-                {isLoading ? "Loading…" : `${rows.length} application${rows.length !== 1 ? "s" : ""}`}
-              </p>
+              {tab === "my-queue" && (
+                <p className="text-xs text-muted-foreground sm:ml-auto shrink-0">
+                  {isLoading ? "Loading…" : `${rows.length} application${rows.length !== 1 ? "s" : ""}`}
+                </p>
+              )}
             </div>
           </CardHeader>
 
           <CardContent className="p-0">
-            {!isLiveTab ? (
+            {tab === "all" ? (
+              <AllApplicationsTable search={search} />
+            ) : !isLiveTab ? (
               <div className="flex flex-col items-center justify-center py-24 gap-3 text-center px-6">
                 <Inbox className="w-8 h-8 text-muted-foreground" />
                 <p className="text-sm font-medium text-foreground">Not available yet</p>
                 <p className="text-xs text-muted-foreground max-w-sm">
-                  This tab needs application-status data from every stage of the pipeline, which isn&apos;t exposed by
-                  the API yet. It will populate once that endpoint lands.
+                  This tab needs a real approval-stage field, which isn&apos;t exposed by the API yet. It will populate
+                  once that field exists.
                 </p>
               </div>
             ) : isLoading ? (

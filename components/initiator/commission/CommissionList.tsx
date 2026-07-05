@@ -1,7 +1,8 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,168 +23,241 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Filter, Inbox } from "lucide-react";
-import { useCommissionList } from "./useCommissionList";
-import { useDebounce } from "@/lib/useDebounce";
+import { Percent, Landmark, GraduationCap, Wallet, Inbox, Plus, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatNPR } from "@/lib/formatters";
+import {
+  useGetCommissionSummaryQuery,
+  useGetCommissionByBankQuery,
+  useGetCommissionByCollegeQuery,
+  useGetNrbCapComplianceQuery,
+  useCreateCommissionPartnerMutation,
+} from "@/lib/api/dashboardApi";
+import type { CommissionPartnerType, CommissionRateType } from "@/types/dashboard";
 
-function TableSkeleton() {
+type Tab = "banks" | "colleges" | "nrb-cap";
+
+function StatCard({ icon: Icon, label, value, iconBg }: { icon: React.ElementType; label: string; value: string; iconBg: string }) {
   return (
-    <div className="divide-y divide-border">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 px-5 py-3.5">
-          <div className="flex-1 space-y-1.5">
-            <Skeleton className="h-4 w-36 rounded" />
-            <Skeleton className="h-3 w-28 rounded" />
-          </div>
-          <Skeleton className="h-4 w-24 rounded hidden md:block" />
-          <Skeleton className="h-4 w-16 rounded hidden sm:block" />
-          <Skeleton className="h-6 w-24 rounded-full" />
-          <Skeleton className="h-7 w-16 rounded" />
+    <Card className="border-border shadow-none">
+      <CardContent className="px-5 py-5">
+        <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-4", iconBg)}>
+          <Icon className="w-4 h-4" />
         </div>
-      ))}
-    </div>
+        <p className="text-2xl font-bold text-foreground tabular-nums mb-0.5">{value}</p>
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      </CardContent>
+    </Card>
   );
 }
 
 export function CommissionList() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [collegeFilter, setCollegeFilter] = useState("all");
-  const debouncedSearch = useDebounce(search, 300);
+  const [tab, setTab] = useState<Tab>("banks");
+  const [showAddPartner, setShowAddPartner] = useState(false);
+  const [form, setForm] = useState({ partnerType: "BANK" as CommissionPartnerType, name: "", rateType: "PERCENTAGE" as CommissionRateType, rateValue: "", mouReference: "" });
 
-  const { data: applications, isLoading } = useCommissionList();
+  const { data: summary, isLoading: summaryLoading } = useGetCommissionSummaryQuery();
+  const { data: banks, isLoading: banksLoading } = useGetCommissionByBankQuery({ page: 1, limit: 50 });
+  const { data: colleges, isLoading: collegesLoading } = useGetCommissionByCollegeQuery({ page: 1, limit: 50 });
+  const { data: nrbCap, isLoading: nrbCapLoading } = useGetNrbCapComplianceQuery({ page: 1, limit: 50 });
+  const [createPartner, { isLoading: creating }] = useCreateCommissionPartnerMutation();
 
-  const colleges = useMemo(
-    () => Array.from(new Set(applications.map((app) => app.collegeName))).sort(),
-    [applications],
-  );
-
-  const filtered = useMemo(() => {
-    const q = debouncedSearch.trim().toLowerCase();
-    return applications.filter((app) => {
-      const matchesSearch =
-        !q ||
-        app.borrowerName.toLowerCase().includes(q) ||
-        app.refNo.toLowerCase().includes(q) ||
-        app.collegeName.toLowerCase().includes(q) ||
-        app.program.toLowerCase().includes(q);
-      const matchesCollege = collegeFilter === "all" || app.collegeName === collegeFilter;
-      return matchesSearch && matchesCollege;
-    });
-  }, [applications, debouncedSearch, collegeFilter]);
+  const handleCreatePartner = async () => {
+    if (!form.name.trim() || !form.rateValue) {
+      toast.error("Name and rate value are required");
+      return;
+    }
+    try {
+      await createPartner({
+        partnerType: form.partnerType,
+        name: form.name.trim(),
+        rateType: form.rateType,
+        rateValue: Number(form.rateValue),
+        mouReference: form.mouReference || undefined,
+      }).unwrap();
+      toast.success("Partner created.");
+      setForm({ partnerType: "BANK", name: "", rateType: "PERCENTAGE", rateValue: "", mouReference: "" });
+      setShowAddPartner(false);
+    } catch {
+      toast.error("Failed to create partner");
+    }
+  };
 
   return (
     <div className="p-6 lg:p-8">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Commission</h1>
-        <p className="text-sm text-muted-foreground mt-1">Bank and college commission tracking, per applicant.</p>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Commission Management</h1>
+          <p className="text-sm text-muted-foreground mt-1">Partner MOU rates and the commission earnings ledger.</p>
+        </div>
+        <Button size="sm" className="h-9 gap-1.5 shrink-0" onClick={() => setShowAddPartner((s) => !s)}>
+          <Plus className="w-4 h-4" /> Add Partner
+        </Button>
       </motion.div>
+
+      {summaryLoading ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard icon={Wallet} label="Total Earned (YTD)" value={formatNPR(summary?.totalEarned ?? 0)} iconBg="bg-primary/10 text-primary" />
+          <StatCard icon={Landmark} label="From Banks" value={formatNPR(summary?.fromBanks ?? 0)} iconBg="bg-[oklch(0.62_0.18_145)]/15 text-[oklch(0.42_0.18_145)]" />
+          <StatCard icon={GraduationCap} label="From Colleges" value={formatNPR(summary?.fromColleges ?? 0)} iconBg="bg-primary/8 text-primary" />
+          <StatCard icon={Percent} label="Pending Payment" value={formatNPR(summary?.pendingPayment ?? 0)} iconBg="bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)]" />
+        </div>
+      )}
+
+      {showAddPartner && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <Card className="border-border shadow-none">
+            <CardContent className="p-5 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <Select value={form.partnerType} onValueChange={(v) => setForm((f) => ({ ...f, partnerType: v as CommissionPartnerType }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BANK">Bank</SelectItem>
+                    <SelectItem value="COLLEGE">College</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input placeholder="Partner name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="h-9 text-sm sm:col-span-2" />
+                <Select value={form.rateType} onValueChange={(v) => setForm((f) => ({ ...f, rateType: v as CommissionRateType }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+                    <SelectItem value="FLAT">Flat</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input type="number" placeholder="Rate value" value={form.rateValue} onChange={(e) => setForm((f) => ({ ...f, rateValue: e.target.value }))} className="h-9 text-sm" />
+              </div>
+              <Input placeholder="MOU reference (optional)" value={form.mouReference} onChange={(e) => setForm((f) => ({ ...f, mouReference: e.target.value }))} className="h-9 text-sm max-w-sm" />
+              <Button size="sm" className="gap-1.5" disabled={creating} onClick={handleCreatePartner}>
+                {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                Save Partner
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
         <Card className="border-border shadow-none">
           <CardHeader className="px-5 py-4 border-b border-border">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by borrower, ref no., college…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 h-9 text-sm"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-                <Select value={collegeFilter} onValueChange={setCollegeFilter}>
-                  <SelectTrigger className="h-9 w-44 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Colleges</SelectItem>
-                    {colleges.map((college) => (
-                      <SelectItem key={college} value={college}>
-                        {college}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-xs text-muted-foreground sm:ml-auto shrink-0">
-                {isLoading ? "Loading…" : `${filtered.length} application${filtered.length !== 1 ? "s" : ""}`}
-              </p>
+            <div className="flex items-center gap-1 overflow-x-auto -mx-1 px-1">
+              {([
+                { key: "banks", label: "By Bank" },
+                { key: "colleges", label: "By College" },
+                { key: "nrb-cap", label: "NRB Cap Compliance" },
+              ] as { key: Tab; label: string }[]).map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setTab(t.key)}
+                  className={cn(
+                    "shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap",
+                    tab === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
           </CardHeader>
 
           <CardContent className="p-0">
-            {isLoading ? (
-              <TableSkeleton />
-            ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-3">
-                <Inbox className="w-8 h-8 text-muted-foreground" />
-                <p className="text-sm font-medium text-foreground">No applications found</p>
-                <p className="text-xs text-muted-foreground">Try adjusting your search or filters.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent border-border">
-                    <TableHead className="text-xs pl-5">Ref No.</TableHead>
-                    <TableHead className="text-xs">Borrower</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">College</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Program</TableHead>
-                    <TableHead className="text-xs hidden sm:table-cell">Amount</TableHead>
-                    <TableHead className="text-xs">Stage</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Days Open</TableHead>
-                    <TableHead className="text-xs text-right pr-5">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((app) => (
-                    <TableRow
-                      key={app.id}
-                      className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
-                      onClick={() => router.push(`/initiator/commission/${app.id}`)}
-                    >
-                      <TableCell className="pl-5 py-3.5">
-                        <span className="text-xs font-mono font-semibold text-foreground">{app.refNo}</span>
-                      </TableCell>
-                      <TableCell className="py-3.5">
-                        <p className="text-sm font-semibold text-foreground leading-tight">{app.borrowerName}</p>
-                      </TableCell>
-                      <TableCell className="py-3.5 hidden md:table-cell">
-                        <p className="text-xs text-foreground max-w-44 truncate">{app.collegeName}</p>
-                      </TableCell>
-                      <TableCell className="py-3.5 hidden lg:table-cell">
-                        <p className="text-xs text-foreground max-w-44 truncate">{app.program}</p>
-                      </TableCell>
-                      <TableCell className="py-3.5 hidden sm:table-cell">
-                        <span className="text-xs font-semibold text-foreground">{app.amountLabel}</span>
-                      </TableCell>
-                      <TableCell className="py-3.5">
-                        <Badge className="bg-primary/10 text-primary border-0 text-[10px] font-semibold">{app.stageLabel}</Badge>
-                      </TableCell>
-                      <TableCell className="py-3.5 hidden md:table-cell">
-                        <span className="text-xs text-muted-foreground">{app.daysOpen}d</span>
-                      </TableCell>
-                      <TableCell className="py-3.5 text-right pr-5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-primary hover:bg-primary/10 hover:text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/initiator/commission/${app.id}`);
-                          }}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
+            {tab === "banks" && (
+              banksLoading ? <Skeleton className="h-40 m-5 rounded" /> : !banks?.data.length ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-2"><Inbox className="w-7 h-7 text-muted-foreground" /><p className="text-sm text-muted-foreground">No bank partners yet</p></div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-border">
+                      <TableHead className="text-xs pl-5">Bank</TableHead>
+                      <TableHead className="text-xs">Rate</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">MOU Ref</TableHead>
+                      <TableHead className="text-xs">Loans</TableHead>
+                      <TableHead className="text-xs text-right pr-5">Total Earned</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {banks.data.map((row) => (
+                      <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40 border-border" onClick={() => router.push(`/initiator/commission/${row.id}`)}>
+                        <TableCell className="pl-5 py-3.5 text-sm font-semibold text-foreground">{row.name}</TableCell>
+                        <TableCell className="py-3.5 text-xs text-foreground">{row.rateValue}{row.rateType === "PERCENTAGE" ? "%" : ""}</TableCell>
+                        <TableCell className="py-3.5 text-xs text-muted-foreground hidden sm:table-cell">{row.mouReference ?? "—"}</TableCell>
+                        <TableCell className="py-3.5 text-xs text-muted-foreground">{row.loans}</TableCell>
+                        <TableCell className="py-3.5 text-right pr-5 text-xs font-semibold text-foreground">{formatNPR(row.totalEarned)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )
+            )}
+
+            {tab === "colleges" && (
+              collegesLoading ? <Skeleton className="h-40 m-5 rounded" /> : !colleges?.data.length ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-2"><Inbox className="w-7 h-7 text-muted-foreground" /><p className="text-sm text-muted-foreground">No college partners yet</p></div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-border">
+                      <TableHead className="text-xs pl-5">College</TableHead>
+                      <TableHead className="text-xs">Rate</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">MOU Ref</TableHead>
+                      <TableHead className="text-xs">Loans</TableHead>
+                      <TableHead className="text-xs text-right pr-5">Total Earned</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {colleges.data.map((row) => (
+                      <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40 border-border" onClick={() => router.push(`/initiator/commission/${row.id}`)}>
+                        <TableCell className="pl-5 py-3.5 text-sm font-semibold text-foreground">{row.name}</TableCell>
+                        <TableCell className="py-3.5 text-xs text-foreground">{row.rateValue}{row.rateType === "PERCENTAGE" ? "%" : ""}</TableCell>
+                        <TableCell className="py-3.5 text-xs text-muted-foreground hidden sm:table-cell">{row.mouReference ?? "—"}</TableCell>
+                        <TableCell className="py-3.5 text-xs text-muted-foreground">{row.loans}</TableCell>
+                        <TableCell className="py-3.5 text-right pr-5 text-xs font-semibold text-foreground">{formatNPR(row.totalEarned)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )
+            )}
+
+            {tab === "nrb-cap" && (
+              nrbCapLoading ? <Skeleton className="h-40 m-5 rounded" /> : !nrbCap?.data.length ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-2"><Inbox className="w-7 h-7 text-muted-foreground" /><p className="text-sm text-muted-foreground">No applications with a credit limit set yet</p></div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-border">
+                      <TableHead className="text-xs pl-5">Borrower</TableHead>
+                      <TableHead className="text-xs">Credit Limit</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">NRB Cap</TableHead>
+                      <TableHead className="text-xs">Utilization</TableHead>
+                      <TableHead className="text-xs text-right pr-5">Compliant</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {nrbCap.data.map((row) => (
+                      <TableRow key={row.applicationId} className="border-border">
+                        <TableCell className="pl-5 py-3.5">
+                          <p className="text-sm font-semibold text-foreground leading-tight">{row.borrower ?? "—"}</p>
+                          <p className="text-[11px] text-muted-foreground font-mono">{row.refNo}</p>
+                        </TableCell>
+                        <TableCell className="py-3.5 text-xs text-foreground">{formatNPR(row.creditLimit)}</TableCell>
+                        <TableCell className="py-3.5 text-xs text-muted-foreground hidden sm:table-cell">{formatNPR(row.nrbCapAmount)}</TableCell>
+                        <TableCell className="py-3.5 text-xs text-foreground">{row.utilizationPercent}%</TableCell>
+                        <TableCell className="py-3.5 text-right pr-5">
+                          <Badge className={cn(row.compliant ? "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success" : "bg-destructive/10 text-destructive", "border-0 text-[10px] font-semibold")}>
+                            {row.compliant ? "Compliant" : "Exceeds Cap"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )
             )}
           </CardContent>
         </Card>

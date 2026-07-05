@@ -1,88 +1,59 @@
 "use client";
 
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
-import { ShieldCheck } from "lucide-react";
-import { SectionCard } from "../ui/SectionCard";
-import { RepeatableTable, type RepeatableTableColumn } from "../ui/RepeatableTable";
+import { useFormContext, useWatch } from "react-hook-form";
+import { ShieldCheck, UserCheck } from "lucide-react";
+import { SectionCard, FormSection } from "../ui/SectionCard";
 import { TextField } from "../fields/TextField";
+import { TextareaField } from "../fields/TextareaField";
 import { NumberField } from "../fields/NumberField";
 import { SelectField } from "../fields/SelectField";
 import { DateField } from "../fields/DateField";
+import { ReadonlyField } from "../ui/ReadonlyField";
+import { YES_NO_OPTIONS } from "../schema";
 import type { LoanAssessmentFormValues } from "../schema";
 
-function SecurityLtvCell({ index }: { index: number }) {
-  const { control } = useFormContext<LoanAssessmentFormValues>();
-  const row = useWatch({ control, name: `security.securities.${index}` });
-  const fmv = Number(row?.fmv);
-  const proposedLoan = Number(row?.proposedLoan);
-  const ltv = fmv > 0 && proposedLoan >= 0 ? Math.round((proposedLoan / fmv) * 1000) / 10 : undefined;
-
-  return (
-    <div className="h-8 flex items-center rounded-lg border border-dashed border-border bg-muted/40 px-2.5 text-sm text-muted-foreground min-w-20">
-      {ltv === undefined ? "—" : `${ltv}%`}
-    </div>
-  );
-}
+const toOptions = (values: readonly string[]) => values.map((v) => ({ value: v, label: v }));
 
 export function Step5SecurityGuarantee() {
   const { control } = useFormContext<LoanAssessmentFormValues>();
+  const security = useWatch({ control, name: "security" });
 
-  const securities = useFieldArray({ control, name: "security.securities" });
-  const guarantors = useFieldArray({ control, name: "security.guarantors" });
-
-  const securityColumns: RepeatableTableColumn[] = [
-    { key: "securityDetails", header: "Security Details", render: (i) => <TextField name={`security.securities.${i}.securityDetails`} label="" placeholder="Description of security" /> },
-    { key: "fmv", header: "FMV", render: (i) => <NumberField name={`security.securities.${i}.fmv`} label="" /> },
-    { key: "proposedLoan", header: "Proposed Loan", render: (i) => <NumberField name={`security.securities.${i}.proposedLoan`} label="" /> },
-    { key: "ltv", header: "Loan to Value", render: (i) => <SecurityLtvCell index={i} /> },
-  ];
-
-  const guarantorColumns: RepeatableTableColumn[] = [
-    { key: "guarantorName", header: "Guarantor", render: (i) => <TextField name={`security.guarantors.${i}.guarantorName`} label="" placeholder="Full name" /> },
-    { key: "relationship", header: "Relationship", render: (i) => <TextField name={`security.guarantors.${i}.relationship`} label="" placeholder="e.g. Father" /> },
-    { key: "age", header: "Age", className: "w-16", render: (i) => <NumberField name={`security.guarantors.${i}.age`} label="" /> },
-    { key: "netWorth", header: "Net Worth", render: (i) => <NumberField name={`security.guarantors.${i}.netWorth`} label="" /> },
-    { key: "consent", header: "Consent", render: (i) => <SelectField name={`security.guarantors.${i}.consent`} label="" options={[{ value: "Yes", label: "Yes" }, { value: "No", label: "No" }]} placeholder="—" /> },
-    { key: "ciclStatus", header: "CICL Status", render: (i) => <TextField name={`security.guarantors.${i}.ciclStatus`} label="" placeholder="Clear / Listed" /> },
-    { key: "ciclRemarks", header: "CICL Remarks", render: (i) => <TextField name={`security.guarantors.${i}.ciclRemarks`} label="" placeholder="Remarks" /> },
-    { key: "blacklistedDate", header: "Blacklisted Date", render: (i) => <DateField name={`security.guarantors.${i}.blacklistedDate`} label="" /> },
-    { key: "releasedDate", header: "Released Date", render: (i) => <DateField name={`security.guarantors.${i}.releasedDate`} label="" /> },
-  ];
+  const fmv = Number(security?.fmv);
+  const proposedLoan = Number(security?.proposedLoan);
+  const calculatedLtv = fmv > 0 && proposedLoan >= 0 ? Math.round((proposedLoan / fmv) * 1000) / 10 : undefined;
 
   return (
     <div className="space-y-5">
-      <SectionCard icon={ShieldCheck} title="Security" description="Collateral pledged against this facility.">
-        <RepeatableTable
-          columns={securityColumns}
-          rowCount={securities.fields.length}
-          onAdd={() => securities.append({ securityDetails: "", fmv: undefined, proposedLoan: undefined })}
-          onRemove={securities.remove}
-          addLabel="Add Security"
-          emptyLabel="No securities added yet."
-        />
+      <SectionCard icon={ShieldCheck} title="Security" description="Collateral pledged against this facility. The backend stores a single security record per application.">
+        <FormSection>
+          <TextField name="security.securityDetails" label="Security Details" placeholder="Description of security" />
+          <NumberField name="security.fmv" label="Fair Market Value (FMV)" suffix="NPR" />
+          <NumberField name="security.proposedLoan" label="Proposed Loan" suffix="NPR" />
+          <NumberField name="security.financeAgainstFmv" label="Finance Against FMV" suffix="%" />
+        </FormSection>
+        <div className="mt-4">
+          <ReadonlyField
+            label="Calculated Loan to Value"
+            value={calculatedLtv === undefined ? "—" : `${calculatedLtv}%`}
+            hint="Proposed loan ÷ FMV — for reference, enter the approved figure into Finance Against FMV above."
+          />
+        </div>
       </SectionCard>
 
-      <SectionCard title="Personal Guarantee" description="Guarantors backing the facility.">
-        <RepeatableTable
-          columns={guarantorColumns}
-          rowCount={guarantors.fields.length}
-          onAdd={() =>
-            guarantors.append({
-              guarantorName: "",
-              relationship: "",
-              age: undefined,
-              netWorth: undefined,
-              consent: undefined,
-              ciclStatus: "",
-              ciclRemarks: "",
-              blacklistedDate: "",
-              releasedDate: "",
-            })
-          }
-          onRemove={guarantors.remove}
-          addLabel="Add Guarantor"
-          emptyLabel="No guarantors added yet."
-        />
+      <SectionCard icon={UserCheck} title="Personal Guarantee" description="The backend stores a single guarantor per application.">
+        <FormSection>
+          <TextField name="security.guarantor.nameOfGuarantor" label="Guarantor Name" placeholder="Full name" />
+          <TextField name="security.guarantor.relationship" label="Relationship" placeholder="e.g. Father" />
+          <NumberField name="security.guarantor.age" label="Age" />
+          <NumberField name="security.guarantor.netWorth" label="Net Worth" suffix="NPR" />
+          <SelectField name="security.guarantor.guarantorConsent" label="Guarantor Consent" options={toOptions(YES_NO_OPTIONS)} />
+          <SelectField name="security.guarantor.ciclStatus" label="CICL Status Clear" options={toOptions(YES_NO_OPTIONS)} />
+          <DateField name="security.guarantor.blackListedDate" label="Blacklisted Date" />
+          <DateField name="security.guarantor.releasedDate" label="Released Date" />
+        </FormSection>
+        <div className="mt-4">
+          <TextareaField name="security.guarantor.ciclRemarks" label="CICL Remarks" rows={3} />
+        </div>
       </SectionCard>
     </div>
   );

@@ -2,7 +2,12 @@ import { Check, ChevronRight, Circle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ApprovalStage } from "./types";
 
-/** Compact horizontal step tracker: Initiator -> Supporter -> Checker -> Approver. */
+/**
+ * Compact horizontal step tracker: Initiator -> Supporter -> Checker -> Approver.
+ * Visual only — the backend has no persisted per-role workflow state yet, so the
+ * stages passed in here are illustrative (see `realDataStages()` in
+ * ApprovalWorkflowDetail), not a live status read from the API.
+ */
 export function StageStepper({ stages }: { stages: ApprovalStage[] }) {
   return (
     <div className="flex items-stretch rounded-lg border border-border overflow-hidden">

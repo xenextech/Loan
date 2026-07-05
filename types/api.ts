@@ -237,12 +237,50 @@ export interface CollegeVerifiedItem {
   collegeVerification: CollegeVerification;
 }
 
+export interface InitiatorFamilyMemberRecord {
+  id: string;
+  personName?: string;
+  age?: number;
+  qualification?: string;
+  relationshipWithBorrower?: string;
+  occupationSocialInvolvement?: string;
+}
+
+export interface InitiatorPersonalGuaranteeRecord {
+  nameOfGuarantor?: string;
+  relationship?: string;
+  age?: number;
+  netWorth?: number;
+  guarantorConsent?: boolean;
+  ciclStatus?: boolean;
+  ciclRemarks?: string;
+  blackListedDate?: string;
+  releasedDate?: string;
+}
+
+export interface InitiatorInsuranceRecord {
+  insuredAssets?: string;
+  valueOfAssets?: number;
+  sumOfInsurance?: number;
+  insuranceCoverage?: number;
+  insuranceRemarks?: string;
+}
+
+export interface InitiatorRepaymentCapacityRecord {
+  insuredAssets?: number;
+  valueOfAssets?: number;
+  sumOfInsurance?: number;
+  insuranceCoverage?: number;
+  insuranceRemarks?: string;
+}
+
 // Full record returned by GET /applications/:applicationId/initiator — a plain
 // LoanApplication row with every relation the initiator review screen needs.
 export interface InitiatorApplicationRecord {
   id: string;
   applicationNumber: string;
   status: AppStatus;
+  branch?: string;
   fullName?: string;
   email?: string;
   phoneNumber?: string;
@@ -271,6 +309,82 @@ export interface InitiatorApplicationRecord {
   documents?: Document[];
   collegeVerification?: CollegeVerification;
   parentVerification?: ParentVerification;
+
+  // ─── Initiator credit-appraisal fields (flat on LoanApplication) ────────────
+  // Basic Information
+  customerName?: string;
+  relationshipStartDate?: string;
+  customerGroup?: string;
+  obligorNumber?: number;
+  permanentAddress?: string;
+  correspondenceAddress?: string;
+  profession?: string;
+  repaymentSource?: string;
+  citizenshipNumber?: string;
+  citizenshipIssuedDate?: string;
+  citizenshipIssuedPlace?: string;
+  nidNumber?: string;
+  panNumber?: string;
+  licenseNumber?: string;
+  bankingRelationship?: string;
+  isBlacklisted?: boolean;
+  // NRB Reporting
+  baselClassification?: string;
+  baselRiskWeight?: number;
+  nrb93SectorCode?: string;
+  nrb93KaProductCode?: string;
+  nrb94SecurityTypeCode?: string;
+  sis0IndustrialClassification?: string;
+  sis1ProductType?: string;
+  sis2Sector?: string;
+  sis3Security?: string;
+  sis4InstitutionalGroupingOfBorrower?: string;
+  sis9PriorityLending?: string;
+  greenFinanceEconomicSector?: string;
+  greenFinanceSubSector?: string;
+  greenFinanceTaxonomyTag?: string;
+  // Credit Scoring
+  creditLimit?: number;
+  loanToValueRatio?: number;
+  dsgir?: number;
+  performanceYears?: number;
+  bankingRelationshipScore?: number;
+  parentsBorrowingsWithBFIs?: string;
+  sourceOfIncomeScore?: number;
+  operationOfInstitution?: number;
+  creditRiskScoring?: string;
+  riskGrade?: string;
+  totalScore?: number;
+  totalPercentage?: number;
+  // Applicant Background / This Facility
+  facility?: string;
+  purpose?: string;
+  limit?: number;
+  period?: number;
+  interestRate?: number;
+  fee?: number;
+  remarks?: string;
+  familyMember?: InitiatorFamilyMemberRecord[];
+  // Security
+  securityDetails?: string;
+  fmv?: number;
+  proposedLoan?: number;
+  financeAgainstFmv?: number;
+  personalGuarantee?: InitiatorPersonalGuaranteeRecord;
+  // Insurance / Repayment Capacity — both are relations, not flat fields
+  insurance?: InitiatorInsuranceRecord;
+  repaymentCapacity?: InitiatorRepaymentCapacityRecord;
+  // Risk / Recommendation
+  amlRisk?: string;
+  waiver?: string;
+  termsAndConditions?: string;
+  bankingRelationshipRemarks?: string;
+  keyCreditRiskMitigation?: string;
+  justificationOfLoan?: string;
+  accountStrategy?: string;
+  disbursementSection?: string;
+  utilizationOfFund?: string;
+  conclusionAndRecommendation?: string;
 }
 
 // ─── Document ─────────────────────────────────────────────────────────────────

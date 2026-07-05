@@ -8,10 +8,10 @@ export function Step7RiskAssessment() {
       <SectionCard icon={AlertOctagon} title="Risk Assessment" description="Narrative risk analysis for the credit committee.">
         <div className="space-y-5">
           <TextareaField
-            name="riskAssessment.moneyLaunderingRisk"
-            label="Money Laundering / Terrorist Financing Risks"
-            description="The KYC procedure for the client has been completed as a comprehensive screening confirmed that the individual is not listed under any blacklists, Politically Exposed Persons (PEPs), domestic or foreign PEP registries, NRB Rokka restrictions, or multiple account databases. The proposed agriculture loan amount will be utilized for the agriculture expenses as mentioned in the plan sheet. Thus, there will not be any money laundering and terrorist financing risk."
-            placeholder="Assess ML/TF risk exposure for this applicant and facility…"
+            name="riskAssessment.amlRisk"
+            label="AML / CFT Risk"
+            description="The KYC procedure for the client has been completed as a comprehensive screening confirmed that the individual is not listed under any blacklists, Politically Exposed Persons (PEPs), domestic or foreign PEP registries, NRB Rokka restrictions, or multiple account databases. The proposed loan amount will be utilized for the expenses as mentioned in the plan sheet. Thus, there will not be any money laundering and terrorist financing risk."
+            placeholder="Assess AML/CFT risk exposure for this applicant and facility…"
             rows={4}
           />
           <TextareaField
@@ -21,7 +21,7 @@ export function Step7RiskAssessment() {
             rows={4}
           />
           <TextareaField
-            name="riskAssessment.bankingRelationshipRisk"
+            name="riskAssessment.bankingRelationshipRemarks"
             label="Banking Relationship"
             placeholder="Assess the strength and risk of the banking relationship…"
             rows={4}

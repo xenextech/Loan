@@ -1,67 +1,46 @@
 import { Landmark } from "lucide-react";
 import { SectionCard, FormSection } from "../ui/SectionCard";
-import { ComboboxField } from "../fields/ComboboxField";
-import { SelectField } from "../fields/SelectField";
 import { TextField } from "../fields/TextField";
 import { NumberField } from "../fields/NumberField";
-import { TextareaField } from "../fields/TextareaField";
-import {
-  SECTOR_CLASSIFICATION_OPTIONS,
-  LOAN_TYPE_OPTIONS,
-  PURPOSE_OF_LOAN_OPTIONS,
-  SECURITY_TYPE_OPTIONS,
-  INTEREST_RATE_TYPE_OPTIONS,
-  CREDIT_RATING_AGENCY_OPTIONS,
-  LOAN_CLASSIFICATION_OPTIONS,
-  YES_NO_OPTIONS,
-} from "../schema";
-
-const toOptions = (values: readonly string[]) => values.map((v) => ({ value: v, label: v }));
 
 export function Step2NrbReporting() {
   return (
     <div className="space-y-5">
       <SectionCard
         icon={Landmark}
-        title="Classification"
-        description="Regulatory classification for the NRB return. Fields with search support long option lists."
+        title="Basel Classification"
+        description="Basel exposure classification and risk weight used for NRB capital adequacy reporting."
       >
         <FormSection>
-          <ComboboxField name="nrbReporting.sectorClassification" label="Sector Classification" options={SECTOR_CLASSIFICATION_OPTIONS} />
-          <TextField name="nrbReporting.productCode" label="Product Code" placeholder="Core banking product code" />
-          <ComboboxField name="nrbReporting.loanType" label="Loan Type" options={LOAN_TYPE_OPTIONS} />
-          <ComboboxField name="nrbReporting.purposeOfLoan" label="Purpose of Loan" options={PURPOSE_OF_LOAN_OPTIONS} />
-          <ComboboxField name="nrbReporting.securityType" label="Security Type" options={SECURITY_TYPE_OPTIONS} />
-          <SelectField name="nrbReporting.interestRateType" label="Interest Rate Type" options={toOptions(INTEREST_RATE_TYPE_OPTIONS)} />
+          <TextField name="nrbReporting.baselClassification" label="Basel Classification" placeholder="e.g. Regulatory Retail Claims" />
+          <NumberField name="nrbReporting.baselRiskWeight" label="Basel Risk Weight" suffix="%" />
         </FormSection>
       </SectionCard>
 
-      <SectionCard title="Pricing">
+      <SectionCard title="NRB Directive Codes" description="NRB Directive 9.3 (sector/product) and 9.4 (security type) codes.">
         <FormSection columns={3}>
-          <NumberField name="nrbReporting.baseRate" label="Base Rate" suffix="%" />
-          <NumberField name="nrbReporting.premium" label="Premium" suffix="%" />
-          <NumberField name="nrbReporting.effectiveInterestRate" label="Effective Interest Rate" suffix="%" />
+          <TextField name="nrbReporting.nrb93SectorCode" label="NRB 9.3 Sector Code" placeholder="e.g. SEC-12" />
+          <TextField name="nrbReporting.nrb93KaProductCode" label="NRB 9.3(Ka) Product Code" placeholder="e.g. PROD-05" />
+          <TextField name="nrbReporting.nrb94SecurityTypeCode" label="NRB 9.4 Security Type Code" placeholder="e.g. SEC-TYP-01" />
         </FormSection>
       </SectionCard>
 
-      <SectionCard title="Credit Rating & Classification">
-        <FormSection>
-          <ComboboxField name="nrbReporting.creditRatingAgency" label="Credit Rating Agency" options={CREDIT_RATING_AGENCY_OPTIONS} />
-          <TextField name="nrbReporting.creditRatingGrade" label="Credit Rating Grade" placeholder="e.g. A+, BBB" />
-          <ComboboxField name="nrbReporting.loanClassification" label="Loan Classification" options={LOAN_CLASSIFICATION_OPTIONS} />
-          <NumberField name="nrbReporting.provisioningPercentage" label="Provisioning" suffix="%" />
-        </FormSection>
-      </SectionCard>
-
-      <SectionCard title="Compliance Flags">
+      <SectionCard title="SIS Classification" description="Statistical Information System codes reported to NRB.">
         <FormSection columns={3}>
-          <SelectField name="nrbReporting.restructured" label="Restructured" options={toOptions(YES_NO_OPTIONS)} />
-          <SelectField name="nrbReporting.rescheduled" label="Rescheduled" options={toOptions(YES_NO_OPTIONS)} />
-          <SelectField name="nrbReporting.insiderLending" label="Insider Lending" options={toOptions(YES_NO_OPTIONS)} />
+          <TextField name="nrbReporting.sis0IndustrialClassification" label="SIS 0 — Industrial Classification" placeholder="e.g. SIS-IND-45" />
+          <TextField name="nrbReporting.sis1ProductType" label="SIS 1 — Product Type" placeholder="e.g. SIS-PT-02" />
+          <TextField name="nrbReporting.sis2Sector" label="SIS 2 — Sector" placeholder="e.g. Private Sector" />
+          <TextField name="nrbReporting.sis3Security" label="SIS 3 — Security" placeholder="e.g. Real Estate Mortgage" />
+          <TextField name="nrbReporting.sis4InstitutionalGroupingOfBorrower" label="SIS 4 — Institutional Grouping of Borrower" placeholder="e.g. Non-Financial Corporation" />
+          <TextField name="nrbReporting.sis9PriorityLending" label="SIS 9 — Priority Lending" placeholder="e.g. Agriculture-01" />
         </FormSection>
-        <FormSection columns={1} className="mt-4">
-          <TextField name="nrbReporting.singleObligorLimitStatus" label="Single Obligor Limit Status" placeholder="Within Limit / Exceeds Limit" />
-          <TextareaField name="nrbReporting.regulatoryReportingRemarks" label="Regulatory Reporting Remarks" rows={4} />
+      </SectionCard>
+
+      <SectionCard title="Green Finance" description="Green Finance taxonomy tagging, where applicable.">
+        <FormSection columns={3}>
+          <TextField name="nrbReporting.greenFinanceEconomicSector" label="Economic Sector" placeholder="e.g. Renewable Energy" />
+          <TextField name="nrbReporting.greenFinanceSubSector" label="Sub-Sector" placeholder="e.g. Solar Power" />
+          <TextField name="nrbReporting.greenFinanceTaxonomyTag" label="Taxonomy Tag" placeholder="e.g. TAX-GREEN-2026" />
         </FormSection>
       </SectionCard>
     </div>

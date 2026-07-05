@@ -1,39 +1,3 @@
-/** The four sequential desks a credit application passes through before disbursement. */
-export type ApprovalRoleKey = "INITIATOR" | "SUPPORTER" | "CHECKER" | "APPROVER";
-
-export type StageStatus = "DONE" | "ACTIVE" | "AWAITING";
-
-export interface ApprovalStage {
-  role: ApprovalRoleKey;
-  roleLabel: string;
-  actorName: string;
-  actorTitle: string;
-  status: StageStatus;
-  comment?: string;
-  decidedAt?: string;
-}
-
-export interface CreditScoringParameter {
-  label: string;
-  value: string;
-  weight: number;
-  score: number;
-}
-
-export interface ComplianceCheck {
-  label: string;
-  passed: boolean;
-}
-
-export interface ActivityEvent {
-  role: ApprovalRoleKey;
-  roleLabel: string;
-  actorName: string;
-  action: string;
-  note: string;
-  timestamp: string;
-}
-
 export type ApprovalStageLabel =
   | "Awaiting Review"
   | "Checking"
@@ -59,24 +23,29 @@ export interface ApprovalListItem {
   daysOpen: number;
 }
 
-export interface ApprovalDetail extends ApprovalListItem {
-  citizenshipNumber: string;
-  riskGrade: string;
-  collateral: string;
-  insuranceStatus: string;
-  offerLetterRef: string;
-  offerLetterCollege: string;
-  offerLetterVerified: boolean;
-  ciclStatus: string;
-  stages: ApprovalStage[];
-  creditScore: {
-    weighted: number;
-    max: number;
-    grade: string;
-    riskLabel: string;
-    percentage: number;
-    parameters: CreditScoringParameter[];
-  };
-  complianceChecks: ComplianceCheck[];
-  activity: ActivityEvent[];
+/**
+ * Visual-only stage tracker types. The backend has no persisted
+ * INITIATOR/SUPPORTER/CHECKER/APPROVER workflow state yet — these render an
+ * illustrative stage strip (Initiator done, rest awaiting), not live status.
+ */
+export type ApprovalRoleKey = "INITIATOR" | "SUPPORTER" | "CHECKER" | "APPROVER";
+
+export type StageStatus = "DONE" | "ACTIVE" | "AWAITING";
+
+export interface ApprovalStage {
+  role: ApprovalRoleKey;
+  roleLabel: string;
+  actorName: string;
+  actorTitle: string;
+  status: StageStatus;
+  comment?: string;
+}
+
+/** Illustrative credit-scoring parameter row — reference only, not sourced from a
+ *  per-parameter scoring API. The real, live figure is the overall score/grade above. */
+export interface CreditScoringParameter {
+  label: string;
+  value: string;
+  weight: number;
+  score: number;
 }

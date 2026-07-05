@@ -50,79 +50,31 @@ export const applicantInfoSchema = z.object({
 });
 
 // ─── Step 2 — NRB Reporting ─────────────────────────────────────────────────
-
-export const SECTOR_CLASSIFICATION_OPTIONS = [
-  "Education",
-  "Agriculture",
-  "Consumer Loan",
-  "Industry & Manufacturing",
-  "Construction",
-  "Service",
-  "Wholesale & Retail Trade",
-  "Others",
-] as const;
-
-export const LOAN_TYPE_OPTIONS = ["Term Loan", "Overdraft", "Working Capital", "Demand Loan"] as const;
-
-export const PURPOSE_OF_LOAN_OPTIONS = [
-  "Tuition Fee Financing",
-  "Living Expense Financing",
-  "Study Abroad Financing",
-  "Skill Development",
-  "Others",
-] as const;
-
-export const SECURITY_TYPE_OPTIONS = [
-  "Fixed Deposit Receipt",
-  "Land & Building",
-  "Personal Guarantee",
-  "Gold / Ornaments",
-  "Government Bonds",
-  "Others",
-] as const;
-
-export const INTEREST_RATE_TYPE_OPTIONS = ["Fixed", "Floating"] as const;
-
-export const CREDIT_RATING_AGENCY_OPTIONS = [
-  "ICRA Nepal",
-  "CARE Ratings Nepal",
-  "Not Rated",
-] as const;
-
-export const LOAN_CLASSIFICATION_OPTIONS = [
-  "Pass",
-  "Watchlist",
-  "Substandard",
-  "Doubtful",
-  "Loss",
-] as const;
+// Field names match the backend's actual regulatory codes exactly (Basel
+// classification/risk weight, NRB Directive 9.3/9.4 codes, SIS classification,
+// Green Finance taxonomy) — these are bank-assigned codes rather than a fixed
+// option list, so every field below is free text.
 
 export const YES_NO_OPTIONS = ["Yes", "No"] as const;
 
-export const SINGLE_OBLIGOR_LIMIT_OPTIONS = ["Within Limit", "Exceeds Limit"] as const;
-
 export const nrbReportingSchema = z.object({
-  sectorClassification: optionalText(120),
-  productCode: optionalText(60),
-  loanType: optionalText(60),
-  purposeOfLoan: optionalText(120),
-  securityType: optionalText(120),
-  interestRateType: z.enum(["Fixed", "Floating"]).optional(),
-  baseRate: optionalNumber,
-  premium: optionalNumber,
-  effectiveInterestRate: optionalNumber,
-  creditRatingAgency: optionalText(120),
-  creditRatingGrade: optionalText(30),
-  loanClassification: optionalText(60),
-  provisioningPercentage: optionalNumber,
-  restructured: z.enum(["Yes", "No"]).optional(),
-  rescheduled: z.enum(["Yes", "No"]).optional(),
-  insiderLending: z.enum(["Yes", "No"]).optional(),
-  singleObligorLimitStatus: optionalText(60),
-  regulatoryReportingRemarks: optionalText(1000),
+  baselClassification: optionalText(120),
+  baselRiskWeight: optionalNumber,
+  nrb93SectorCode: optionalText(60),
+  nrb93KaProductCode: optionalText(60),
+  nrb94SecurityTypeCode: optionalText(60),
+  sis0IndustrialClassification: optionalText(60),
+  sis1ProductType: optionalText(60),
+  sis2Sector: optionalText(60),
+  sis3Security: optionalText(60),
+  sis4InstitutionalGroupingOfBorrower: optionalText(120),
+  sis9PriorityLending: optionalText(60),
+  greenFinanceEconomicSector: optionalText(120),
+  greenFinanceSubSector: optionalText(120),
+  greenFinanceTaxonomyTag: optionalText(60),
 });
 
-// ─── Step 3 — Credit Assessment ────────────────────────────────────────────
+// ─── Step 3 — Credit Scoring ────────────────────────────────────────────────
 
 export const creditAssessmentSchema = z.object({
   creditLimit: optionalNumber,
@@ -130,21 +82,26 @@ export const creditAssessmentSchema = z.object({
   dsgir: optionalNumber,
   performanceYears: optionalNumber,
   bankingRelationshipScore: optionalNumber,
-  parentsBorrowingsWithBfis: optionalNumber,
-  sourceOfIncome: optionalNumber,
-  collegeOperations: optionalNumber,
+  parentsBorrowingsWithBFIs: optionalText(60),
+  sourceOfIncomeScore: optionalNumber,
+  operationOfInstitution: optionalNumber,
+  creditRiskScoring: optionalText(120),
+  riskGrade: optionalText(60),
+  totalScore: optionalNumber,
+  totalPercentage: optionalNumber,
 });
 
 // ─── Step 4 — Applicant Background ─────────────────────────────────────────
 
 export const familyMemberSchema = z.object({
-  name: optionalText(120),
+  personName: optionalText(120),
   age: optionalNumber,
   qualification: optionalText(120),
-  relationship: optionalText(80),
-  occupation: optionalText(120),
+  relationshipWithBorrower: optionalText(80),
+  occupationSocialInvolvement: optionalText(120),
 });
 
+/** No backend field exists for tracking facilities held at other banks — local-draft only. */
 export const existingFacilitySchema = z.object({
   facilityType: optionalText(120),
   bank: optionalText(120),
@@ -156,63 +113,71 @@ export const existingFacilitySchema = z.object({
 export const applicantBackgroundSchema = z.object({
   familyMembers: z.array(familyMemberSchema),
   existingFacilities: z.array(existingFacilitySchema),
+  // "This facility" — the credit facility being proposed under this application.
+  facility: optionalText(120),
+  purpose: optionalText(200),
+  limit: optionalNumber,
+  period: optionalNumber,
+  interestRate: optionalNumber,
+  fee: optionalNumber,
+  remarks: optionalText(1000),
 });
 
 // ─── Step 5 — Security & Personal Guarantee ────────────────────────────────
-
-export const securityItemSchema = z.object({
-  securityDetails: optionalText(300),
-  fmv: optionalNumber,
-  proposedLoan: optionalNumber,
-});
-
-export const CICL_STATUS_OPTIONS = ["Clear", "Listed", "Under Review"] as const;
+// The backend stores exactly one security and one personal guarantee per
+// application (1:1 relations, not lists) — single-entry, not repeatable.
 
 export const guarantorSchema = z.object({
-  guarantorName: optionalText(120),
+  nameOfGuarantor: optionalText(120),
   relationship: optionalText(80),
   age: optionalNumber,
   netWorth: optionalNumber,
-  consent: z.enum(["Yes", "No"]).optional(),
-  ciclStatus: optionalText(60),
+  guarantorConsent: z.enum(["Yes", "No"]).optional(),
+  ciclStatus: z.enum(["Yes", "No"]).optional(),
   ciclRemarks: optionalText(300),
-  blacklistedDate: optionalText(20),
+  blackListedDate: optionalText(20),
   releasedDate: optionalText(20),
 });
 
 export const securitySchema = z.object({
-  securities: z.array(securityItemSchema),
-  guarantors: z.array(guarantorSchema),
+  securityDetails: optionalText(300),
+  fmv: optionalNumber,
+  proposedLoan: optionalNumber,
+  financeAgainstFmv: optionalNumber,
+  guarantor: guarantorSchema,
 });
 
 // ─── Step 6 — Insurance & Repayment Capacity ───────────────────────────────
+// The backend stores exactly one Insurance record and one (separate)
+// RepaymentCapacity record per application — both single-entry.
 
-export const insuranceItemSchema = z.object({
-  insuranceType: optionalText(120),
-  insurer: optionalText(120),
-  sumAssured: optionalNumber,
-  premiumAmount: optionalNumber,
-  policyNumber: optionalText(60),
-  expiryDate: optionalText(20),
+export const insuranceSchema = z.object({
+  insuredAssets: optionalText(300),
+  valueOfAssets: optionalNumber,
+  sumOfInsurance: optionalNumber,
+  insuranceCoverage: optionalNumber,
+  insuranceRemarks: optionalText(500),
 });
 
 export const repaymentCapacitySchema = z.object({
-  monthlyIncome: optionalNumber,
-  existingObligations: optionalNumber,
-  proposedEmi: optionalNumber,
+  insuredAssets: optionalNumber,
+  valueOfAssets: optionalNumber,
+  sumOfInsurance: optionalNumber,
+  insuranceCoverage: optionalNumber,
+  insuranceRemarks: optionalText(500),
 });
 
 export const insuranceRepaymentSchema = z.object({
-  insurances: z.array(insuranceItemSchema),
+  insurance: insuranceSchema,
   repaymentCapacity: repaymentCapacitySchema,
 });
 
 // ─── Step 7 — Risk Assessment ───────────────────────────────────────────────
 
 export const riskAssessmentSchema = z.object({
-  moneyLaunderingRisk: optionalText(2000),
+  amlRisk: optionalText(2000),
   waiver: optionalText(2000),
-  bankingRelationshipRisk: optionalText(2000),
+  bankingRelationshipRemarks: optionalText(2000),
   keyCreditRiskMitigation: optionalText(2000),
 });
 
@@ -220,15 +185,16 @@ export const riskAssessmentSchema = z.object({
 
 export const recommendationSchema = z.object({
   termsAndConditions: optionalText(3000),
-  justification: optionalText(3000),
+  justificationOfLoan: optionalText(3000),
   accountStrategy: optionalText(3000),
-  disbursement: optionalText(3000),
-  fundUtilization: optionalText(3000),
-  conclusion: optionalText(3000),
-  recommendation: optionalText(3000),
+  disbursementSection: optionalText(3000),
+  utilizationOfFund: optionalText(3000),
+  conclusionAndRecommendation: optionalText(3000),
 });
 
 // ─── Step 9 — Approval ──────────────────────────────────────────────────────
+// No backend field exists yet for the approval chain (name/date/signature per
+// role) — this section stays local-draft only until the API supports it.
 
 export const approvalStatusSchema = z.enum([
   "PENDING",
@@ -276,6 +242,4 @@ export type LoanAssessmentSubmitValues = z.output<typeof loanAssessmentSchema>;
 
 export type FamilyMember = z.input<typeof familyMemberSchema>;
 export type ExistingFacility = z.input<typeof existingFacilitySchema>;
-export type SecurityItem = z.input<typeof securityItemSchema>;
 export type Guarantor = z.input<typeof guarantorSchema>;
-export type InsuranceItem = z.input<typeof insuranceItemSchema>;

@@ -1,47 +1,26 @@
-import { useInitiatorApplications } from "@/components/initiator/hooks/useInitiatorApplications";
+import { useGetDisbursementPendingQuery } from "@/lib/api/dashboardApi";
 import { formatNPR } from "@/lib/formatters";
+import type { DisbursementListRow } from "./types";
 
-export interface DisbursementQueueItem {
-  id: string;
-  refNo: string;
-  borrowerName: string;
-  collegeName: string;
-  program: string;
-  amountLabel: string;
-  stageLabel: string;
-  daysOpen: number;
-}
-
-const daysSince = (iso: string): number => {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return 0;
-  return Math.max(0, Math.floor((Date.now() - then) / (1000 * 60 * 60 * 24)));
-};
-
-/**
- * Real applications, presented as the disbursement queue — backed by the same
- * GET /applications/initiator/college-verified endpoint the Applications and Approval
- * Workflow pages use. There's no backend endpoint yet for disbursement conditions,
- * tranches, or commission tracking, so every row is honestly a single "Awaiting Review"
- * stage until that data exists.
- */
-export function useDisbursements(): {
-  data: DisbursementQueueItem[];
+/** Approved applications not yet fully disbursed — GET /dashboard/disbursement/pending. */
+export function useDisbursements(page = 1, limit = 20): {
+  data: DisbursementListRow[];
   isLoading: boolean;
+  total: number;
 } {
-  const { data, isLoading } = useInitiatorApplications();
+  const { data, isLoading } = useGetDisbursementPendingQuery({ page, limit });
 
   return {
-    data: data.map((app) => ({
-      id: app.id,
-      refNo: app.applicationNumber,
-      borrowerName: app.studentName,
-      collegeName: app.collegeName,
-      program: app.program,
-      amountLabel: formatNPR(app.loanAmount),
-      stageLabel: "Awaiting Review",
-      daysOpen: daysSince(app.collegeVerifiedAt),
+    data: (data?.data ?? []).map((row) => ({
+      id: row.applicationId,
+      refNo: row.refNo ?? "—",
+      borrowerName: row.borrower ?? "—",
+      amountLabel: row.amount !== null ? formatNPR(row.amount) : "—",
+      conditionsDone: row.conditionsDone,
+      conditionsTotal: row.conditionsTotal,
+      status: row.status,
     })),
     isLoading,
+    total: data?.meta.total ?? 0,
   };
 }

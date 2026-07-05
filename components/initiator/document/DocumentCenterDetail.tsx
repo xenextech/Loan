@@ -21,258 +21,213 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, FileText, Loader2, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useDocumentCenterDetail } from "./useDocumentCenterDetail";
-import type { AgreementStatus, DocumentTone } from "./types";
+import { formatDate } from "@/lib/formatters";
+import {
+  useGetDashboardApplicationDetailQuery,
+  useVerifyOfferLetterMutation,
+  useGetDocumentVaultQuery,
+  useGetGeneratedAgreementsQuery,
+  useCreateGeneratedAgreementMutation,
+  useSendAgreementToSignMutation,
+  useMarkAgreementSignedMutation,
+} from "@/lib/api/dashboardApi";
+import type { GeneratedAgreementType, GeneratedAgreementStatus } from "@/types/dashboard";
 
-const TONE_SWATCH_CLASS: Record<DocumentTone, string> = {
-  success: "bg-[var(--success)]/15",
-  info: "bg-primary/10",
-  purple: "bg-[oklch(0.85_0.08_300)]",
-  warning: "bg-[var(--warning)]/15",
+const AGREEMENT_TYPES: GeneratedAgreementType[] = ["LOAN_AGREEMENT", "GUARANTEE_DEED", "HYPOTHECATION", "PROMISSORY_NOTE"];
+
+const STATUS_BADGE_CLASS: Record<GeneratedAgreementStatus, string> = {
+  DRAFT: "bg-muted text-muted-foreground",
+  PENDING_SIGNATURE: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
+  SIGNED: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
+  ACTIVE: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
 };
 
-const STATUS_BADGE_CLASS: Record<AgreementStatus, string> = {
-  Signed: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
-  Active: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
-  "Pending sign": "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
-  "Not signed": "bg-destructive/10 text-destructive",
-};
-
-/** Document Center is not scoped to one loan's data model beyond the demo example — `id` only drives the Back destination. */
-export function DocumentCenterDetail({ id: _id }: { id: string }) {
+export function DocumentCenterDetail({ id }: { id: string }) {
   const router = useRouter();
-  const { data } = useDocumentCenterDetail();
+  const [refInput, setRefInput] = useState("");
+  const [agreementType, setAgreementType] = useState<GeneratedAgreementType>("LOAN_AGREEMENT");
 
-  const [refInput, setRefInput] = useState(data.offerLetterVerification.refNo);
-  const [verified, setVerified] = useState(true);
-  const [agreementType, setAgreementType] = useState(data.agreementTypeOptions[0]);
-  const [loanReference, setLoanReference] = useState(data.loanReferenceOptions[0]?.value ?? "");
+  const { data: application, isLoading: appLoading } = useGetDashboardApplicationDetailQuery(id);
+  const { data: vault, isLoading: vaultLoading } = useGetDocumentVaultQuery({ applicationId: id, page: 1, limit: 50 });
+  const { data: agreements, isLoading: agreementsLoading } = useGetGeneratedAgreementsQuery({ applicationId: id, page: 1, limit: 50 });
+  const [verifyOfferLetter, { data: verifyResult, isLoading: verifying }] = useVerifyOfferLetterMutation();
+  const [createAgreement, { isLoading: creatingAgreement }] = useCreateGeneratedAgreementMutation();
+  const [sendToSign] = useSendAgreementToSignMutation();
+  const [markSigned] = useMarkAgreementSignedMutation();
 
-  const handleVerify = () => {
-    if (!refInput.trim()) {
-      setVerified(false);
-      return;
+  const handleVerify = async () => {
+    if (!refInput.trim()) return;
+    try {
+      await verifyOfferLetter({ applicationId: id, refOrQrToken: refInput.trim() }).unwrap();
+    } catch {
+      toast.error("Verification request failed");
     }
-    setVerified(true);
-    toast.success(`Offer letter ${refInput.trim()} verified.`);
   };
 
-  const handleGeneratePdf = () => {
-    toast.success(`${agreementType} PDF generated for ${data.borrowerName}.`);
+  const handleCreateAgreement = async () => {
+    try {
+      await createAgreement({ applicationId: id, agreementType }).unwrap();
+      toast.success("Agreement draft generated.");
+    } catch {
+      toast.error("Failed to generate agreement");
+    }
   };
+
+  if (appLoading) {
+    return <div className="p-6 lg:p-8 max-w-5xl mx-auto text-sm text-muted-foreground">Loading…</div>;
+  }
+
+  if (!application) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 gap-3">
+        <FileText className="w-8 h-8 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Application not found.</p>
+        <Button variant="outline" size="sm" onClick={() => router.push("/initiator/document-center")}>
+          Back to list
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
       <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/document-center")}>
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 
-      <div>
-        <h1 className="text-lg font-bold text-foreground">Document Center</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Unnati Initiator Portal · Education Loan Documents</p>
+      <div className="flex items-center gap-2">
+        <h2 className="text-sm font-bold text-foreground font-mono">{application.applicationNumber}</h2>
+        <span className="text-sm text-muted-foreground">— {application.fullName ?? "—"}</span>
       </div>
 
       {/* Offer letter verification */}
       <div>
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-          <h3 className="text-sm font-bold text-foreground">Offer letter verification</h3>
-          <p className="text-xs text-muted-foreground">QR scan or manual ref entry</p>
+        <h3 className="text-sm font-bold text-foreground mb-4">Offer letter verification</h3>
+        <div className="flex items-center gap-2 w-full max-w-md mb-4">
+          <Input
+            value={refInput}
+            onChange={(e) => setRefInput(e.target.value)}
+            placeholder="e.g. AIM/OFFER/2081-082/0041 or QR token"
+            className="h-9 text-sm"
+            onKeyDown={(e) => e.key === "Enter" && handleVerify()}
+          />
+          <Button size="sm" className="h-9 shrink-0 gap-1.5" disabled={verifying || !refInput.trim()} onClick={handleVerify}>
+            {verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            Verify
+          </Button>
         </div>
 
-        <div className="flex flex-col items-center gap-2 mb-5">
-          <p className="text-xs font-semibold text-foreground">Scan offer letter QR code or enter reference number</p>
-          <div className="flex items-center gap-2 w-full max-w-md">
-            <Input
-              value={refInput}
-              onChange={(e) => setRefInput(e.target.value)}
-              placeholder="e.g. AIM/OFFER/2081-082/0041"
-              className="h-9 text-sm text-center"
-            />
-            <Button size="sm" className="h-9 shrink-0" onClick={handleVerify}>
-              Verify
-            </Button>
-          </div>
-        </div>
-
-        {verified && (
-          <div className="rounded-lg bg-[var(--success)]/10 border-l-4 border-[var(--success)] px-4 py-3">
-            <p className="text-xs font-semibold text-[oklch(0.42_0.18_145)] dark:text-success mb-2 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Verification result — {data.offerLetterVerification.refNo}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-1 text-xs text-[oklch(0.42_0.18_145)] dark:text-success">
-              <p>
-                College: <span className="font-semibold">{data.offerLetterVerification.college}</span>
-              </p>
-              <p>
-                Student: <span className="font-semibold">{data.offerLetterVerification.studentName}</span>
-              </p>
-              <p>
-                Program: <span className="font-semibold">{data.offerLetterVerification.program}</span>
-              </p>
-              <p>
-                Duration: <span className="font-semibold">{data.offerLetterVerification.duration}</span>
-              </p>
-              <p>
-                Total fee: <span className="font-semibold">{data.offerLetterVerification.totalFeeLabel}</span>
-              </p>
-              <p>
-                Valid until: <span className="font-semibold">{data.offerLetterVerification.validUntil}</span>
-              </p>
-              <p>
-                NRB Partner: <span className="font-semibold">{data.offerLetterVerification.nrbPartner}</span>
-              </p>
-              <p>
-                Status: <span className="font-semibold">{data.offerLetterVerification.status} ✓</span>
+        {verifyResult && (
+          verifyResult.matched ? (
+            <div className="rounded-lg bg-[var(--success)]/10 border-l-4 border-[var(--success)] px-4 py-3 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[oklch(0.42_0.18_145)] dark:text-success shrink-0" />
+              <p className="text-xs font-semibold text-[oklch(0.42_0.18_145)] dark:text-success">
+                Matched — offer letter verified and linked to this application.
               </p>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-lg bg-destructive/10 border-l-4 border-destructive px-4 py-3 flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-destructive shrink-0" />
+              <p className="text-xs font-semibold text-destructive">No offer letter matched that reference/QR token.</p>
+            </div>
+          )
         )}
       </div>
 
       {/* Document vault */}
       <div>
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
-          <h3 className="text-sm font-bold text-foreground">Document vault</h3>
-          <p className="text-xs font-mono text-muted-foreground">{data.loanRef}</p>
-        </div>
-        <ul className="divide-y divide-border">
-          {data.vaultDocuments.map((doc) => (
-            <li key={doc.id} className="flex items-center gap-4 py-4 first:pt-0">
-              <div className={cn("w-9 h-9 rounded-lg shrink-0", TONE_SWATCH_CLASS[doc.tone])} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-foreground">{doc.title}</p>
-                <p className="text-xs text-muted-foreground">{doc.subtitle}</p>
-              </div>
-              <div className="flex items-center gap-4 shrink-0">
-                <button type="button" className="text-xs font-medium text-primary hover:underline">
+        <h3 className="text-sm font-bold text-foreground mb-3">Document vault</h3>
+        {vaultLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : !vault?.data.length ? (
+          <p className="text-sm text-muted-foreground">No documents uploaded for this application yet.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {vault.data.map((doc) => (
+              <li key={doc.id} className="flex items-center gap-4 py-3.5 first:pt-0">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground">{doc.documentType.replaceAll("_", " ")}</p>
+                  <p className="text-xs text-muted-foreground">{doc.originalFileName} · {formatDate(doc.uploadedAt)}</p>
+                </div>
+                <a href={doc.publicUrl} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline shrink-0">
                   View
-                </button>
-                <button type="button" className="text-xs font-medium text-primary hover:underline">
-                  Download
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Agreement generator */}
       <div>
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
-          <h3 className="text-sm font-bold text-foreground">Agreement generator</h3>
-          <p className="text-xs text-muted-foreground">Auto-populate from loan record</p>
-        </div>
-
-        <p className="text-xs font-semibold text-foreground mb-2">Select loan and agreement type</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          <div className="space-y-1.5">
-            <p className="text-xs text-muted-foreground">Loan reference</p>
-            <Select value={loanReference} onValueChange={setLoanReference}>
-              <SelectTrigger className="h-9 text-sm w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {data.loanReferenceOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-xs text-muted-foreground">Agreement type</p>
-            <Select value={agreementType} onValueChange={setAgreementType}>
-              <SelectTrigger className="h-9 text-sm w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {data.agreementTypeOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <p className="text-xs font-semibold text-foreground mb-2">Auto-populated fields preview</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-1.5 text-xs text-muted-foreground mb-5">
-          <p>
-            Borrower: <span className="font-semibold text-foreground">{data.autoPopulated.borrower}</span>
-          </p>
-          <p>
-            Loan amount: <span className="font-semibold text-foreground">{data.autoPopulated.loanAmount}</span>
-          </p>
-          <p>
-            Interest rate: <span className="font-semibold text-foreground">{data.autoPopulated.interestRate}</span>
-          </p>
-          <p>
-            Tenure: <span className="font-semibold text-foreground">{data.autoPopulated.tenure}</span>
-          </p>
-          <p>
-            College: <span className="font-semibold text-foreground">{data.autoPopulated.college}</span>
-          </p>
-          <p>
-            Guarantor: <span className="font-semibold text-foreground">{data.autoPopulated.guarantor}</span>
-          </p>
-          <p>
-            Disbursement: <span className="font-semibold text-foreground">{data.autoPopulated.disbursement}</span>
-          </p>
-          <p>
-            Platform: <span className="font-semibold text-foreground">{data.autoPopulated.platform}</span>
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <Button className="flex-1 w-full h-11 bg-[oklch(0.3_0.08_260)] hover:bg-[oklch(0.25_0.08_260)] text-white" onClick={handleGeneratePdf}>
-            Generate PDF
+        <h3 className="text-sm font-bold text-foreground mb-4">Agreement generator</h3>
+        <div className="flex items-center gap-3 mb-1">
+          <Select value={agreementType} onValueChange={(v) => setAgreementType(v as GeneratedAgreementType)}>
+            <SelectTrigger className="h-9 text-sm w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {AGREEMENT_TYPES.map((t) => (
+                <SelectItem key={t} value={t}>{t.replaceAll("_", " ")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" className="gap-1.5" disabled={creatingAgreement} onClick={handleCreateAgreement}>
+            {creatingAgreement ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            Generate Draft
           </Button>
-          <button type="button" className="text-xs font-medium text-primary hover:underline shrink-0">
-            Send to sign
-          </button>
-          <button type="button" className="text-xs font-medium text-primary hover:underline shrink-0">
-            Preview
-          </button>
         </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          No PDF rendering pipeline exists yet — this creates a draft record with borrower/loan terms auto-populated from the application.
+        </p>
       </div>
 
-      {/* All generated agreements */}
+      {/* Generated agreements for this application */}
       <div>
-        <h3 className="text-sm font-bold text-foreground mb-3">All generated agreements</h3>
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent border-border">
-              <TableHead className="text-xs">Doc type</TableHead>
-              <TableHead className="text-xs">For</TableHead>
-              <TableHead className="text-xs">Generated</TableHead>
-              <TableHead className="text-xs">Signed</TableHead>
-              <TableHead className="text-xs">Status</TableHead>
-              <TableHead className="text-xs text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data.generatedAgreements.map((agreement) => (
-              <TableRow key={agreement.id} className="border-border">
-                <TableCell className="text-xs text-foreground">{agreement.docType}</TableCell>
-                <TableCell className="text-sm text-foreground">{agreement.forName}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{agreement.generatedLabel}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{agreement.signedLabel}</TableCell>
-                <TableCell>
-                  <Badge className={cn(STATUS_BADGE_CLASS[agreement.status], "border-0 text-[10px] font-semibold")}>{agreement.status}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <button type="button" className="text-xs font-medium text-primary hover:underline">
-                    {agreement.actionLabel}
-                  </button>
-                </TableCell>
+        <h3 className="text-sm font-bold text-foreground mb-3">Generated agreements</h3>
+        {agreementsLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : !agreements?.data.length ? (
+          <p className="text-sm text-muted-foreground">No agreements generated for this application yet.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent border-border">
+                <TableHead className="text-xs">Type</TableHead>
+                <TableHead className="text-xs">Generated</TableHead>
+                <TableHead className="text-xs">Signed</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="text-xs text-right">Action</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {agreements.data.map((agreement) => (
+                <TableRow key={agreement.id} className="border-border">
+                  <TableCell className="text-xs text-foreground">{agreement.agreementType.replaceAll("_", " ")}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{formatDate(agreement.createdAt)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{agreement.signedAt ? formatDate(agreement.signedAt) : "—"}</TableCell>
+                  <TableCell>
+                    <Badge className={cn(STATUS_BADGE_CLASS[agreement.status], "border-0 text-[10px] font-semibold")}>{agreement.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {agreement.status === "DRAFT" && (
+                      <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => sendToSign(agreement.id)}>
+                        Send to sign
+                      </button>
+                    )}
+                    {agreement.status === "PENDING_SIGNATURE" && (
+                      <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => markSigned(agreement.id)}>
+                        Mark signed
+                      </button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </motion.div>
   );

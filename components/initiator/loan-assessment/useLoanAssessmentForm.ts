@@ -39,9 +39,10 @@ function mergeDefaults(overrides?: Partial<LoanAssessmentFormValues>): LoanAsses
 /**
  * Owns the single React Hook Form instance for the whole multi-step assessment,
  * plus step navigation, per-step validation, and draft persistence.
- * Draft storage is `localStorage` today, keyed by application id — swap the two
- * marked spots for real `GET/PUT /initiator/applications/:id/assessment` calls
- * once the backend endpoint exists; nothing else in the form needs to change.
+ * `initialValues` seeds the form with whatever the backend already has saved
+ * (see `toAssessmentInitialValues` in `lib/api/transforms.ts`); a same-device
+ * `localStorage` draft layers on top of that for unsaved edits since the last
+ * successful PATCH, keyed by application id.
  */
 export function useLoanAssessmentForm(applicationId: string, initialValues?: Partial<LoanAssessmentFormValues>) {
   const storageKey = `${DRAFT_STORAGE_PREFIX}${applicationId}`;
@@ -128,10 +129,11 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
 
   /**
    * Drives the primary step button (Step 1 = "Next", every step after = "Update").
-   * Step 1 creates the initiator record on the backend; every following step (up to
-   * the Review step, which has its own Submit flow) PATCHes the same record with the
-   * current Applicant Information — that's the only section the backend module
-   * accepts today. Only advances to the next step once the request succeeds.
+   * Step 1 creates the initiator record on the backend (Basic Information only,
+   * per the create DTO). Every step after that PATCHes the same record with the
+   * full accumulated form state — not just the current step's slice — so the
+   * backend stays in sync regardless of which step was last edited. Only
+   * advances to the next step once the request succeeds.
    */
   const submitStepAndAdvance = useCallback(async () => {
     if (isSyncingStep) return false; // guard against double-submit while a request is in flight
@@ -144,15 +146,14 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
       return false;
     }
 
-    const applicantInfo = form.getValues("applicantInfo");
     try {
       if (currentStep === 1) {
-        await createInitiatorApplication({ applicationId, data: applicantInfo }).unwrap();
+        await createInitiatorApplication({ applicationId, data: form.getValues("applicantInfo") }).unwrap();
       } else {
-        await updateInitiatorApplication({ applicationId, data: applicantInfo }).unwrap();
+        await updateInitiatorApplication({ applicationId, data: form.getValues() }).unwrap();
       }
     } catch (err) {
-      toast.error(currentStep === 1 ? "Failed to submit applicant information" : "Failed to update applicant information", {
+      toast.error(currentStep === 1 ? "Failed to submit applicant information" : "Failed to update the assessment", {
         description: getApiErrorMessage(err) ?? "Please try again.",
       });
       return false;
@@ -176,6 +177,7 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
 
   const submit = useCallback(
     async (onValid: (values: LoanAssessmentSubmitValues) => void | Promise<void>) => {
+      if (isSyncingStep) return false;
       const valid = await form.trigger();
       if (!valid) {
         await goToStep(TOTAL_STEPS);
@@ -184,6 +186,17 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
         });
         return false;
       }
+
+      // Final consolidated PATCH — guarantees the backend has every step's latest
+      // values even if the user jumped between steps via the Stepper instead of
+      // clicking "Update" on each one.
+      try {
+        await updateInitiatorApplication({ applicationId, data: form.getValues() }).unwrap();
+      } catch (err) {
+        toast.error("Failed to save the assessment", { description: getApiErrorMessage(err) ?? "Please try again." });
+        return false;
+      }
+
       // Full form already validated above — parse to get the clean, coerced payload.
       await onValid(loanAssessmentSchema.parse(form.getValues()));
       try {
@@ -193,7 +206,7 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
       }
       return true;
     },
-    [form, goToStep, storageKey],
+    [form, goToStep, storageKey, isSyncingStep, applicationId, updateInitiatorApplication],
   );
 
   return useMemo(

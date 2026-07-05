@@ -1,19 +1,12 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -22,168 +15,150 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Filter, Inbox } from "lucide-react";
-import { useAuditList } from "./useAuditList";
-import { useDebounce } from "@/lib/useDebounce";
+import { Inbox, Download, Plus, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/formatters";
+import { useGetAuditLogQuery, useLazyExportAuditCsvQuery } from "@/lib/api/dashboardApi";
+import type { AuditCategory } from "@/types/dashboard";
 
-function TableSkeleton() {
-  return (
-    <div className="divide-y divide-border">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 px-5 py-3.5">
-          <div className="flex-1 space-y-1.5">
-            <Skeleton className="h-4 w-36 rounded" />
-            <Skeleton className="h-3 w-28 rounded" />
-          </div>
-          <Skeleton className="h-4 w-24 rounded hidden md:block" />
-          <Skeleton className="h-4 w-16 rounded hidden sm:block" />
-          <Skeleton className="h-6 w-24 rounded-full" />
-          <Skeleton className="h-7 w-16 rounded" />
-        </div>
-      ))}
-    </div>
-  );
-}
+const CATEGORY_TABS: { key: AuditCategory | "ALL"; label: string }[] = [
+  { key: "ALL", label: "All" },
+  { key: "APPROVAL", label: "Approvals" },
+  { key: "DISBURSEMENT", label: "Disbursements" },
+  { key: "REPAYMENT", label: "Repayments" },
+  { key: "COMMISSION", label: "Commission" },
+  { key: "SYSTEM", label: "System changes" },
+];
+
+const CATEGORY_BADGE_CLASS: Record<AuditCategory, string> = {
+  APPROVAL: "bg-primary/10 text-primary",
+  DISBURSEMENT: "bg-[oklch(0.62_0.18_145)]/15 text-[oklch(0.42_0.18_145)]",
+  REPAYMENT: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
+  COMMISSION: "bg-[oklch(0.85_0.08_300)] text-[oklch(0.35_0.08_300)]",
+  SYSTEM: "bg-muted text-muted-foreground",
+};
 
 export function AuditLedgerList() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [collegeFilter, setCollegeFilter] = useState("all");
-  const debouncedSearch = useDebounce(search, 300);
+  const [category, setCategory] = useState<AuditCategory | "ALL">("ALL");
+  const [page, setPage] = useState(1);
 
-  const { data: applications, isLoading } = useAuditList();
+  const { data, isLoading } = useGetAuditLogQuery({ page, limit: 20, category: category === "ALL" ? undefined : category });
+  const [triggerExport, { isLoading: exporting }] = useLazyExportAuditCsvQuery();
 
-  const colleges = useMemo(
-    () => Array.from(new Set(applications.map((app) => app.collegeName))).sort(),
-    [applications],
-  );
+  const rows = data?.data ?? [];
 
-  const filtered = useMemo(() => {
-    const q = debouncedSearch.trim().toLowerCase();
-    return applications.filter((app) => {
-      const matchesSearch =
-        !q ||
-        app.borrowerName.toLowerCase().includes(q) ||
-        app.refNo.toLowerCase().includes(q) ||
-        app.collegeName.toLowerCase().includes(q) ||
-        app.program.toLowerCase().includes(q);
-      const matchesCollege = collegeFilter === "all" || app.collegeName === collegeFilter;
-      return matchesSearch && matchesCollege;
-    });
-  }, [applications, debouncedSearch, collegeFilter]);
+  const handleExport = async () => {
+    try {
+      const { data: blobUrl } = await triggerExport({ category: category === "ALL" ? undefined : category });
+      if (!blobUrl) return;
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `audit-log-${Date.now()}.csv`;
+      link.click();
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      toast.error("Failed to export CSV");
+    }
+  };
 
   return (
     <div className="p-6 lg:p-8">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Audit Ledger</h1>
-        <p className="text-sm text-muted-foreground mt-1">Immutable action log, per applicant.</p>
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Audit Ledger</h1>
+          <p className="text-sm text-muted-foreground mt-1">Immutable log of every significant action taken in the system.</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button size="sm" variant="outline" className="h-9 gap-1.5" disabled={exporting} onClick={handleExport}>
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Export CSV
+          </Button>
+          <Button size="sm" className="h-9 gap-1.5" onClick={() => router.push("/initiator/audit-ledger/manual-entry")}>
+            <Plus className="w-4 h-4" /> Manual Entry
+          </Button>
+        </div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
         <Card className="border-border shadow-none">
-          <CardHeader className="px-5 py-4 border-b border-border">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by borrower, ref no., college…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 h-9 text-sm"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground shrink-0" />
-                <Select value={collegeFilter} onValueChange={setCollegeFilter}>
-                  <SelectTrigger className="h-9 w-44 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Colleges</SelectItem>
-                    {colleges.map((college) => (
-                      <SelectItem key={college} value={college}>
-                        {college}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <p className="text-xs text-muted-foreground sm:ml-auto shrink-0">
-                {isLoading ? "Loading…" : `${filtered.length} application${filtered.length !== 1 ? "s" : ""}`}
-              </p>
+          <CardHeader className="px-5 py-4 border-b border-border space-y-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <CardTitle className="text-sm font-semibold text-foreground">Activity Log</CardTitle>
+              <p className="text-xs text-muted-foreground">{isLoading ? "Loading…" : `${data?.meta.total ?? 0} entries`}</p>
+            </div>
+            <div className="flex items-center gap-1 overflow-x-auto -mx-1 px-1">
+              {CATEGORY_TABS.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => { setCategory(t.key); setPage(1); }}
+                  className={cn(
+                    "shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap",
+                    category === t.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
           </CardHeader>
 
           <CardContent className="p-0">
             {isLoading ? (
-              <TableSkeleton />
-            ) : filtered.length === 0 ? (
+              <div className="divide-y divide-border">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="px-5 py-3.5"><Skeleton className="h-4 w-full rounded" /></div>
+                ))}
+              </div>
+            ) : rows.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <Inbox className="w-8 h-8 text-muted-foreground" />
-                <p className="text-sm font-medium text-foreground">No applications found</p>
-                <p className="text-xs text-muted-foreground">Try adjusting your search or filters.</p>
+                <p className="text-sm font-medium text-foreground">No activity recorded</p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent border-border">
-                    <TableHead className="text-xs pl-5">Ref No.</TableHead>
-                    <TableHead className="text-xs">Borrower</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">College</TableHead>
-                    <TableHead className="text-xs hidden lg:table-cell">Program</TableHead>
-                    <TableHead className="text-xs hidden sm:table-cell">Amount</TableHead>
-                    <TableHead className="text-xs">Stage</TableHead>
-                    <TableHead className="text-xs hidden md:table-cell">Days Open</TableHead>
-                    <TableHead className="text-xs text-right pr-5">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((app) => (
-                    <TableRow
-                      key={app.id}
-                      className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
-                      onClick={() => router.push(`/initiator/audit-ledger/${app.id}`)}
-                    >
-                      <TableCell className="pl-5 py-3.5">
-                        <span className="text-xs font-mono font-semibold text-foreground">{app.refNo}</span>
-                      </TableCell>
-                      <TableCell className="py-3.5">
-                        <p className="text-sm font-semibold text-foreground leading-tight">{app.borrowerName}</p>
-                      </TableCell>
-                      <TableCell className="py-3.5 hidden md:table-cell">
-                        <p className="text-xs text-foreground max-w-44 truncate">{app.collegeName}</p>
-                      </TableCell>
-                      <TableCell className="py-3.5 hidden lg:table-cell">
-                        <p className="text-xs text-foreground max-w-44 truncate">{app.program}</p>
-                      </TableCell>
-                      <TableCell className="py-3.5 hidden sm:table-cell">
-                        <span className="text-xs font-semibold text-foreground">{app.amountLabel}</span>
-                      </TableCell>
-                      <TableCell className="py-3.5">
-                        <Badge className="bg-primary/10 text-primary border-0 text-[10px] font-semibold">{app.stageLabel}</Badge>
-                      </TableCell>
-                      <TableCell className="py-3.5 hidden md:table-cell">
-                        <span className="text-xs text-muted-foreground">{app.daysOpen}d</span>
-                      </TableCell>
-                      <TableCell className="py-3.5 text-right pr-5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-primary hover:bg-primary/10 hover:text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/initiator/audit-ledger/${app.id}`);
-                          }}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-border">
+                      <TableHead className="text-xs pl-5">Time</TableHead>
+                      <TableHead className="text-xs">User</TableHead>
+                      <TableHead className="text-xs hidden sm:table-cell">Category</TableHead>
+                      <TableHead className="text-xs text-right pr-5">Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((entry) => (
+                      <TableRow key={entry.id} className="border-border">
+                        <TableCell className="pl-5 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDate(entry.createdAt)}</TableCell>
+                        <TableCell className="py-3">
+                          <p className="text-sm font-medium text-foreground leading-tight">{entry.user?.email ?? "System"}</p>
+                          <p className="text-[11px] text-muted-foreground">{entry.user?.role ?? "—"}</p>
+                        </TableCell>
+                        <TableCell className="py-3 hidden sm:table-cell">
+                          <Badge className={cn(CATEGORY_BADGE_CLASS[entry.category], "border-0 text-[10px] font-semibold")}>{entry.category}</Badge>
+                        </TableCell>
+                        <TableCell className="py-3 text-right pr-5">
+                          <span className="text-xs text-foreground">{entry.action.replaceAll("_", " ").toLowerCase()}</span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {data && data.meta.totalPages > 1 && (
+                  <div className="flex items-center justify-between px-5 py-3 border-t border-border">
+                    <p className="text-xs text-muted-foreground">Page {data.meta.page} of {data.meta.totalPages}</p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" disabled={!data.meta.hasPrev} onClick={() => setPage((p) => p - 1)}>
+                        <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" disabled={!data.meta.hasNext} onClick={() => setPage((p) => p + 1)}>
+                        Next <ChevronRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

@@ -75,6 +75,8 @@ export interface InitiatorApplicationDetail extends InitiatorApplicationListItem
   documents: InitiatorDocumentSet;
   submittedAt: string;
   workflowStage: string;
+  /** Previously-saved Loan Assessment Form values, mapped from the backend record — pre-fills the form on reopen. */
+  assessment: Partial<import("../loan-assessment/schema").LoanAssessmentFormValues>;
 }
 
 /**

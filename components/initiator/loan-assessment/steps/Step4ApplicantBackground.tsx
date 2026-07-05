@@ -1,11 +1,12 @@
 "use client";
 
 import { useFieldArray, useFormContext } from "react-hook-form";
-import { Users } from "lucide-react";
-import { SectionCard } from "../ui/SectionCard";
+import { Users, Landmark } from "lucide-react";
+import { SectionCard, FormSection } from "../ui/SectionCard";
 import { RepeatableTable, type RepeatableTableColumn } from "../ui/RepeatableTable";
 import { TextField } from "../fields/TextField";
 import { NumberField } from "../fields/NumberField";
+import { TextareaField } from "../fields/TextareaField";
 import type { LoanAssessmentFormValues } from "../schema";
 
 export function Step4ApplicantBackground() {
@@ -15,11 +16,11 @@ export function Step4ApplicantBackground() {
   const existingFacilities = useFieldArray({ control, name: "applicantBackground.existingFacilities" });
 
   const familyColumns: RepeatableTableColumn[] = [
-    { key: "name", header: "Name", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.name`} label="" placeholder="Name" /> },
+    { key: "personName", header: "Name", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.personName`} label="" placeholder="Name" /> },
     { key: "age", header: "Age", className: "w-20", render: (i) => <NumberField name={`applicantBackground.familyMembers.${i}.age`} label="" /> },
     { key: "qualification", header: "Qualification", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.qualification`} label="" placeholder="Qualification" /> },
-    { key: "relationship", header: "Relationship", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.relationship`} label="" placeholder="e.g. Father" /> },
-    { key: "occupation", header: "Occupation", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.occupation`} label="" placeholder="Occupation" /> },
+    { key: "relationshipWithBorrower", header: "Relationship", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.relationshipWithBorrower`} label="" placeholder="e.g. Father" /> },
+    { key: "occupationSocialInvolvement", header: "Occupation", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.occupationSocialInvolvement`} label="" placeholder="Occupation" /> },
   ];
 
   const facilityColumns: RepeatableTableColumn[] = [
@@ -36,14 +37,39 @@ export function Step4ApplicantBackground() {
         <RepeatableTable
           columns={familyColumns}
           rowCount={familyMembers.fields.length}
-          onAdd={() => familyMembers.append({ name: "", age: undefined, qualification: "", relationship: "", occupation: "" })}
+          onAdd={() =>
+            familyMembers.append({
+              personName: "",
+              age: undefined,
+              qualification: "",
+              relationshipWithBorrower: "",
+              occupationSocialInvolvement: "",
+            })
+          }
           onRemove={familyMembers.remove}
           addLabel="Add Family Member"
           emptyLabel="No family members added yet."
         />
       </SectionCard>
 
-      <SectionCard title="Existing Facilities" description="Other credit facilities currently held by the applicant or household.">
+      <SectionCard icon={Landmark} title="This Facility" description="Terms of the credit facility being proposed under this application.">
+        <FormSection columns={3}>
+          <TextField name="applicantBackground.facility" label="Facility" placeholder="e.g. Term Loan" />
+          <TextField name="applicantBackground.purpose" label="Purpose" placeholder="e.g. Tuition Fee Financing" />
+          <NumberField name="applicantBackground.limit" label="Limit" suffix="NPR" />
+          <NumberField name="applicantBackground.period" label="Period" suffix="months" />
+          <NumberField name="applicantBackground.interestRate" label="Interest Rate" suffix="%" />
+          <NumberField name="applicantBackground.fee" label="Fee" suffix="NPR" />
+        </FormSection>
+        <div className="mt-4">
+          <TextareaField name="applicantBackground.remarks" label="Remarks" rows={3} />
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Existing Facilities"
+        description="Other credit facilities currently held by the applicant or household at other banks/BFIs. Not saved to the backend yet — kept as a local reference only."
+      >
         <RepeatableTable
           columns={facilityColumns}
           rowCount={existingFacilities.fields.length}

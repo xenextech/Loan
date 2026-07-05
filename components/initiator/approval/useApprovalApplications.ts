@@ -1,40 +1,35 @@
-import { useInitiatorApplications } from "@/components/initiator/hooks/useInitiatorApplications";
+import { useGetDashboardApplicationsQuery } from "@/lib/api/dashboardApi";
 import { formatNPR } from "@/lib/formatters";
 import type { ApprovalListItem } from "./types";
 
-const daysSince = (iso: string): number => {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return 0;
-  return Math.max(0, Math.floor((Date.now() - then) / (1000 * 60 * 60 * 24)));
-};
-
 /**
- * Real applications awaiting initiator review, presented in the approval-workflow shape —
- * backed by GET /applications/initiator/college-verified (same source as the Applications
- * page). There's no backend endpoint yet for the Checker/Approver/credit-scoring stages
- * this module visualizes, so every row is honestly a single "Awaiting Review" stage until
- * that data exists.
+ * Every submitted application in the credit-ops pipeline, presented in the
+ * approval-workflow shape — backed by GET /dashboard/applications. There's no
+ * persisted stage field yet, so every row shows a single "Awaiting Review" stage
+ * (see the backend README's note on the approval-stage gap).
  */
-export function useApprovalApplications(): {
+export function useApprovalApplications(page = 1, limit = 20): {
   data: ApprovalListItem[];
   isLoading: boolean;
+  total: number;
 } {
-  const { data, isLoading } = useInitiatorApplications();
+  const { data, isLoading } = useGetDashboardApplicationsQuery({ page, limit });
 
   return {
-    data: data.map((app) => ({
+    data: (data?.data ?? []).map((app) => ({
       id: app.id,
-      refNo: app.applicationNumber,
-      borrowerName: app.studentName,
-      branch: app.collegeName,
-      loanType: app.program,
-      amountLabel: formatNPR(app.loanAmount),
-      grade: "—",
+      refNo: app.refNo ?? "—",
+      borrowerName: app.borrower ?? "—",
+      branch: app.branch ?? "—",
+      loanType: app.type ?? "—",
+      amountLabel: app.amount !== null ? formatNPR(app.amount) : "—",
+      grade: app.grade ?? "—",
       stageLabel: "Awaiting Review",
-      dsgirLabel: "—",
-      ltvLabel: "—",
-      daysOpen: daysSince(app.collegeVerifiedAt),
+      dsgirLabel: app.dsgir !== null ? `${app.dsgir}%` : "—",
+      ltvLabel: app.ltv !== null ? `${app.ltv}%` : "—",
+      daysOpen: app.daysOpen,
     })),
     isLoading,
+    total: data?.meta.total ?? 0,
   };
 }

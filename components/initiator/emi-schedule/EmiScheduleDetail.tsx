@@ -1,8 +1,11 @@
 "use client";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -12,64 +15,51 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, RefreshCw, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatNPR } from "@/lib/formatters";
-import { useInitiatorApplicationDetail } from "@/components/initiator/hooks/useInitiatorApplicationDetail";
-import { useEmiScheduleDetail } from "./useEmiScheduleDetail";
-import { buildAmortizationSchedule, SHARED_FIELDS } from "./mockEmiSchedules";
-import type { EmiScheduleDetail as EmiScheduleDetailData, NotificationTier, OverdueBucket } from "./types";
+import { formatNPR, formatDate } from "@/lib/formatters";
+import {
+  useGetDashboardApplicationDetailQuery,
+  useGetEmiScheduleQuery,
+  useGenerateEmiScheduleMutation,
+  useMarkEmiPaidMutation,
+  useGetEmiNotificationTriggersQuery,
+} from "@/lib/api/dashboardApi";
+import type { EmiStatus } from "@/types/dashboard";
 
-const BUCKET_BADGE_CLASS: Record<OverdueBucket, string> = {
-  "1-30d bucket": "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
-  "31-90d bucket": "bg-[var(--warning)]/20 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
-  "Near NPA": "bg-destructive/10 text-destructive",
+const STATUS_BADGE_CLASS: Record<EmiStatus, string> = {
+  UPCOMING: "bg-muted text-muted-foreground",
+  PAID: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
+  OVERDUE: "bg-destructive/10 text-destructive",
+  PARTIAL: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
 };
-
-const TIER_DOT_CLASS: Record<NotificationTier, string> = {
-  info: "bg-[var(--success)]",
-  urgent: "bg-[var(--warning)]",
-  critical: "bg-destructive",
-};
-
-const DEFAULT_RATE_PERCENT = 9.0;
-const DEFAULT_TERM_MONTHS = 60;
 
 export function EmiScheduleDetail({ id }: { id: string }) {
   const router = useRouter();
+  const [payingEntryId, setPayingEntryId] = useState<string | null>(null);
+  const [paidAmount, setPaidAmount] = useState("");
 
-  // The EMI schedule demo dataset is mock-only (no backend yet for amortization or
-  // repayment tracking). Real application IDs fall through to the real initiator-detail
-  // endpoint below, rendered with a generic amortization scaffold built off the real
-  // loan amount.
-  const { data: mockDetail, isLoading: mockLoading } = useEmiScheduleDetail(id);
-  const {
-    data: realDetail,
-    isLoading: realLoading,
-    errorStatus,
-  } = useInitiatorApplicationDetail(mockDetail ? "" : id);
+  const { data: application, isLoading: appLoading, error: appError } = useGetDashboardApplicationDetailQuery(id);
+  const { data: schedule, isLoading: scheduleLoading } = useGetEmiScheduleQuery({ applicationId: id, page: 1, limit: 100 });
+  const { data: triggers } = useGetEmiNotificationTriggersQuery();
+  const [generateSchedule, { isLoading: generating }] = useGenerateEmiScheduleMutation();
+  const [markPaid, { isLoading: marking }] = useMarkEmiPaidMutation();
 
-  if (mockLoading || (!mockDetail && realLoading)) {
+  if (appLoading || scheduleLoading) {
     return (
-      <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-5">
+      <div className="p-6 lg:p-8 max-w-4xl mx-auto space-y-5">
         <div className="flex items-center gap-4">
           <Skeleton className="h-8 w-24 rounded" />
           <Skeleton className="h-6 w-56 rounded" />
         </div>
-        <Skeleton className="h-24 rounded-lg" />
-        <Skeleton className="h-64 rounded-lg" />
-        <Skeleton className="h-48 rounded-lg" />
+        <Skeleton className="h-52 rounded-lg" />
       </div>
     );
   }
 
-  if (!mockDetail && !realDetail) {
-    const message =
-      errorStatus === 404
-        ? "This application has no initiator record yet — it may not have been picked up for review."
-        : errorStatus !== undefined
-          ? `Couldn't load this application (error ${errorStatus}). Please try again.`
-          : "EMI schedule not found";
+  if (!application) {
+    const status = appError && "status" in appError ? appError.status : undefined;
+    const message = status === 404 ? "Application not found." : "Couldn't load this application. Please try again.";
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-3">
         <FileText className="w-8 h-8 text-muted-foreground" />
@@ -81,116 +71,114 @@ export function EmiScheduleDetail({ id }: { id: string }) {
     );
   }
 
-  const detail: EmiScheduleDetailData = mockDetail
-    ? mockDetail
-    : {
-        id: realDetail!.id,
-        loanRef: realDetail!.applicationNumber,
-        borrowerName: realDetail!.studentName,
-        amountLabel: formatNPR(realDetail!.loanAmount),
-        termMonths: DEFAULT_TERM_MONTHS,
-        emiLabel: formatNPR(realDetail!.loanAmount / DEFAULT_TERM_MONTHS),
-        rateLabel: `${DEFAULT_RATE_PERCENT.toFixed(2)}%`,
-        startDateLabel: "Not yet disbursed",
-        endDateLabel: "—",
-        schedule: buildAmortizationSchedule(realDetail!.loanAmount, DEFAULT_RATE_PERCENT, DEFAULT_TERM_MONTHS, new Date()),
-        ...SHARED_FIELDS,
-      };
-  const isMockDemo = !!mockDetail;
+  const rows = schedule?.data ?? [];
+
+  const handleGenerate = async () => {
+    try {
+      await generateSchedule(id).unwrap();
+      toast.success("EMI schedule generated.");
+    } catch (err) {
+      const message = err && typeof err === "object" && "data" in err ? (err.data as { message?: string })?.message : undefined;
+      toast.error("Failed to generate schedule", { description: message ?? "Check that credit limit, interest rate, and period are set." });
+    }
+  };
+
+  const handleMarkPaid = async (entryId: string) => {
+    const amount = Number(paidAmount);
+    if (!amount || amount <= 0) {
+      toast.error("Enter a valid paid amount");
+      return;
+    }
+    try {
+      await markPaid({ entryId, applicationId: id, data: { paidAmount: amount, paidDate: new Date().toISOString() } }).unwrap();
+      setPayingEntryId(null);
+      setPaidAmount("");
+      toast.success("Payment recorded.");
+    } catch {
+      toast.error("Failed to record payment");
+    }
+  };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
       <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/emi-schedule")}>
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 
-      <div>
-        <h1 className="text-lg font-bold text-foreground">EMI Schedule and Repayment</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Unnati Initiator Portal · Education Loan Repayment</p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-sm font-bold text-foreground font-mono">{application.applicationNumber}</h2>
+          <span className="text-sm text-muted-foreground truncate">— {application.fullName ?? "—"}</span>
+        </div>
+        <Badge variant="outline" className="text-xs font-medium">{formatNPR(application.creditLimit ?? 0)}</Badge>
       </div>
 
-      {!isMockDemo && (
-        <p className="text-xs text-muted-foreground -mt-3">
-          This loan hasn&apos;t been disbursed yet, so the schedule below is illustrative — built from the requested
-          loan amount at a placeholder rate/term until real terms and a repayment-tracking API exist.
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h3 className="text-sm font-bold text-foreground">Amortization schedule</h3>
+        <Button size="sm" variant="outline" className="gap-1.5" disabled={generating} onClick={handleGenerate}>
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          {rows.length > 0 ? "Regenerate Schedule" : "Generate Schedule"}
+        </Button>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No schedule yet — generate one once the application has a credit limit, interest rate, and period set.
         </p>
-      )}
-
-      {/* Portfolio stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-10 gap-y-4">
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">EMI due today</p>
-          <p className="text-2xl font-bold text-foreground">{detail.emiDueTodayLabel}</p>
-          <p className="text-xs text-[oklch(0.42_0.18_145)] dark:text-success mt-0.5">{detail.emiDueTodayAccounts} accounts</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Overdue 1-30 days</p>
-          <p className="text-2xl font-bold text-destructive">{detail.overdue1to30Label}</p>
-          <p className="text-xs text-destructive mt-0.5">{detail.overdue1to30Accounts} accounts</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Overdue 31-90 days</p>
-          <p className="text-2xl font-bold text-destructive">{detail.overdue31to90Label}</p>
-          <p className="text-xs text-destructive mt-0.5">{detail.overdue31to90SubLabel}</p>
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Collection efficiency</p>
-          <p className="text-2xl font-bold text-foreground">{detail.collectionEfficiencyLabel}</p>
-          <p className="text-xs text-[oklch(0.42_0.18_145)] dark:text-success mt-0.5">{detail.collectionEfficiencySubLabel}</p>
-        </div>
-      </div>
-
-      {/* EMI schedule for this loan */}
-      <div>
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
-          <h3 className="text-sm font-bold text-foreground">EMI schedule — {detail.loanRef}</h3>
-          <p className="text-xs text-muted-foreground">
-            {detail.borrowerName} · {detail.amountLabel} · {detail.termMonths} months
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 text-xs text-muted-foreground mb-3 pb-3 border-b border-border">
-          <span>
-            <span className="font-semibold text-foreground">EMI:</span> {detail.emiLabel}
-          </span>
-          <span>
-            <span className="font-semibold text-foreground">Rate:</span> {detail.rateLabel}
-          </span>
-          <span>
-            <span className="font-semibold text-foreground">Start:</span> {detail.startDateLabel}
-          </span>
-          <span>
-            <span className="font-semibold text-foreground">End:</span> {detail.endDateLabel}
-          </span>
-        </div>
-
-        <div className="overflow-auto max-h-96 border border-border rounded-lg">
+      ) : (
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border">
-                <TableHead className="text-xs pl-3">#</TableHead>
-                <TableHead className="text-xs">Due date</TableHead>
-                <TableHead className="text-xs text-right">Principal</TableHead>
-                <TableHead className="text-xs text-right">Interest</TableHead>
-                <TableHead className="text-xs text-right">EMI</TableHead>
-                <TableHead className="text-xs text-right">Balance</TableHead>
-                <TableHead className="text-xs pr-3">Status</TableHead>
+                <TableHead className="text-xs">#</TableHead>
+                <TableHead className="text-xs">Due Date</TableHead>
+                <TableHead className="text-xs">Principal</TableHead>
+                <TableHead className="text-xs">Interest</TableHead>
+                <TableHead className="text-xs">EMI</TableHead>
+                <TableHead className="text-xs">Balance</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="text-xs text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {detail.schedule.map((row) => (
-                <TableRow key={row.installmentNo} className="border-border">
-                  <TableCell className="text-xs text-muted-foreground pl-3">{row.installmentNo}</TableCell>
-                  <TableCell className="text-xs text-foreground">{row.dueDateLabel}</TableCell>
-                  <TableCell className="text-xs text-right text-foreground">{row.principal.toLocaleString()}</TableCell>
-                  <TableCell className="text-xs text-right text-foreground">{row.interest.toLocaleString()}</TableCell>
-                  <TableCell className="text-xs text-right font-semibold text-foreground">{row.emi.toLocaleString()}</TableCell>
-                  <TableCell className="text-xs text-right text-muted-foreground">{row.balance.toLocaleString()}</TableCell>
-                  <TableCell className="pr-3">
-                    {row.status !== "—" ? (
-                      <Badge className="bg-primary/10 text-primary border-0 text-[10px] font-semibold">{row.status}</Badge>
+              {rows.map((entry) => (
+                <TableRow key={entry.id} className="border-border">
+                  <TableCell className="text-xs text-muted-foreground">{entry.installmentNumber}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{formatDate(entry.dueDate)}</TableCell>
+                  <TableCell className="text-xs text-foreground">{formatNPR(entry.principalComponent)}</TableCell>
+                  <TableCell className="text-xs text-foreground">{formatNPR(entry.interestComponent)}</TableCell>
+                  <TableCell className="text-xs font-semibold text-foreground">{formatNPR(entry.emiAmount)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{formatNPR(entry.outstandingPrincipal)}</TableCell>
+                  <TableCell>
+                    <Badge className={cn(STATUS_BADGE_CLASS[entry.status], "border-0 text-[10px] font-semibold")}>{entry.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {entry.status === "PAID" ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Paid
+                      </span>
+                    ) : payingEntryId === entry.id ? (
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <Input
+                          type="number"
+                          placeholder="Amount"
+                          value={paidAmount}
+                          onChange={(e) => setPaidAmount(e.target.value)}
+                          className="h-7 w-24 text-xs"
+                        />
+                        <Button size="sm" className="h-7 text-xs" disabled={marking} onClick={() => handleMarkPaid(entry.id)}>
+                          {marking ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                        </Button>
+                      </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={() => { setPayingEntryId(entry.id); setPaidAmount(String(entry.emiAmount)); }}
+                      >
+                        Mark Paid
+                      </Button>
                     )}
                   </TableCell>
                 </TableRow>
@@ -198,96 +186,21 @@ export function EmiScheduleDetail({ id }: { id: string }) {
             </TableBody>
           </Table>
         </div>
+      )}
 
-        <p className="text-xs text-muted-foreground mt-2">
-          Auto-generates full {detail.termMonths}-month amortization. Penal interest @2% above contracted rate applied
-          on overdue days per NRB directive.
-        </p>
-      </div>
-
-      {/* Overdue accounts */}
-      <div>
-        <h3 className="text-sm font-bold text-foreground mb-3">Overdue accounts</h3>
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent border-border">
-              <TableHead className="text-xs">Loan ref</TableHead>
-              <TableHead className="text-xs">Borrower</TableHead>
-              <TableHead className="text-xs">EMI</TableHead>
-              <TableHead className="text-xs">Overdue days</TableHead>
-              <TableHead className="text-xs">Penal int.</TableHead>
-              <TableHead className="text-xs">Status</TableHead>
-              <TableHead className="text-xs text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {detail.overdueAccounts.map((account) => (
-              <TableRow key={account.id} className="border-border">
-                <TableCell className="text-xs font-mono font-semibold text-foreground">{account.loanRef}</TableCell>
-                <TableCell className="text-sm text-foreground">{account.borrowerName}</TableCell>
-                <TableCell className="text-xs font-semibold text-foreground">{account.emiLabel}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{account.overdueDays}d</TableCell>
-                <TableCell className="text-xs text-muted-foreground">{account.penalInterestLabel}</TableCell>
-                <TableCell>
-                  <Badge className={cn(BUCKET_BADGE_CLASS[account.bucket], "border-0 text-[10px] font-semibold")}>{account.bucket}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <button type="button" className="text-xs font-medium text-primary hover:underline">
-                    {account.actionLabel}
-                  </button>
-                </TableCell>
-              </TableRow>
+      {triggers && triggers.length > 0 && (
+        <div>
+          <h3 className="text-sm font-bold text-foreground mb-3">EMI notification triggers</h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {triggers.map((t) => (
+              <li key={t.trigger} className="flex items-center justify-between gap-3 text-xs px-3 py-2 rounded-lg bg-muted/40">
+                <span className="font-medium text-foreground">{t.trigger}</span>
+                <span className="text-muted-foreground">{t.messageType}</span>
+              </li>
             ))}
-          </TableBody>
-        </Table>
-
-        <div className="mt-3 rounded-lg bg-[var(--warning)]/10 border border-[var(--warning)]/30 px-4 py-2.5">
-          <p className="text-xs text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]">
-            NRB reclassification: &gt;90 days → Substandard. &gt;180d → Doubtful. &gt;365d → Loss. Provision: 25% / 50%
-            / 100%.
-          </p>
+          </ul>
         </div>
-      </div>
-
-      {/* Notification schedule */}
-      <div>
-        <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
-          <h3 className="text-sm font-bold text-foreground">Notification schedule — EMI reminders</h3>
-          <p className="text-xs text-muted-foreground">Per NRB collection protocol</p>
-        </div>
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent border-border">
-              <TableHead className="text-xs">Trigger</TableHead>
-              <TableHead className="text-xs">Message type</TableHead>
-              <TableHead className="text-xs text-right pr-3">Channels</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {detail.notificationRules.map((rule) => (
-              <TableRow key={rule.trigger} className="border-border">
-                <TableCell className="text-xs font-medium text-foreground whitespace-nowrap">{rule.trigger}</TableCell>
-                <TableCell className="text-xs text-foreground">{rule.messageType}</TableCell>
-                <TableCell className="pr-3">
-                  <div className="flex items-center justify-end gap-1.5">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <span
-                        key={i}
-                        className={cn(
-                          "w-2.5 h-2.5 rounded-full",
-                          i < rule.channelsLit
-                            ? TIER_DOT_CLASS[rule.tier]
-                            : "bg-muted",
-                        )}
-                      />
-                    ))}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      )}
     </motion.div>
   );
 }

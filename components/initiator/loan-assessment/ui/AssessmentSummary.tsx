@@ -59,12 +59,12 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
       </ReviewCard>
 
       <ReviewCard title={STEPS[1].title} stepId={2} onEdit={onEdit}>
-        <SummaryItem label="Sector Classification" value={n?.sectorClassification} />
-        <SummaryItem label="Loan Type" value={n?.loanType} />
-        <SummaryItem label="Purpose of Loan" value={n?.purposeOfLoan} />
-        <SummaryItem label="Loan Classification" value={n?.loanClassification} />
-        <SummaryItem label="Interest Rate Type" value={n?.interestRateType} />
-        <SummaryItem label="Effective Interest Rate" value={n?.effectiveInterestRate !== undefined ? `${n.effectiveInterestRate}%` : undefined} />
+        <SummaryItem label="Basel Classification" value={n?.baselClassification} />
+        <SummaryItem label="Basel Risk Weight" value={n?.baselRiskWeight !== undefined ? `${n.baselRiskWeight}%` : undefined} />
+        <SummaryItem label="NRB 9.3 Sector Code" value={n?.nrb93SectorCode} />
+        <SummaryItem label="NRB 9.4 Security Type Code" value={n?.nrb94SecurityTypeCode} />
+        <SummaryItem label="SIS 2 — Sector" value={n?.sis2Sector} />
+        <SummaryItem label="Green Finance Sector" value={n?.greenFinanceEconomicSector} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[2].title} stepId={3} onEdit={onEdit}>
@@ -72,40 +72,48 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
         <SummaryItem label="Loan to Value Ratio (%)" value={c?.loanToValueRatio !== undefined ? `${c.loanToValueRatio}%` : undefined} />
         <SummaryItem label="DSGIR (%)" value={c?.dsgir !== undefined ? `${c.dsgir}%` : undefined} />
         <SummaryItem label="Performance Years" value={c?.performanceYears} />
-        <SummaryItem label="Banking Relationship" value={c?.bankingRelationshipScore} />
-        <SummaryItem label="Parents Borrowings with BFIs" value={c?.parentsBorrowingsWithBfis} />
-        <SummaryItem label="Source of Income" value={c?.sourceOfIncome} />
-        <SummaryItem label="Operations of the College / Institution" value={c?.collegeOperations} />
+        <SummaryItem label="Banking Relationship Score" value={c?.bankingRelationshipScore} />
+        <SummaryItem label="Parents Borrowings with BFIs" value={c?.parentsBorrowingsWithBFIs} />
+        <SummaryItem label="Source of Income Score" value={c?.sourceOfIncomeScore} />
+        <SummaryItem label="Risk Grade" value={c?.riskGrade} />
+        <SummaryItem label="Total Score" value={c?.totalScore} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[3].title} stepId={4} onEdit={onEdit}>
         <SummaryItem label="Family Members" value={`${bg?.familyMembers?.length ?? 0} recorded`} />
-        <SummaryItem label="Existing Facilities" value={`${bg?.existingFacilities?.length ?? 0} recorded`} />
+        <SummaryItem label="Existing Facilities (local only)" value={`${bg?.existingFacilities?.length ?? 0} recorded`} />
+        <SummaryItem label="This Facility" value={bg?.facility} />
+        <SummaryItem label="Purpose" value={bg?.purpose} />
+        <SummaryItem label="Limit" value={bg?.limit !== undefined ? `NPR ${bg.limit}` : undefined} />
+        <SummaryItem label="Interest Rate" value={bg?.interestRate !== undefined ? `${bg.interestRate}%` : undefined} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[4].title} stepId={5} onEdit={onEdit}>
-        <SummaryItem label="Securities Pledged" value={`${s?.securities?.length ?? 0} recorded`} />
-        <SummaryItem label="Guarantors" value={`${s?.guarantors?.length ?? 0} recorded`} />
+        <SummaryItem label="Security Details" value={s?.securityDetails} />
+        <SummaryItem label="FMV" value={s?.fmv !== undefined ? `NPR ${s.fmv}` : undefined} />
+        <SummaryItem label="Proposed Loan" value={s?.proposedLoan !== undefined ? `NPR ${s.proposedLoan}` : undefined} />
+        <SummaryItem label="Guarantor" value={s?.guarantor?.nameOfGuarantor} />
+        <SummaryItem label="Guarantor Consent" value={s?.guarantor?.guarantorConsent} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[5].title} stepId={6} onEdit={onEdit}>
-        <SummaryItem label="Insurance Policies" value={`${ir?.insurances?.length ?? 0} recorded`} />
-        <SummaryItem label="Monthly Income" value={ir?.repaymentCapacity?.monthlyIncome} />
-        <SummaryItem label="Proposed EMI" value={ir?.repaymentCapacity?.proposedEmi} />
+        <SummaryItem label="Insured Assets" value={ir?.insurance?.insuredAssets} />
+        <SummaryItem label="Sum of Insurance" value={ir?.insurance?.sumOfInsurance !== undefined ? `NPR ${ir.insurance.sumOfInsurance}` : undefined} />
+        <SummaryItem label="Repayment Capacity — Value of Assets" value={ir?.repaymentCapacity?.valueOfAssets !== undefined ? `NPR ${ir.repaymentCapacity.valueOfAssets}` : undefined} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[6].title} stepId={7} onEdit={onEdit}>
-        <SummaryItem label="Money Laundering / TF Risk" value={truncate(r?.moneyLaunderingRisk)} />
+        <SummaryItem label="AML / CFT Risk" value={truncate(r?.amlRisk)} />
         <SummaryItem label="Waiver" value={truncate(r?.waiver)} />
-        <SummaryItem label="Banking Relationship" value={truncate(r?.bankingRelationshipRisk)} />
+        <SummaryItem label="Banking Relationship" value={truncate(r?.bankingRelationshipRemarks)} />
         <SummaryItem label="Key Credit Risk Mitigation" value={truncate(r?.keyCreditRiskMitigation)} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[7].title} stepId={8} onEdit={onEdit}>
-        <SummaryItem label="Justification" value={truncate(rec?.justification)} />
+        <SummaryItem label="Justification of Loan" value={truncate(rec?.justificationOfLoan)} />
         <SummaryItem label="Account Strategy" value={truncate(rec?.accountStrategy)} />
-        <SummaryItem label="Disbursement" value={truncate(rec?.disbursement)} />
-        <SummaryItem label="Recommendation" value={truncate(rec?.recommendation)} />
+        <SummaryItem label="Disbursement" value={truncate(rec?.disbursementSection)} />
+        <SummaryItem label="Conclusion & Recommendation" value={truncate(rec?.conclusionAndRecommendation)} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[8].title} stepId={9} onEdit={onEdit}>

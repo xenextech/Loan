@@ -22,6 +22,7 @@ import type {
   InitiatorApplicationListItem,
   InitiatorDocumentSet,
 } from "@/components/initiator/types/initiator";
+import type { LoanAssessmentFormValues } from "@/components/initiator/loan-assessment/schema";
 
 // ─── To-backend transforms ────────────────────────────────────────────────────
 
@@ -175,6 +176,138 @@ const groupInitiatorDocuments = (
   return { student, parent, college };
 };
 
+// ─── Initiator assessment (Loan Assessment Form) ───────────────────────────────
+// Maps the backend's flat/nested initiator fields onto the Loan Assessment Form's
+// per-step shape, so reopening an application pre-fills previously-saved values
+// instead of resetting to a blank form. Steps with no backend field (Existing
+// Facilities, the Approval chain) are intentionally omitted — they stay local-draft only.
+
+const toDateInputValue = (iso?: string): string => (iso ? iso.slice(0, 10) : "");
+
+const toYesNo = (value?: boolean): "Yes" | "No" | undefined => (value === undefined ? undefined : value ? "Yes" : "No");
+
+export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): Partial<LoanAssessmentFormValues> => {
+  const g = record.personalGuarantee;
+  const ins = record.insurance;
+  const rc = record.repaymentCapacity;
+
+  return {
+    applicantInfo: {
+      customerName: record.customerName ?? "",
+      relationshipStartDate: toDateInputValue(record.relationshipStartDate),
+      group: record.customerGroup ?? "",
+      obligorNumber: record.obligorNumber ?? "",
+      permanentAddress: record.permanentAddress ?? "",
+      correspondenceAddress: record.correspondenceAddress ?? "",
+      contactNumber: record.phoneNumber ?? "",
+      profession: record.profession ?? "",
+      repaymentSource: record.repaymentSource ?? "",
+      citizenshipNumber: record.citizenshipNumber ?? "",
+      citizenshipIssuedDate: toDateInputValue(record.citizenshipIssuedDate),
+      citizenshipIssuedPlace: record.citizenshipIssuedPlace ?? "",
+      nationalId: record.nidNumber ?? "",
+      pan: record.panNumber ?? "",
+      license: record.licenseNumber ?? "",
+      bankingRelationship: record.bankingRelationship as LoanAssessmentFormValues["applicantInfo"]["bankingRelationship"],
+      blacklistedStatus: record.isBlacklisted === undefined ? undefined : record.isBlacklisted ? "BLACKLISTED" : "NOT_BLACKLISTED",
+    },
+    nrbReporting: {
+      baselClassification: record.baselClassification ?? "",
+      baselRiskWeight: toOptionalNumber(record.baselRiskWeight),
+      nrb93SectorCode: record.nrb93SectorCode ?? "",
+      nrb93KaProductCode: record.nrb93KaProductCode ?? "",
+      nrb94SecurityTypeCode: record.nrb94SecurityTypeCode ?? "",
+      sis0IndustrialClassification: record.sis0IndustrialClassification ?? "",
+      sis1ProductType: record.sis1ProductType ?? "",
+      sis2Sector: record.sis2Sector ?? "",
+      sis3Security: record.sis3Security ?? "",
+      sis4InstitutionalGroupingOfBorrower: record.sis4InstitutionalGroupingOfBorrower ?? "",
+      sis9PriorityLending: record.sis9PriorityLending ?? "",
+      greenFinanceEconomicSector: record.greenFinanceEconomicSector ?? "",
+      greenFinanceSubSector: record.greenFinanceSubSector ?? "",
+      greenFinanceTaxonomyTag: record.greenFinanceTaxonomyTag ?? "",
+    },
+    creditAssessment: {
+      creditLimit: toOptionalNumber(record.creditLimit),
+      loanToValueRatio: toOptionalNumber(record.loanToValueRatio),
+      dsgir: toOptionalNumber(record.dsgir),
+      performanceYears: toOptionalNumber(record.performanceYears),
+      bankingRelationshipScore: toOptionalNumber(record.bankingRelationshipScore),
+      parentsBorrowingsWithBFIs: record.parentsBorrowingsWithBFIs ?? "",
+      sourceOfIncomeScore: toOptionalNumber(record.sourceOfIncomeScore),
+      operationOfInstitution: toOptionalNumber(record.operationOfInstitution),
+      creditRiskScoring: record.creditRiskScoring ?? "",
+      riskGrade: record.riskGrade ?? "",
+      totalScore: toOptionalNumber(record.totalScore),
+      totalPercentage: toOptionalNumber(record.totalPercentage),
+    },
+    applicantBackground: {
+      familyMembers: (record.familyMember ?? []).map((m) => ({
+        personName: m.personName ?? "",
+        age: m.age ?? undefined,
+        qualification: m.qualification ?? "",
+        relationshipWithBorrower: m.relationshipWithBorrower ?? "",
+        occupationSocialInvolvement: m.occupationSocialInvolvement ?? "",
+      })),
+      existingFacilities: [],
+      facility: record.facility ?? "",
+      purpose: record.purpose ?? "",
+      limit: toOptionalNumber(record.limit),
+      period: toOptionalNumber(record.period),
+      interestRate: toOptionalNumber(record.interestRate),
+      fee: toOptionalNumber(record.fee),
+      remarks: record.remarks ?? "",
+    },
+    security: {
+      securityDetails: record.securityDetails ?? "",
+      fmv: toOptionalNumber(record.fmv),
+      proposedLoan: toOptionalNumber(record.proposedLoan),
+      financeAgainstFmv: toOptionalNumber(record.financeAgainstFmv),
+      guarantor: {
+        nameOfGuarantor: g?.nameOfGuarantor ?? "",
+        relationship: g?.relationship ?? "",
+        age: g?.age ?? undefined,
+        netWorth: toOptionalNumber(g?.netWorth),
+        guarantorConsent: toYesNo(g?.guarantorConsent),
+        ciclStatus: toYesNo(g?.ciclStatus),
+        ciclRemarks: g?.ciclRemarks ?? "",
+        blackListedDate: toDateInputValue(g?.blackListedDate),
+        releasedDate: toDateInputValue(g?.releasedDate),
+      },
+    },
+    insuranceRepayment: {
+      insurance: {
+        insuredAssets: ins?.insuredAssets ?? "",
+        valueOfAssets: toOptionalNumber(ins?.valueOfAssets),
+        sumOfInsurance: toOptionalNumber(ins?.sumOfInsurance),
+        insuranceCoverage: toOptionalNumber(ins?.insuranceCoverage),
+        insuranceRemarks: ins?.insuranceRemarks ?? "",
+      },
+      repaymentCapacity: {
+        insuredAssets: toOptionalNumber(rc?.insuredAssets),
+        valueOfAssets: toOptionalNumber(rc?.valueOfAssets),
+        sumOfInsurance: toOptionalNumber(rc?.sumOfInsurance),
+        insuranceCoverage: toOptionalNumber(rc?.insuranceCoverage),
+        insuranceRemarks: rc?.insuranceRemarks ?? "",
+      },
+    },
+    riskAssessment: {
+      amlRisk: record.amlRisk ?? "",
+      waiver: record.waiver ?? "",
+      bankingRelationshipRemarks: record.bankingRelationshipRemarks ?? "",
+      keyCreditRiskMitigation: record.keyCreditRiskMitigation ?? "",
+    },
+    recommendation: {
+      termsAndConditions: record.termsAndConditions ?? "",
+      justificationOfLoan: record.justificationOfLoan ?? "",
+      accountStrategy: record.accountStrategy ?? "",
+      disbursementSection: record.disbursementSection ?? "",
+      utilizationOfFund: record.utilizationOfFund ?? "",
+      conclusionAndRecommendation: record.conclusionAndRecommendation ?? "",
+    },
+  };
+};
+
 // Convert the full backend initiator record (GET .../initiator) → the review workspace's view model.
 export const toInitiatorDetail = (record: InitiatorApplicationRecord): InitiatorApplicationDetail => {
   const { collegeVerification, parentVerification, studyInformation, loanInformation } = record;
@@ -233,5 +366,6 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
       parentVerification?.submittedAt,
       collegeVerification,
     ),
+    assessment: toAssessmentInitialValues(record),
   };
 };
