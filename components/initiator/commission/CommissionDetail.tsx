@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const STATUS_BADGE_CLASS: Record<CommissionEntryStatus, string> = {
 /** Commission ledger entries for a single partner — `id` is a CommissionPartner id. */
 export function CommissionDetail({ id }: { id: string }) {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [amount, setAmount] = useState("");
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
 
@@ -67,7 +69,7 @@ export function CommissionDetail({ id }: { id: string }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-3xl mx-auto space-y-6">
-      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/commission")}>
+      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push(`${basePath}/commission`)}>
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 

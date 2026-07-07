@@ -195,7 +195,7 @@ export default function AgreementGenerator() {
     () => `BON-${String(Date.now()).slice(-8)}`,
   );
   const [qrVerifyUrl, setQrVerifyUrl] = useState(
-    () => `verify.genzloan.com.np/doc/BON-${String(Date.now()).slice(-8)}`,
+    () => `verify.Unnati.com.np/doc/BON-${String(Date.now()).slice(-8)}`,
   );
 
   const [generated, setGenerated] = useState(false);
@@ -899,7 +899,7 @@ export default function AgreementGenerator() {
                       onChange={(e) => {
                         setQrToken(e.target.value);
                         setQrVerifyUrl(
-                          `verify.genzloan.com.np/doc/${e.target.value}`,
+                          `verify.Unnati.com.np/doc/${e.target.value}`,
                         );
                       }}
                     />

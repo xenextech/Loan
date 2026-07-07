@@ -214,7 +214,7 @@ export default function OfferLetterGenerator() {
   // ── QR ─────────────────────────────────────────────────────────────────────
   const [qrToken, setQrToken] = useState(() => makeQrToken());
   const [qrVerifyUrl, setQrVerifyUrl] = useState(
-    () => `verify.genzloan.com.np/doc/${qrToken}`,
+    () => `verify.Unnati.com.np/doc/${qrToken}`,
   );
 
   // ── Computed ───────────────────────────────────────────────────────────────
@@ -223,7 +223,9 @@ export default function OfferLetterGenerator() {
   const tf = Number(tuitionPerSem) || 0;
   const ef = Number(examFeePerSem) || 0;
   const lf = Number(labFeePerSem) || 0;
-  const customFeesFilled = customFees.filter((f) => f.label.trim() && Number(f.amount) > 0);
+  const customFeesFilled = customFees.filter(
+    (f) => f.label.trim() && Number(f.amount) > 0,
+  );
   const customFeesTotal = customFeesFilled.reduce((sum, f) => {
     const amt = Number(f.amount) || 0;
     return sum + (f.perSemester ? amt * sems : amt);
@@ -303,7 +305,7 @@ export default function OfferLetterGenerator() {
     // QR
     const newToken = makeQrToken();
     setQrToken(newToken);
-    setQrVerifyUrl(`verify.genzloan.com.np/doc/${newToken}`);
+    setQrVerifyUrl(`verify.Unnati.com.np/doc/${newToken}`);
 
     // Misc
     setGenerated(false);
@@ -586,7 +588,11 @@ export default function OfferLetterGenerator() {
   };
 
   // ─── Helpers for dynamic lists ───────────────────────────────────────────
-  function updateCustomFee(idx: number, field: keyof CustomFee, val: string | number | boolean) {
+  function updateCustomFee(
+    idx: number,
+    field: keyof CustomFee,
+    val: string | number | boolean,
+  ) {
     setCustomFees((prev) =>
       prev.map((f, i) => (i === idx ? { ...f, [field]: val } : f)),
     );
@@ -595,7 +601,10 @@ export default function OfferLetterGenerator() {
     setCustomFees((prev) => prev.filter((_, i) => i !== idx));
   }
   function addCustomFee() {
-    setCustomFees((prev) => [...prev, { label: "", amount: "", perSemester: false }]);
+    setCustomFees((prev) => [
+      ...prev,
+      { label: "", amount: "", perSemester: false },
+    ]);
   }
 
   function updateCondition(idx: number, val: string) {
@@ -1159,7 +1168,9 @@ export default function OfferLetterGenerator() {
                           className="h-8 text-xs flex-1"
                           placeholder="Fee label, e.g. Hostel fee, Uniform fee"
                           value={f.label}
-                          onChange={(e) => updateCustomFee(i, "label", e.target.value)}
+                          onChange={(e) =>
+                            updateCustomFee(i, "label", e.target.value)
+                          }
                         />
                         <Input
                           className="h-8 text-xs w-28 shrink-0"
@@ -1170,13 +1181,17 @@ export default function OfferLetterGenerator() {
                             updateCustomFee(
                               i,
                               "amount",
-                              e.target.value === "" ? "" : Number(e.target.value),
+                              e.target.value === ""
+                                ? ""
+                                : Number(e.target.value),
                             )
                           }
                         />
                         <button
                           type="button"
-                          onClick={() => updateCustomFee(i, "perSemester", !f.perSemester)}
+                          onClick={() =>
+                            updateCustomFee(i, "perSemester", !f.perSemester)
+                          }
                           className={`h-8 px-2 rounded-md text-[10px] font-medium border shrink-0 whitespace-nowrap transition-colors ${
                             f.perSemester
                               ? "bg-primary/10 text-primary border-primary/30"
@@ -1207,9 +1222,11 @@ export default function OfferLetterGenerator() {
                   </div>
                   {customFeesFilled.length > 0 && (
                     <p className="text-[10px] text-[oklch(0.55_0.18_80)] mt-2">
-                      Custom fees are included in the total, live preview, and PDF, but the backend doesn&apos;t yet
-                      store itemized custom fees — only the combined total is saved when you click Save. Re-enter
-                      them if you reopen a saved offer letter.
+                      Custom fees are included in the total, live preview, and
+                      PDF, but the backend doesn&apos;t yet store itemized
+                      custom fees — only the combined total is saved when you
+                      click Save. Re-enter them if you reopen a saved offer
+                      letter.
                     </p>
                   )}
                 </div>
@@ -1389,7 +1406,7 @@ export default function OfferLetterGenerator() {
                       onChange={(e) => {
                         setQrToken(e.target.value);
                         setQrVerifyUrl(
-                          `verify.genzloan.com.np/doc/${e.target.value}`,
+                          `verify.Unnati.com.np/doc/${e.target.value}`,
                         );
                       }}
                     />

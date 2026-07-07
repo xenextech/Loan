@@ -120,9 +120,9 @@ export default function LandingNav() {
           >
             <Image
               src="/logo-white-bg.svg"
-              width={180}
-              height={180}
-              alt="GenZ Logo"
+              width={120}
+              height={120}
+              alt="Unnati Logo"
             />
           </Link>
 
@@ -219,13 +219,21 @@ export default function LandingNav() {
                       Sign In
                     </Button>
                   </Link>
-                  <Link href="/apply">
+                  {/* <Link href="/apply">
                     <Button
                       size="sm"
                       className="text-[13px] font-semibold h-9 px-5 gap-1.5 rounded-lg shadow-none"
                     >
                       Apply For Loan
                       <ArrowRight className="w-3.5 h-3.5" />
+                    </Button>
+                  </Link> */}
+                     <Link href="/register">
+                    <Button
+                      size="sm"
+                      className="text-[13px] font-semibold h-9 px-5 gap-1.5 rounded-lg shadow-none"
+                    >
+                      Sign Up
                     </Button>
                   </Link>
                 </>

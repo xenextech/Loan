@@ -37,7 +37,7 @@ import { Landmark } from "lucide-react";
 
 const AGREEMENT_TYPES = [
   { icon: Building2, label: "College–Bank MOU", key: "mou" as const, count: 6 },
-  { icon: Zap, label: "College–Unnati MOU", key: "genz" as const, count: 1 },
+  { icon: Zap, label: "College–Unnati MOU", key: "Unnati" as const, count: 1 },
   {
     icon: Users,
     label: "Student loan agreement",
@@ -225,7 +225,7 @@ export default function AgreementsView() {
     () => `AGR-${String(Date.now()).slice(-8)}`,
   );
   const [qrVerifyUrl, setQrVerifyUrl] = useState(
-    () => `verify.genzloan.com.np/doc/AGR-${String(Date.now()).slice(-8)}`,
+    () => `verify.Unnati.com.np/doc/AGR-${String(Date.now()).slice(-8)}`,
   );
 
   const feeDue = feeDueRs === "" ? 0 : Number(feeDueRs);
@@ -235,7 +235,7 @@ export default function AgreementsView() {
     year: "numeric",
   });
   const displayDate = issuedDateAD || today;
-  const isMOU = activeType === "mou" || activeType === "genz";
+  const isMOU = activeType === "mou" || activeType === "Unnati";
   const isStudent = !isMOU;
   const typeLabel =
     AGREEMENT_TYPES.find((a) => a.key === activeType)?.label ?? "Agreement";
@@ -262,7 +262,7 @@ export default function AgreementsView() {
       toast.error("Fill in college name.");
       return;
     }
-    const partyBName = activeType === "genz" ? "Unnati Pvt. Ltd." : bank;
+    const partyBName = activeType === "Unnati" ? "Unnati Pvt. Ltd." : bank;
     const clauses = [
       `${collegeName} shall verify student enrollment and issue certified documents via the Unnati platform, acting as facilitating intermediary only.`,
       `${partyBName} shall offer education loans up to ${maxLoan || "[Max Loan]"} at ${rate || "[Rate]"} with moratorium equal to ${MORATORIUM_LABELS[moratorium] ?? moratorium}.`,
@@ -481,7 +481,9 @@ ${[
                           key={m.name}
                           className="flex items-center justify-between px-0.5 py-1"
                         >
-                          <span className="text-xs text-foreground">{m.name}</span>
+                          <span className="text-xs text-foreground">
+                            {m.name}
+                          </span>
                           <Badge
                             className={`text-[9px] font-semibold ${mouBadgeStyle[m.type]}`}
                           >
@@ -681,7 +683,7 @@ ${[
                 <>
                   <div>
                     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3 pb-2 border-b border-border">
-                      {activeType === "genz"
+                      {activeType === "Unnati"
                         ? "Unnati (Party B)"
                         : "Bank / Lender (Party B)"}
                     </p>
@@ -980,7 +982,7 @@ ${[
                       onChange={(e) => {
                         setQrToken(e.target.value);
                         setQrVerifyUrl(
-                          `verify.genzloan.com.np/doc/${e.target.value}`,
+                          `verify.Unnati.com.np/doc/${e.target.value}`,
                         );
                       }}
                     />
@@ -1121,7 +1123,7 @@ ${[
                       </p>
                       <div className="border border-border rounded-lg p-2">
                         <p className="text-[9px] font-bold">
-                          {activeType === "genz" ? "Unnati Pvt. Ltd." : bank}
+                          {activeType === "Unnati" ? "Unnati Pvt. Ltd." : bank}
                         </p>
                         <p className="text-[8px] text-muted-foreground">
                           Party B
@@ -1173,7 +1175,7 @@ ${[
                         },
                         {
                           n: branchManager || "Manager",
-                          o: activeType === "genz" ? "Unnati" : bank,
+                          o: activeType === "Unnati" ? "Unnati" : bank,
                           p: "Party B",
                         },
                         { n: "CEO", o: "Unnati", p: "Party C" },

@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ function TableSkeleton() {
 
 export function DocumentCenterList() {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
 
@@ -108,7 +110,7 @@ export function DocumentCenterList() {
                     <TableRow
                       key={app.id}
                       className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
-                      onClick={() => router.push(`/initiator/document-center/${app.id}`)}
+                      onClick={() => router.push(`${basePath}/document-center/${app.id}`)}
                     >
                       <TableCell className="pl-5 py-3.5">
                         <span className="text-xs font-mono font-semibold text-foreground">{app.applicationNumber}</span>
@@ -132,7 +134,7 @@ export function DocumentCenterList() {
                           className="h-7 text-xs text-primary hover:bg-primary/10 hover:text-primary"
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/initiator/document-center/${app.id}`);
+                            router.push(`${basePath}/document-center/${app.id}`);
                           }}
                         >
                           View

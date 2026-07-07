@@ -188,4 +188,4 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
   },
 };
 
-export const DRAFT_STORAGE_PREFIX = "genz-loan-assessment-draft:";
+export const DRAFT_STORAGE_PREFIX = "Unnati-loan-assessment-draft:";

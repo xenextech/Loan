@@ -28,6 +28,7 @@ import {
   useGetDashboardOverviewQuery,
   useGetCheckerQueueQuery,
 } from "@/lib/api/dashboardApi";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import type { DashboardAlertType } from "@/types/dashboard";
 
 const ALERT_META: Record<DashboardAlertType, { label: string; icon: React.ElementType; className: string }> = {
@@ -81,6 +82,7 @@ function StatSkeleton() {
 
 export default function InitiatorDashboard() {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const { data: overview, isLoading: overviewLoading } = useGetDashboardOverviewQuery();
   const { data: queue, isLoading: queueLoading } = useGetCheckerQueueQuery({ page: 1, limit: 8 });
 
@@ -200,7 +202,7 @@ export default function InitiatorDashboard() {
                       <li
                         key={`${alert.applicationId}-${i}`}
                         className="flex items-start gap-3 px-5 py-3 cursor-pointer hover:bg-muted/40 transition-colors"
-                        onClick={() => router.push(`/initiator/approval/${alert.applicationId}`)}
+                        onClick={() => router.push(`${basePath}/approval/${alert.applicationId}`)}
                       >
                         <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5", meta.className)}>
                           <meta.icon className="w-3.5 h-3.5" />
@@ -250,7 +252,7 @@ export default function InitiatorDashboard() {
                       <TableRow
                         key={row.id}
                         className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
-                        onClick={() => router.push(`/initiator/approval/${row.id}`)}
+                        onClick={() => router.push(`${basePath}/approval/${row.id}`)}
                       >
                         <TableCell className="pl-5 py-3">
                           <p className="text-sm font-medium text-foreground leading-tight">{row.fullName ?? "—"}</p>

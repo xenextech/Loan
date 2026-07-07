@@ -350,6 +350,18 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
       loanAmount:      toOptionalNumber(loanInformation?.loanAmount),
       expectedSalary:  toOptionalNumber(loanInformation?.expectedSalary),
     },
+    parentVerification: parentVerification
+      ? {
+          name:                  parentVerification.name,
+          phone:                 parentVerification.phone,
+          contact:               parentVerification.contact,
+          citizenshipNumber:     parentVerification.citizenshipNumber,
+          salaryBankName:        parentVerification.salaryBankName,
+          bankAccountNumber:     parentVerification.bankAccountNumber,
+          salarySheetPublicUrl:  parentVerification.salarySheetPublicUrl,
+          submittedAt:           parentVerification.submittedAt,
+        }
+      : null,
     collegeVerification: {
       collegeName:            collegeVerification?.collegeName,
       collegeEmail:           collegeVerification?.collegeEmail,

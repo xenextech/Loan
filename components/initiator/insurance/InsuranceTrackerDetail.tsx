@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 
 export function InsuranceTrackerDetail({ id }: { id: string }) {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const { data: policy, isLoading, error } = useGetInsurancePolicyDetailQuery(id);
 
   if (isLoading) {
@@ -44,7 +46,7 @@ export function InsuranceTrackerDetail({ id }: { id: string }) {
       <div className="flex flex-col items-center justify-center py-32 gap-3">
         <FileText className="w-8 h-8 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">{status === 404 ? "Insurance policy not found." : "Couldn't load this policy."}</p>
-        <Button variant="outline" size="sm" onClick={() => router.push("/initiator/insurance-checker")}>
+        <Button variant="outline" size="sm" onClick={() => router.push(`${basePath}/insurance-checker`)}>
           Back to list
         </Button>
       </div>
@@ -52,8 +54,8 @@ export function InsuranceTrackerDetail({ id }: { id: string }) {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-2xl mx-auto space-y-6">
-      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/insurance-checker")}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push(`${basePath}/insurance-checker`)}>
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 

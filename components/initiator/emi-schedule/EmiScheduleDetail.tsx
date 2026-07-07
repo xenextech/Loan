@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ import {
   useGetEmiNotificationTriggersQuery,
 } from "@/lib/api/dashboardApi";
 import type { EmiStatus } from "@/types/dashboard";
+import type { NrbLoanClassification } from "@/types/dashboard";
 
 const STATUS_BADGE_CLASS: Record<EmiStatus, string> = {
   UPCOMING: "bg-muted text-muted-foreground",
@@ -34,8 +36,24 @@ const STATUS_BADGE_CLASS: Record<EmiStatus, string> = {
   PARTIAL: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
 };
 
+/** NRB loan classification — driven by the oldest unpaid installment's days-overdue. */
+const NRB_CLASS_LABEL: Record<NrbLoanClassification, string> = {
+  PASS: "Pass",
+  SUBSTANDARD: "Substandard",
+  DOUBTFUL: "Doubtful",
+  LOSS: "Loss",
+};
+
+const NRB_CLASS_BADGE_CLASS: Record<NrbLoanClassification, string> = {
+  PASS: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
+  SUBSTANDARD: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
+  DOUBTFUL: "bg-destructive/10 text-destructive",
+  LOSS: "bg-destructive/20 text-destructive",
+};
+
 export function EmiScheduleDetail({ id }: { id: string }) {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [payingEntryId, setPayingEntryId] = useState<string | null>(null);
   const [paidAmount, setPaidAmount] = useState("");
 
@@ -64,7 +82,7 @@ export function EmiScheduleDetail({ id }: { id: string }) {
       <div className="flex flex-col items-center justify-center py-32 gap-3">
         <FileText className="w-8 h-8 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">{message}</p>
-        <Button variant="outline" size="sm" onClick={() => router.push("/initiator/emi-schedule")}>
+        <Button variant="outline" size="sm" onClick={() => router.push(`${basePath}/emi-schedule`)}>
           Back to list
         </Button>
       </div>
@@ -101,7 +119,7 @@ export function EmiScheduleDetail({ id }: { id: string }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/emi-schedule")}>
+      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push(`${basePath}/emi-schedule`)}>
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 
@@ -110,7 +128,15 @@ export function EmiScheduleDetail({ id }: { id: string }) {
           <h2 className="text-sm font-bold text-foreground font-mono">{application.applicationNumber}</h2>
           <span className="text-sm text-muted-foreground truncate">— {application.fullName ?? "—"}</span>
         </div>
-        <Badge variant="outline" className="text-xs font-medium">{formatNPR(application.creditLimit ?? 0)}</Badge>
+        <div className="flex items-center gap-2 shrink-0">
+          <Badge
+            className={cn(NRB_CLASS_BADGE_CLASS[application.nrbClassification ?? "PASS"], "border-0 font-semibold text-xs")}
+            title="NRB loan classification — recomputed daily from the oldest unpaid installment's days-overdue."
+          >
+            {NRB_CLASS_LABEL[application.nrbClassification ?? "PASS"]}
+          </Badge>
+          <Badge variant="outline" className="text-xs font-medium">{formatNPR(application.creditLimit ?? 0)}</Badge>
+        </div>
       </div>
 
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -136,6 +162,7 @@ export function EmiScheduleDetail({ id }: { id: string }) {
                 <TableHead className="text-xs">Interest</TableHead>
                 <TableHead className="text-xs">EMI</TableHead>
                 <TableHead className="text-xs">Balance</TableHead>
+                <TableHead className="text-xs">Penal Interest</TableHead>
                 <TableHead className="text-xs">Status</TableHead>
                 <TableHead className="text-xs text-right">Action</TableHead>
               </TableRow>
@@ -149,6 +176,9 @@ export function EmiScheduleDetail({ id }: { id: string }) {
                   <TableCell className="text-xs text-foreground">{formatNPR(entry.interestComponent)}</TableCell>
                   <TableCell className="text-xs font-semibold text-foreground">{formatNPR(entry.emiAmount)}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{formatNPR(entry.outstandingPrincipal)}</TableCell>
+                  <TableCell className="text-xs font-semibold text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]">
+                    {entry.penalInterestAccrued > 0 ? formatNPR(entry.penalInterestAccrued) : "—"}
+                  </TableCell>
                   <TableCell>
                     <Badge className={cn(STATUS_BADGE_CLASS[entry.status], "border-0 text-[10px] font-semibold")}>{entry.status}</Badge>
                   </TableCell>

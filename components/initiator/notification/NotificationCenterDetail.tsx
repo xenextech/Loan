@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const CHANNELS: NotificationChannel[] = ["APP", "EMAIL", "SMS", "WHATSAPP"];
  *  route only drives the Back destination, matching the notification log's own convention. */
 export function NotificationCenterDetail({ id: _id }: { id: string }) {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [name, setName] = useState("");
   const [channel, setChannel] = useState<NotificationChannel>("SMS");
   const [body, setBody] = useState("");
@@ -73,7 +75,7 @@ export function NotificationCenterDetail({ id: _id }: { id: string }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/notification")}>
+      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push(`${basePath}/notification`)}>
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 

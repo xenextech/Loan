@@ -109,13 +109,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2.5 px-5 h-14 border-b border-border shrink-0">
-        <Link href="/"><Image
-          src="/logo-white-bg.svg"
-          width={100}
-          height={100}
-          alt="GenZ Logo"
-        /></Link>
-        
+        <Link href="/">
+          <Image
+            src="/logo-white-bg.svg"
+            width={100}
+            height={100}
+            alt="Unnati Logo"
+          />
+        </Link>
 
         <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 py-0.5 ml-auto shrink-0 font-bold tracking-wide">
           COLLEGE
@@ -170,13 +171,14 @@ export default function CollegeSidebar() {
           <Menu className="w-5 h-5 text-foreground" />
         </button>
         <div className="flex items-center gap-2">
-          <Link href="/"><Image
-            src="/logo-white-bg.svg"
-            width={100}
-            height={100}
-            alt="GenZ Logo"
-          /></Link>
-          
+          <Link href="/">
+            <Image
+              src="/logo-white-bg.svg"
+              width={100}
+              height={100}
+              alt="Unnati Logo"
+            />
+          </Link>
 
           <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 font-bold">
             COLLEGE

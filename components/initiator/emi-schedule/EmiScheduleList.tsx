@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,9 @@ const BUCKET_TABS: { key: OverdueBucket | "all"; label: string }[] = [
   { key: "all", label: "All Overdue" },
   { key: "1-30", label: "1–30 days" },
   { key: "31-90", label: "31–90 days" },
-  { key: "90+", label: "90+ days" },
+  { key: "91-180", label: "91–180 days" },
+  { key: "181-365", label: "181–365 days" },
+  { key: "365+", label: "365+ days" },
 ];
 
 function StatCard({ icon: Icon, label, value, sub, iconBg }: { icon: React.ElementType; label: string; value: string | number; sub?: string; iconBg: string }) {
@@ -42,8 +45,21 @@ function StatCard({ icon: Icon, label, value, sub, iconBg }: { icon: React.Eleme
   );
 }
 
+function AgingBucketCard({ label, amount, count }: { label: string; amount: number; count: number }) {
+  return (
+    <Card className="border-border shadow-none">
+      <CardContent className="px-4 py-4">
+        <p className="text-xs font-semibold text-muted-foreground mb-1.5">{label}</p>
+        <p className="text-lg font-bold text-foreground tabular-nums">{formatNPR(amount)}</p>
+        <p className="text-[11px] text-muted-foreground/70 mt-0.5">{count} account{count !== 1 ? "s" : ""}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function EmiScheduleList() {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [bucket, setBucket] = useState<OverdueBucket | "all">("all");
   const [page, setPage] = useState(1);
 
@@ -65,17 +81,44 @@ export function EmiScheduleList() {
       </motion.div>
 
       {overviewLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <StatCard icon={Wallet} label="Due Today" value={formatNPR(overview?.dueToday.amount ?? 0)} sub={`${overview?.dueToday.count ?? 0} accounts`} iconBg="bg-primary/10 text-primary" />
-          <StatCard icon={AlertTriangle} label="Overdue 1–30d" value={formatNPR(overview?.overdue1to30.amount ?? 0)} sub={`${overview?.overdue1to30.count ?? 0} accounts`} iconBg="bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)]" />
-          <StatCard icon={AlertTriangle} label="Overdue 31–90d" value={formatNPR(overview?.overdue31to90.amount ?? 0)} sub={`${overview?.overdue31to90.count ?? 0} accounts`} iconBg="bg-destructive/10 text-destructive" />
           <StatCard icon={Gauge} label="Collection Efficiency" value={overview?.collectionEfficiency !== null && overview?.collectionEfficiency !== undefined ? `${overview.collectionEfficiency}%` : "—"} iconBg="bg-[oklch(0.62_0.18_145)]/15 text-[oklch(0.42_0.18_145)]" />
+          <StatCard
+            icon={AlertTriangle}
+            label="Total Overdue Accounts"
+            value={
+              (overview?.overdue1to30.count ?? 0) +
+              (overview?.overdue31to90.count ?? 0) +
+              (overview?.overdue91to180.count ?? 0) +
+              (overview?.overdue181to365.count ?? 0) +
+              (overview?.overdue365Plus.count ?? 0)
+            }
+            iconBg="bg-destructive/10 text-destructive"
+          />
         </div>
       )}
+
+      <div className="mb-8">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2.5">Overdue Aging (NRB Buckets)</p>
+        {overviewLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <AgingBucketCard label="1–30 days" amount={overview?.overdue1to30.amount ?? 0} count={overview?.overdue1to30.count ?? 0} />
+            <AgingBucketCard label="31–90 days" amount={overview?.overdue31to90.amount ?? 0} count={overview?.overdue31to90.count ?? 0} />
+            <AgingBucketCard label="91–180 days" amount={overview?.overdue91to180.amount ?? 0} count={overview?.overdue91to180.count ?? 0} />
+            <AgingBucketCard label="181–365 days" amount={overview?.overdue181to365.amount ?? 0} count={overview?.overdue181to365.count ?? 0} />
+            <AgingBucketCard label="365+ days" amount={overview?.overdue365Plus.amount ?? 0} count={overview?.overdue365Plus.count ?? 0} />
+          </div>
+        )}
+      </div>
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
         <Card className="border-border shadow-none">
@@ -119,6 +162,7 @@ export function EmiScheduleList() {
                       <TableHead className="text-xs hidden sm:table-cell">Installment</TableHead>
                       <TableHead className="text-xs">EMI</TableHead>
                       <TableHead className="text-xs hidden md:table-cell">Due Date</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Penal Interest</TableHead>
                       <TableHead className="text-xs text-right pr-5">Action</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -127,7 +171,7 @@ export function EmiScheduleList() {
                       <TableRow
                         key={entry.id}
                         className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
-                        onClick={() => entry.application && router.push(`/initiator/emi-schedule/${entry.application.id}`)}
+                        onClick={() => entry.application && router.push(`${basePath}/emi-schedule/${entry.application.id}`)}
                       >
                         <TableCell className="pl-5 py-3.5">
                           <p className="text-sm font-semibold text-foreground leading-tight">{entry.application?.fullName ?? "—"}</p>
@@ -141,6 +185,11 @@ export function EmiScheduleList() {
                         </TableCell>
                         <TableCell className="py-3.5 hidden md:table-cell">
                           <span className="text-xs text-muted-foreground">{formatDate(entry.dueDate)}</span>
+                        </TableCell>
+                        <TableCell className="py-3.5 hidden md:table-cell">
+                          <span className="text-xs font-semibold text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]">
+                            {entry.penalInterestAccrued > 0 ? formatNPR(entry.penalInterestAccrued) : "—"}
+                          </span>
                         </TableCell>
                         <TableCell className="py-3.5 text-right pr-5">
                           <Badge className="bg-destructive/10 text-destructive border-0 text-[10px] font-semibold gap-1">

@@ -1,22 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, PanelRightOpen, PanelRightClose } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { DocumentReviewPanel } from "@/components/initiator/review/DocumentReviewPanel";
+import { STAGE_LABEL, STAGE_BADGE_CLASS, NO_STAGE_LABEL, NO_STAGE_BADGE_CLASS } from "@/components/initiator/approval/stageBadge";
 import { SupporterAssessmentPanel } from "./SupporterAssessmentPanel";
 import type { SupporterApplicationDetail } from "../types/supporter";
 
 /**
- * Split-screen Support review layout — mirrors the Initiator's `VerificationLayout`
- * exactly (sticky header, 45/55 split, independently-scrolling columns) so the two
- * roles feel like one continuous product. The right-hand document workspace is the
- * *same* `DocumentReviewPanel` the Initiator uses, reused as-is.
+ * Support review layout. The verification form opens full-width; the
+ * "Application Review" button slides in the document review workspace
+ * (Application Summary + Application Review tabs) from the right, resizing
+ * the form panel down to make room — matches the Initiator's `VerificationLayout`
+ * and the Approver's `ApproverVerificationLayout`.
  */
 export function SupporterVerificationLayout({ detail }: { detail: SupporterApplicationDetail }) {
   const router = useRouter();
+  const [showReview, setShowReview] = useState(false);
 
   return (
     <div className="flex flex-col">
@@ -36,21 +41,48 @@ export function SupporterVerificationLayout({ detail }: { detail: SupporterAppli
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2 shrink-0">
-          <Badge className="bg-primary/10 text-primary border-0 text-xs font-semibold gap-1 hidden sm:inline-flex">
-            <ClipboardCheck className="w-3 h-3" /> Approved by Initiator
-          </Badge>
-          <Badge variant="outline" className="text-xs font-semibold">
-            {detail.workflowStage}
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowReview((v) => !v)}>
+            {showReview ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRightOpen className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{showReview ? "Hide Review" : "Application Review"}</span>
+          </Button>
+          {detail.branch && (
+            <Badge variant="outline" className="text-xs font-medium hidden sm:inline-flex">
+              {detail.branch}
+            </Badge>
+          )}
+          <Badge className={cn(detail.stage ? STAGE_BADGE_CLASS[detail.stage] : NO_STAGE_BADGE_CLASS, "border-0 font-semibold text-xs")}>
+            {detail.stage ? STAGE_LABEL[detail.stage] : NO_STAGE_LABEL}
           </Badge>
         </div>
       </header>
 
+      {/* Body: form panel resizes between full-width and its split width; the review
+          panel collapses to 0 width when hidden (clipped via overflow-hidden) and
+          expands to its split width when shown — one shared transition duration
+          keeps both edges moving together, reading as a single slide. */}
       <div className="flex flex-col md:flex-row md:items-start">
-        <div className="w-full md:w-[60%] lg:w-[45%] border-r-0 md:border-r border-border md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-y-auto">
+        <div
+          className={cn(
+            "w-full border-border md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-y-auto transition-[width] duration-300 ease-in-out",
+            showReview ? "md:w-[60%] lg:w-[45%] border-r-0 md:border-r" : "md:w-full border-r-0",
+          )}
+        >
           <SupporterAssessmentPanel detail={detail} />
         </div>
-        <div className="w-full md:w-[40%] lg:w-[55%] md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-y-auto bg-muted/20">
-          <DocumentReviewPanel detail={detail} />
+        <div
+          className={cn(
+            "overflow-hidden transition-[width,opacity] duration-300 ease-in-out bg-muted/20",
+            showReview ? "w-full md:w-[40%] lg:w-[55%] opacity-100" : "w-0 opacity-0",
+          )}
+        >
+          <div
+            className={cn(
+              "w-full min-w-[min(100%,26rem)] md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:overflow-y-auto transition-transform duration-300 ease-in-out",
+              showReview ? "translate-x-0" : "translate-x-8",
+            )}
+          >
+            <DocumentReviewPanel detail={detail} />
+          </div>
         </div>
       </div>
     </div>

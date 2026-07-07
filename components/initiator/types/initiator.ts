@@ -39,6 +39,19 @@ export interface InitiatorStudentInfo {
   expectedSalary?: number;
 }
 
+/** Read-only view of the parent's verification submission (via magic link) — distinct from the
+ *  student-reported family names on `InitiatorStudentInfo`. */
+export interface InitiatorParentVerification {
+  name?: string;
+  phone?: string;
+  contact?: string;
+  citizenshipNumber?: string;
+  salaryBankName?: string;
+  bankAccountNumber?: string;
+  salarySheetPublicUrl?: string;
+  submittedAt?: string;
+}
+
 /** Read-only view of the college's verification form. */
 export interface InitiatorCollegeVerification {
   collegeName?: string;
@@ -71,6 +84,8 @@ export interface InitiatorDocumentSet {
 
 export interface InitiatorApplicationDetail extends InitiatorApplicationListItem {
   studentInfo: InitiatorStudentInfo;
+  /** Present only once the parent has submitted the magic-link verification form. */
+  parentVerification: InitiatorParentVerification | null;
   collegeVerification: InitiatorCollegeVerification;
   documents: InitiatorDocumentSet;
   submittedAt: string;

@@ -5,3 +5,4 @@ export { loanAssessmentSchema } from "./schema";
 export type { LoanAssessmentFormValues, LoanAssessmentSubmitValues } from "./schema";
 export { DEFAULT_LOAN_ASSESSMENT_VALUES } from "./constants";
 export type { ApprovalRole, ApprovalStatus } from "./types";
+export { mergeDefaults } from "./useLoanAssessmentForm";

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ const STATUS_BADGE_CLASS: Record<GeneratedAgreementStatus, string> = {
 
 export function DocumentCenterDetail({ id }: { id: string }) {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [refInput, setRefInput] = useState("");
   const [agreementType, setAgreementType] = useState<GeneratedAgreementType>("LOAN_AGREEMENT");
 
@@ -84,7 +86,7 @@ export function DocumentCenterDetail({ id }: { id: string }) {
       <div className="flex flex-col items-center justify-center py-32 gap-3">
         <FileText className="w-8 h-8 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Application not found.</p>
-        <Button variant="outline" size="sm" onClick={() => router.push("/initiator/document-center")}>
+        <Button variant="outline" size="sm" onClick={() => router.push(`${basePath}/document-center`)}>
           Back to list
         </Button>
       </div>
@@ -93,7 +95,7 @@ export function DocumentCenterDetail({ id }: { id: string }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/document-center")}>
+      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push(`${basePath}/document-center`)}>
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 

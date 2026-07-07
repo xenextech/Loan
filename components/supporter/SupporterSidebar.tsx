@@ -12,14 +12,107 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
-import { LayoutDashboard, LogOut, ClipboardCheck, Menu } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  GitBranch,
+  Wallet,
+  Calendar,
+  Bell,
+  FolderOpen,
+  ShieldCheck,
+  Percent,
+  History,
+  LogOut,
+  ClipboardCheck,
+  Menu,
+} from "lucide-react";
 
-const NAV_ITEMS = [
+const NAV_GROUPS = [
   {
-    href: "/supporter",
-    icon: LayoutDashboard,
-    label: "Dashboard",
-    exact: true,
+    title: "Overview",
+    items: [
+      {
+        href: "/supporter",
+        icon: LayoutDashboard,
+        label: "Dashboard",
+        exact: true,
+      },
+    ],
+  },
+  {
+    title: "Lending",
+    items: [
+      {
+        href: "/supporter/applications",
+        icon: FileText,
+        label: "Applications",
+        exact: false,
+      },
+      {
+        href: "/supporter/approval",
+        icon: GitBranch,
+        label: "Approval Work Flow",
+        exact: false,
+      },
+      {
+        href: "/supporter/disbursment",
+        icon: Wallet,
+        label: "Disbursement",
+        exact: false,
+      },
+    ],
+  },
+  {
+    title: "Repayment",
+    items: [
+      {
+        href: "/supporter/emi-schedule",
+        icon: Calendar,
+        label: "EMI Schedule",
+        exact: false,
+      },
+      {
+        href: "/supporter/notification",
+        icon: Bell,
+        label: "Notification",
+        exact: false,
+      },
+    ],
+  },
+  {
+    title: "Document",
+    items: [
+      {
+        href: "/supporter/document-center",
+        icon: FolderOpen,
+        label: "Document Center",
+        exact: false,
+      },
+      {
+        href: "/supporter/insurance-checker",
+        icon: ShieldCheck,
+        label: "Insurance Checker",
+        exact: false,
+      },
+    ],
+  },
+  {
+    title: "Finance",
+    items: [
+      {
+        href: "/supporter/commission",
+        icon: Percent,
+        label: "Commission",
+        exact: false,
+      },
+      {
+        href: "/supporter/audit-ledger",
+        icon: History,
+        label: "Audit Ledger",
+        exact: false,
+      },
+    ],
   },
 ] as const;
 
@@ -27,25 +120,34 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto py-2">
-      {NAV_ITEMS.map(({ href, icon: Icon, label, exact }) => {
-        const active = exact ? pathname === href : pathname.startsWith(href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={onNavigate}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            }`}
-          >
-            <Icon className="w-4 h-4 shrink-0" />
-            {label}
-          </Link>
-        );
-      })}
+    <nav className="flex-1 px-3 space-y-4 overflow-y-auto py-2">
+      {NAV_GROUPS.map((group) => (
+        <div key={group.title} className="space-y-0.5">
+          <p className="px-3 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+            {group.title}
+          </p>
+          {group.items.map(({ href, icon: Icon, label, exact }) => {
+            const active = exact
+              ? pathname === href
+              : pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={onNavigate}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
 }
@@ -70,18 +172,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             src="/logo-white-bg.svg"
             width={100}
             height={100}
-            alt="GenZ Logo"
+            alt="Unnati Logo"
           />
         </Link>
         <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 py-0.5 ml-auto shrink-0 font-bold tracking-wide">
           SUPPORTER
         </Badge>
-      </div>
-
-      <div className="px-5 pt-5 pb-1 shrink-0">
-        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-          Navigation
-        </p>
       </div>
 
       <NavLinks onNavigate={onNavigate} />
@@ -131,7 +227,7 @@ export default function SupporterSidebar() {
               src="/logo-white-bg.svg"
               width={100}
               height={100}
-              alt="GenZ Logo"
+              alt="Unnati Logo"
             />
           </Link>
           <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 font-bold">

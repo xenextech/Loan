@@ -22,7 +22,10 @@ function getApiErrorMessage(err: unknown): string | undefined {
   return undefined;
 }
 
-function mergeDefaults(overrides?: Partial<LoanAssessmentFormValues>): LoanAssessmentFormValues {
+/** Deep-merges saved partial assessment values with the full default shape — exported so any
+ *  read-only consumer (e.g. the Supporter's assessment view) can safely render `LoanAssessmentFormValues`
+ *  without duplicating the merge logic. */
+export function mergeDefaults(overrides?: Partial<LoanAssessmentFormValues>): LoanAssessmentFormValues {
   if (!overrides) return DEFAULT_LOAN_ASSESSMENT_VALUES;
   return {
     ...DEFAULT_LOAN_ASSESSMENT_VALUES,

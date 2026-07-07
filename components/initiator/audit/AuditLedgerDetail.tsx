@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ const CATEGORIES: AuditCategory[] = ["APPROVAL", "DISBURSEMENT", "REPAYMENT", "C
  *  drives the Back destination, matching the notification templates page's convention. */
 export function AuditLedgerDetail({ id: _id }: { id: string }) {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [category, setCategory] = useState<AuditCategory>("SYSTEM");
   const [applicationId, setApplicationId] = useState("");
   const [remarks, setRemarks] = useState("");
@@ -51,7 +53,7 @@ export function AuditLedgerDetail({ id: _id }: { id: string }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-6 lg:p-8 max-w-2xl mx-auto space-y-6">
-      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push("/initiator/audit-ledger")}>
+      <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 self-start" onClick={() => router.push(`${basePath}/audit-ledger`)}>
         <ArrowLeft className="w-4 h-4" /> Back
       </Button>
 

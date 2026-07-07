@@ -29,7 +29,12 @@ const NAV_ITEMS = [
     exact: true,
   },
   { href: "/dashboard/drafts", icon: FileEdit, label: "Drafts", exact: true },
-  { href: "/dashboard/loan-tools", icon: Calculator, label: "Loan Tools", exact: true },
+  {
+    href: "/dashboard/loan-tools",
+    icon: Calculator,
+    label: "Loan Tools",
+    exact: true,
+  },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -79,7 +84,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             src="/logo-white-bg.svg"
             width={100}
             height={100}
-            alt="GenZ Logo"
+            alt="Unnati Logo"
           />
         </Link>
         <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 py-0.5 ml-auto shrink-0 font-bold tracking-wide">
@@ -140,7 +145,7 @@ export default function StudentSidebar() {
               src="/logo-white-bg.svg"
               width={100}
               height={100}
-              alt="GenZ Logo"
+              alt="Unnati Logo"
             />
           </Link>
           <Badge className="text-[9px] bg-primary/10 text-primary border-0 px-1.5 font-bold">

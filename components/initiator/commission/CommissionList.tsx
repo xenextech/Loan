@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -53,6 +54,7 @@ function StatCard({ icon: Icon, label, value, iconBg }: { icon: React.ElementTyp
 
 export function CommissionList() {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [tab, setTab] = useState<Tab>("banks");
   const [showAddPartner, setShowAddPartner] = useState(false);
   const [form, setForm] = useState({ partnerType: "BANK" as CommissionPartnerType, name: "", rateType: "PERCENTAGE" as CommissionRateType, rateValue: "", mouReference: "" });
@@ -182,7 +184,7 @@ export function CommissionList() {
                   </TableHeader>
                   <TableBody>
                     {banks.data.map((row) => (
-                      <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40 border-border" onClick={() => router.push(`/initiator/commission/${row.id}`)}>
+                      <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40 border-border" onClick={() => router.push(`${basePath}/commission/${row.id}`)}>
                         <TableCell className="pl-5 py-3.5 text-sm font-semibold text-foreground">{row.name}</TableCell>
                         <TableCell className="py-3.5 text-xs text-foreground">{row.rateValue}{row.rateType === "PERCENTAGE" ? "%" : ""}</TableCell>
                         <TableCell className="py-3.5 text-xs text-muted-foreground hidden sm:table-cell">{row.mouReference ?? "—"}</TableCell>
@@ -211,7 +213,7 @@ export function CommissionList() {
                   </TableHeader>
                   <TableBody>
                     {colleges.data.map((row) => (
-                      <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40 border-border" onClick={() => router.push(`/initiator/commission/${row.id}`)}>
+                      <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40 border-border" onClick={() => router.push(`${basePath}/commission/${row.id}`)}>
                         <TableCell className="pl-5 py-3.5 text-sm font-semibold text-foreground">{row.name}</TableCell>
                         <TableCell className="py-3.5 text-xs text-foreground">{row.rateValue}{row.rateType === "PERCENTAGE" ? "%" : ""}</TableCell>
                         <TableCell className="py-3.5 text-xs text-muted-foreground hidden sm:table-cell">{row.mouReference ?? "—"}</TableCell>

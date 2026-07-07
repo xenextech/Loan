@@ -10,7 +10,7 @@ import { SupporterVerificationLayout } from "./review/SupporterVerificationLayou
 
 export default function SupporterApplicationDetails({ id }: { id: string }) {
   const router = useRouter();
-  const { data: detail, isLoading } = useSupporterApplicationDetail(id);
+  const { data: detail, isLoading, isNotFound } = useSupporterApplicationDetail(id);
 
   if (isLoading) {
     return (
@@ -39,7 +39,9 @@ export default function SupporterApplicationDetails({ id }: { id: string }) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-3">
         <FileText className="w-8 h-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">Application not found</p>
+        <p className="text-sm text-muted-foreground">
+          {isNotFound ? "Application not found." : "Couldn't load this application. Please try again."}
+        </p>
         <Button variant="outline" size="sm" onClick={() => router.push("/supporter")}>
           Back to list
         </Button>

@@ -1,6 +1,6 @@
 import { useGetDisbursementPendingQuery } from "@/lib/api/dashboardApi";
 import { formatNPR } from "@/lib/formatters";
-import type { DisbursementListRow } from "./types";
+import { deriveReadiness, type DisbursementListRow } from "./types";
 
 /** Approved applications not yet fully disbursed — GET /dashboard/disbursement/pending. */
 export function useDisbursements(page = 1, limit = 20): {
@@ -18,7 +18,7 @@ export function useDisbursements(page = 1, limit = 20): {
       amountLabel: row.amount !== null ? formatNPR(row.amount) : "—",
       conditionsDone: row.conditionsDone,
       conditionsTotal: row.conditionsTotal,
-      status: row.status,
+      readiness: deriveReadiness(row),
     })),
     isLoading,
     total: data?.meta.total ?? 0,

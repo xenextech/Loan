@@ -19,6 +19,7 @@ import { Search, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useApprovalApplications } from "./useApprovalApplications";
 import { useDebounce } from "@/lib/useDebounce";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { STAGE_LABEL, STAGE_BADGE_CLASS, NO_STAGE_LABEL, NO_STAGE_BADGE_CLASS } from "./stageBadge";
 
 function TableSkeleton() {
@@ -42,6 +43,7 @@ function TableSkeleton() {
 
 export function ApprovalWorkflowList() {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 300);
@@ -120,7 +122,7 @@ export function ApprovalWorkflowList() {
                       <TableRow
                         key={app.id}
                         className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
-                        onClick={() => router.push(`/initiator/approval/${app.id}`)}
+                        onClick={() => router.push(`${basePath}/approval/${app.id}`)}
                       >
                         <TableCell className="pl-5 py-3.5">
                           <span className="text-xs font-mono font-semibold text-foreground">{app.refNo}</span>
@@ -152,7 +154,7 @@ export function ApprovalWorkflowList() {
                             className="h-7 text-xs text-primary hover:bg-primary/10 hover:text-primary"
                             onClick={(e) => {
                               e.stopPropagation();
-                              router.push(`/initiator/approval/${app.id}`);
+                              router.push(`${basePath}/approval/${app.id}`);
                             }}
                           >
                             View

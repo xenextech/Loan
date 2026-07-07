@@ -1,10 +1,10 @@
-import SupporterDashboard from "@/components/supporter/Dashboard";
+import InitiatorDashboard from "@/components/initiator/Dashboard";
 
 export const metadata = {
   title: "Dashboard — Unnati Supporter Portal",
-  description: "Review applications approved by the Initiator.",
+  description: "Portfolio snapshot and items needing your attention.",
 };
 
-export default function SupporterPage() {
-  return <SupporterDashboard />;
+export default function SupporterOverviewPage() {
+  return <InitiatorDashboard />;
 }

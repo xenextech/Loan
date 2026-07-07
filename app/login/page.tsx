@@ -60,6 +60,8 @@ export default function LoginPage() {
         result.user.role === "COLLEGE" ? "/college" :
         result.user.role === "INITIATOR" ? "/initiator" :
         result.user.role === "SUPPORTER" ? "/supporter" :
+        result.user.role === "CHECKER" ? "/checker" :
+        result.user.role === "APPROVER" ? "/approver" :
         "/apply";
       router.replace(destination);
     } catch (err: unknown) {

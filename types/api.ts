@@ -289,6 +289,8 @@ export interface InitiatorApplicationRecord {
   sentBackReason?: string | null;
   sentBackAt?: string | null;
   sentBackToStage?: import('./dashboard').ApplicationStage | null;
+  nrbClassification?: import('./dashboard').NrbLoanClassification;
+  nrbClassifiedAt?: string | null;
   branch?: string;
   fullName?: string;
   email?: string;

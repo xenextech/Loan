@@ -197,7 +197,7 @@ export default function EnrollmentCertificateGenerator() {
   // ── QR ─────────────────────────────────────────────────────────────────────
   const [qrToken, setQrToken] = useState(() => makeDefaultToken());
   const [qrVerifyUrl, setQrVerifyUrl] = useState(
-    () => `verify.genzloan.com.np/doc/${makeDefaultToken()}`,
+    () => `verify.Unnati.com.np/doc/${makeDefaultToken()}`,
   );
 
   const [generated, setGenerated] = useState(false);
@@ -898,7 +898,7 @@ export default function EnrollmentCertificateGenerator() {
                       onChange={(e) => {
                         setQrToken(e.target.value);
                         setQrVerifyUrl(
-                          `verify.genzloan.com.np/doc/${e.target.value}`,
+                          `verify.Unnati.com.np/doc/${e.target.value}`,
                         );
                       }}
                     />

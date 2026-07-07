@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ const CATEGORY_BADGE_CLASS: Record<AuditCategory, string> = {
 
 export function AuditLedgerList() {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [category, setCategory] = useState<AuditCategory | "ALL">("ALL");
   const [page, setPage] = useState(1);
 
@@ -74,7 +76,7 @@ export function AuditLedgerList() {
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Export CSV
           </Button>
-          <Button size="sm" className="h-9 gap-1.5" onClick={() => router.push("/initiator/audit-ledger/manual-entry")}>
+          <Button size="sm" className="h-9 gap-1.5" onClick={() => router.push(`${basePath}/audit-ledger/manual-entry`)}>
             <Plus className="w-4 h-4" /> Manual Entry
           </Button>
         </div>

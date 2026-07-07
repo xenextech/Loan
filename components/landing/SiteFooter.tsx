@@ -33,8 +33,8 @@ const CONTACT = [
   { icon: Phone, value: "+977-01-4567890", href: "tel:+9779860005961" },
   {
     icon: Mail,
-    value: "support@genzLoanedu.com.np",
-    href: "mailto:support@genzLoanedu.com.np",
+    value: "support@Unnatiedu.com.np",
+    href: "mailto:support@Unnatiedu.com.np",
   },
   { icon: MapPin, value: "Kathmandu, Bagmati, Nepal", href: "#" },
 ] as const;
@@ -63,8 +63,8 @@ export default function SiteFooter() {
               <Image
                 src="/logo-dark-bg.svg"
                 alt="Logo"
-                width={180}
-                height={180}
+                width={120}
+                height={120}
               />
             </Link>
 
@@ -164,8 +164,8 @@ export default function SiteFooter() {
           className="flex flex-col sm:flex-row items-center justify-cemter gap-4"
         >
           <p className="text-xs text-zinc-400 text-center mx-auto">
-            © {new Date().getFullYear()} GenZ Education Loan Platform. All
-            rights reserved. Regulated by Deerx.
+            © {new Date().getFullYear()} Unnati Education Loan Platform. All
+            rights reserved. Regulated by Unnati.
           </p>
         </motion.div>
       </div>

@@ -161,6 +161,9 @@ export interface DisbursementPendingRow {
   conditionsDone: number;
   conditionsTotal: number;
   status: DisbursementStatus;
+  /** Whether the parent's bank account is on file — `confirm()` rejects the
+   *  disbursement server-side if this is false, regardless of conditions. */
+  bankAccountReady: boolean;
 }
 
 export interface DisbursementConditionRecord {
@@ -181,6 +184,36 @@ export interface ConfirmDisbursementBody {
   accountCredited?: string;
   commissionAmount?: number;
   date?: string;
+}
+
+export interface DisbursementRecord {
+  id: string;
+  applicationId: string;
+  status: DisbursementStatus;
+  totalDisbursedAmount: number | null;
+  initiatedByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** The tranche as `confirm()` actually returns it — no nested `disbursement.application`
+ *  join (unlike `getHistory`'s rows, which come from a query that does join it). */
+export interface DisbursementTrancheBase {
+  id: string;
+  disbursementId: string;
+  trancheNumber: number;
+  amount: number;
+  accountCredited: string | null;
+  status: TrancheStatus;
+  disbursedAt: string | null;
+  commissionAmount: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConfirmDisbursementResult {
+  disbursement: DisbursementRecord;
+  tranche: DisbursementTrancheBase;
 }
 
 export interface DisbursementTrancheRecord {
@@ -217,19 +250,30 @@ export interface EmiScheduleEntryRecord {
   status: EmiStatus;
   paidAmount: number | null;
   paidDate: string | null;
+  /** Running penal-interest balance — accrued daily while OVERDUE at
+   *  (contract interest rate + 2%) simple daily interest on `emiAmount`. */
+  penalInterestAccrued: number;
   createdAt: string;
   updatedAt: string;
   application?: ApplicationRef;
 }
 
-export type OverdueBucket = "1-30" | "31-90" | "90+";
+/** NRB-aligned aging buckets (days overdue). */
+export type OverdueBucket = "1-30" | "31-90" | "91-180" | "181-365" | "365+";
 
 export interface RepaymentOverview {
   dueToday: { amount: number; count: number };
   overdue1to30: { amount: number; count: number };
   overdue31to90: { amount: number; count: number };
+  overdue91to180: { amount: number; count: number };
+  overdue181to365: { amount: number; count: number };
+  overdue365Plus: { amount: number; count: number };
   collectionEfficiency: number | null;
 }
+
+/** NRB loan classification — driven by the oldest unpaid installment's
+ *  days-overdue, recomputed daily. Display label only; doesn't gate behavior. */
+export type NrbLoanClassification = "PASS" | "SUBSTANDARD" | "DOUBTFUL" | "LOSS";
 
 export interface MarkEmiPaidBody {
   paidAmount: number;

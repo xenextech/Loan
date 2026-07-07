@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ const STATUS_BADGE_CLASS: Record<NotificationDeliveryStatus, string> = {
 
 export function NotificationList() {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [channel, setChannel] = useState<NotificationChannel | "ALL">("ALL");
   const [page, setPage] = useState(1);
 
@@ -55,7 +57,7 @@ export function NotificationList() {
           <h1 className="text-2xl font-bold text-foreground">Notification</h1>
           <p className="text-sm text-muted-foreground mt-1">Delivery log across every SMS/WhatsApp/Email/App notification sent.</p>
         </div>
-        <Button size="sm" variant="outline" className="h-9 text-sm gap-1.5 shrink-0" onClick={() => router.push("/initiator/notification/templates")}>
+        <Button size="sm" variant="outline" className="h-9 text-sm gap-1.5 shrink-0" onClick={() => router.push(`${basePath}/notification/templates`)}>
           <Settings2 className="w-4 h-4" />
           Message Templates
         </Button>

@@ -15,6 +15,7 @@ import type {
   DisbursementPendingRow,
   DisbursementConditionRecord,
   ConfirmDisbursementBody,
+  ConfirmDisbursementResult,
   DisbursementTrancheRecord,
   EmiScheduleEntryRecord,
   RepaymentOverview,
@@ -132,6 +133,7 @@ const mapEmiEntry = (e: EmiScheduleEntryRecord): EmiScheduleEntryRecord => ({
   interestComponent: toNumber(e.interestComponent),
   outstandingPrincipal: toNumber(e.outstandingPrincipal),
   paidAmount: toNumOrNull(e.paidAmount),
+  penalInterestAccrued: toNumber(e.penalInterestAccrued),
 });
 
 const mapPolicy = (p: InsurancePolicyRecord): InsurancePolicyRecord => ({
@@ -275,13 +277,21 @@ export const dashboardApi = baseApi.injectEndpoints({
       ],
     }),
     confirmDisbursement: builder.mutation<
-      { disbursement: unknown; tranche: unknown },
+      ConfirmDisbursementResult,
       { applicationId: string; data: ConfirmDisbursementBody }
     >({
       query: ({ applicationId, data }) => ({
         url: `/dashboard/disbursement/${applicationId}/confirm`,
         method: "POST",
         body: data,
+      }),
+      transformResponse: (raw: ConfirmDisbursementResult) => ({
+        disbursement: { ...raw.disbursement, totalDisbursedAmount: toOptionalNumber(raw.disbursement.totalDisbursedAmount) ?? null },
+        tranche: {
+          ...raw.tranche,
+          amount: toNumber(raw.tranche.amount),
+          commissionAmount: toOptionalNumber(raw.tranche.commissionAmount) ?? null,
+        },
       }),
       invalidatesTags: (_r, _e, { applicationId }) => [
         { type: "Dashboard", id: "disbursement-pending" },
@@ -324,6 +334,9 @@ export const dashboardApi = baseApi.injectEndpoints({
         dueToday: { ...raw.dueToday, amount: toNumber(raw.dueToday.amount) },
         overdue1to30: { ...raw.overdue1to30, amount: toNumber(raw.overdue1to30.amount) },
         overdue31to90: { ...raw.overdue31to90, amount: toNumber(raw.overdue31to90.amount) },
+        overdue91to180: { ...raw.overdue91to180, amount: toNumber(raw.overdue91to180.amount) },
+        overdue181to365: { ...raw.overdue181to365, amount: toNumber(raw.overdue181to365.amount) },
+        overdue365Plus: { ...raw.overdue365Plus, amount: toNumber(raw.overdue365Plus.amount) },
         collectionEfficiency: raw.collectionEfficiency,
       }),
     }),

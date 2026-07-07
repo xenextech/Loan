@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +45,7 @@ function StatCard({ icon: Icon, label, value, iconBg }: { icon: React.ElementTyp
 
 export function InsuranceCheckerList() {
   const router = useRouter();
+  const basePath = useDashboardBasePath();
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ applicationId: "", policyNumber: "", insurer: "", sumInsured: "", expiryDate: "" });
@@ -155,7 +157,7 @@ export function InsuranceCheckerList() {
                       <TableRow
                         key={policy.id}
                         className="cursor-pointer hover:bg-muted/40 transition-colors border-border"
-                        onClick={() => router.push(`/initiator/insurance-checker/${policy.id}`)}
+                        onClick={() => router.push(`${basePath}/insurance-checker/${policy.id}`)}
                       >
                         <TableCell className="pl-5 py-3.5">
                           <p className="text-sm font-semibold text-foreground leading-tight">{policy.application.fullName ?? "—"}</p>

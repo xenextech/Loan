@@ -2,7 +2,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import { baseApi } from "@/lib/api/baseApi";
 import applicationReducer from "./applicationSlice";
 import authReducer from "./authSlice";
-import roleOverrideReducer from "./roleOverrideSlice";
 
 // Import feature APIs so their endpoints are registered before the store is used
 import "@/lib/api/authApi";
@@ -15,7 +14,6 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     application: applicationReducer,
-    roleOverride: roleOverrideReducer,
     [baseApi.reducerPath]: baseApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
