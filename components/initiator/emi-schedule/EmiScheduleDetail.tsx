@@ -27,28 +27,13 @@ import {
   useGetEmiNotificationTriggersQuery,
 } from "@/lib/api/dashboardApi";
 import type { EmiStatus } from "@/types/dashboard";
-import type { NrbLoanClassification } from "@/types/dashboard";
+import { NRB_CLASS_LABEL, NRB_CLASS_BADGE_CLASS } from "./nrbClassificationBadge";
 
 const STATUS_BADGE_CLASS: Record<EmiStatus, string> = {
   UPCOMING: "bg-muted text-muted-foreground",
   PAID: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
   OVERDUE: "bg-destructive/10 text-destructive",
   PARTIAL: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
-};
-
-/** NRB loan classification — driven by the oldest unpaid installment's days-overdue. */
-const NRB_CLASS_LABEL: Record<NrbLoanClassification, string> = {
-  PASS: "Pass",
-  SUBSTANDARD: "Substandard",
-  DOUBTFUL: "Doubtful",
-  LOSS: "Loss",
-};
-
-const NRB_CLASS_BADGE_CLASS: Record<NrbLoanClassification, string> = {
-  PASS: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
-  SUBSTANDARD: "bg-[var(--warning)]/15 text-[oklch(0.5_0.16_80)] dark:text-[var(--warning)]",
-  DOUBTFUL: "bg-destructive/10 text-destructive",
-  LOSS: "bg-destructive/20 text-destructive",
 };
 
 export function EmiScheduleDetail({ id }: { id: string }) {

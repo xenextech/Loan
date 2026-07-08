@@ -1,6 +1,8 @@
 // Wire shapes for the credit-ops dashboard module (`/dashboard/*`).
 // See edu-loan-backend/src/modules/dashboard/README.md for the authoritative contract.
 
+import type { PaginatedData } from "./api";
+
 // ─── Shared enums (mirror backend Prisma enums exactly) ───────────────────────
 
 export type NotificationChannel = "APP" | "EMAIL" | "SMS" | "WHATSAPP";
@@ -16,6 +18,8 @@ export type CommissionRateType = "FLAT" | "PERCENTAGE";
 export type CommissionEntryStatus = "PENDING" | "INVOICE_DUE" | "PAID";
 export type AuditCategory = "APPROVAL" | "DISBURSEMENT" | "REPAYMENT" | "COMMISSION" | "SYSTEM";
 export type InsurancePolicyStatus = "ACTIVE" | "EXPIRING_SOON" | "EXPIRED";
+export type LoanAccountStatus = "ACTIVE" | "CLEARED" | "NEEDS_REVIEW";
+export type CollectionActivityType = "CALL" | "SMS" | "EMAIL" | "WHATSAPP" | "VISIT" | "NOTE" | "OTHER";
 
 // Bank approval workflow stage — separate from ApplicationStatus (DRAFT/SUBMITTED).
 // `null` means the application hasn't entered the workflow yet.
@@ -67,6 +71,21 @@ export interface CheckerQueueRow {
 
 // ─── 2. Applications ────────────────────────────────────────────────────────
 
+/** Server-side stage filter — "my-queue" depends on the requesting staff role
+ *  (SUPPORTER sees INITIATED, CREDIT_MANAGER/CHECKER sees SUPPORTED, APPROVER sees
+ *  CHECKING); "disbursement" returns stage: APPROVED (i.e. the approved-loan
+ *  portfolio, the data source for the Credit Manager dashboard). */
+export type DashboardApplicationsFilter =
+  | "my-queue"
+  | "pending"
+  | "approval"
+  | "disbursement"
+  | "rejected"
+  | "sent-back"
+  | "action-needed"
+  | "pending-disbursement"
+  | "disbursed";
+
 export interface DashboardApplicationsQuery {
   page?: number;
   limit?: number;
@@ -74,6 +93,7 @@ export interface DashboardApplicationsQuery {
   branch?: string;
   dateFrom?: string;
   dateTo?: string;
+  filter?: DashboardApplicationsFilter;
 }
 
 export interface DashboardApplicationRow {
@@ -90,6 +110,20 @@ export interface DashboardApplicationRow {
   dsgir: number | null;
   ltv: number | null;
   daysOpen: number;
+  loanAccountStatus: LoanAccountStatus | null;
+  borrowerNotifiedAt: string | null;
+  disbursementStatus: "PENDING" | "PARTIAL" | "COMPLETED" | null;
+}
+
+// ─── Pipeline stats (this calendar month) ──────────────────────────────────
+export interface PipelineStatsThisMonth {
+  initiated: number;
+  supported: number;
+  checked: number;
+  approved: number;
+  rejected: number;
+  approvalRate: number | null;
+  avgProcessingTimeDays: number | null;
 }
 
 // ─── 3. Approval workflow ───────────────────────────────────────────────────
@@ -520,4 +554,93 @@ export interface ManualAuditEntryBody {
   applicationId?: string;
   remarks?: string;
   payload?: Record<string, unknown>;
+}
+
+// ─── 11. Merged application detail (GET /dashboard/applications/:id/detail) ────
+
+export type RepaymentFrequency = "MONTHLY" | "QUARTERLY" | "YEARLY";
+
+export interface LoanAccountRecord {
+  id: string;
+  applicationId: string;
+  loanAccountNumber: string;
+  status: LoanAccountStatus;
+  // Loan servicing configuration (Credit Manager, post-approval). The approved
+  // principal is never overridden here — only rate/tenure/grace/start-date are
+  // Credit-Manager-adjustable; `null` means not yet configured.
+  finalInterestRate: number | null;
+  finalTenureMonths: number | null;
+  repaymentFrequency: RepaymentFrequency;
+  gracePeriodMonths: number;
+  emiStartDate: string | null;
+  firstDueDate: string | null;
+  configuredByUserId: string | null;
+  configuredAt: string | null;
+  borrowerNotifiedAt: string | null;
+  clearedAt: string | null;
+  reviewReason: string | null;
+  reviewRequestedByUserId: string | null;
+  reviewRequestedAt: string | null;
+  reviewResolvedByUserId: string | null;
+  reviewResolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── 12. Loan Servicing (Credit Manager, post-approval) ───────────────────────
+
+export interface ConfigureLoanServicingBody {
+  finalInterestRate?: number;
+  finalTenureMonths?: number;
+  repaymentFrequency?: RepaymentFrequency;
+  gracePeriodMonths?: number;
+  emiStartDate?: string;
+}
+
+export interface ConfigureLoanServicingResult extends LoanAccountRecord {
+  installmentAmount: number;
+  totalRepayable: number;
+  numberOfInstallments: number;
+  disbursementAmount: number;
+}
+
+export interface NotifyBorrowerResult {
+  studentNotified: boolean;
+  parentNotified: boolean;
+  parentChannel: "SMS" | "WHATSAPP" | null;
+}
+
+export interface CollectionActivityRecord {
+  id: string;
+  applicationId: string;
+  createdByUserId: string;
+  activityType: CollectionActivityType;
+  notes: string;
+  contactedPerson: string | null;
+  createdAt: string;
+}
+
+export interface RecordCollectionActivityBody {
+  activityType: CollectionActivityType;
+  notes: string;
+  contactedPerson?: string;
+}
+
+export interface FlagNeedsReviewBody {
+  reason: string;
+}
+
+export interface ResolveReviewBody {
+  resolutionNotes?: string;
+}
+
+/** The one merged-detail endpoint that includes `loanAccount` — every other
+ *  per-application query (`getOne`) omits it. Used sparingly (one call per loan
+ *  detail view, not for portfolio-wide lists) to avoid N+1 fetching. */
+export interface ApplicationFullDetail {
+  application: import("./api").InitiatorApplicationRecord;
+  loanAccount: LoanAccountRecord | null;
+  disbursement: { status: "PENDING" | "PARTIAL" | "COMPLETED"; totalDisbursedAmount: number | null } | null;
+  creditScore: CreditScoreResult | null;
+  activity: PaginatedData<AuditLogRow>;
 }

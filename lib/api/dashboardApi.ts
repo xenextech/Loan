@@ -51,6 +51,16 @@ import type {
   ManualAuditEntryBody,
   RejectApplicationBody,
   SendBackApplicationBody,
+  ApplicationFullDetail,
+  LoanAccountRecord,
+  ConfigureLoanServicingBody,
+  ConfigureLoanServicingResult,
+  NotifyBorrowerResult,
+  CollectionActivityRecord,
+  RecordCollectionActivityBody,
+  FlagNeedsReviewBody,
+  ResolveReviewBody,
+  PipelineStatsThisMonth,
 } from "@/types/dashboard";
 
 type Paged<Q> = (Q & { page?: number; limit?: number }) | void;
@@ -152,6 +162,24 @@ const mapPartner = (p: CommissionPartnerRecord): CommissionPartnerRecord => ({ .
 
 const mapCommissionEntry = (e: CommissionEntryRecord): CommissionEntryRecord => ({ ...e, amount: toNumber(e.amount) });
 
+const mapLoanAccount = (a: LoanAccountRecord): LoanAccountRecord => ({
+  ...a,
+  finalInterestRate: toNumOrNull(a.finalInterestRate),
+});
+
+const mapConfigureResult = (a: ConfigureLoanServicingResult): ConfigureLoanServicingResult => ({
+  ...a,
+  finalInterestRate: toNumOrNull(a.finalInterestRate),
+});
+
+// Loan servicing config/review changes only ever show up through the merged
+// full-detail endpoint (the only one that includes `loanAccount`), plus the
+// EMI schedule after a reconfigure regenerates it.
+const loanServicingTags = (applicationId: string) => [
+  { type: "Dashboard" as const, id: `full-detail-${applicationId}` },
+  { type: "EmiSchedule" as const, id: applicationId },
+];
+
 export const dashboardApi = baseApi.injectEndpoints({
   overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (builder) => ({
@@ -178,6 +206,10 @@ export const dashboardApi = baseApi.injectEndpoints({
     getDashboardAlerts: builder.query<PaginatedData<DashboardAlert>, Paged<object>>({
       query: (params) => ({ url: "/dashboard/overview/alerts", params: params ?? undefined }),
     }),
+    getPipelineStatsThisMonth: builder.query<PipelineStatsThisMonth, void>({
+      query: () => "/dashboard/overview/pipeline-stats-month",
+      providesTags: [{ type: "Dashboard", id: "pipeline-stats-month" }],
+    }),
 
     // ─── 2. Applications ──────────────────────────────────────────────────
     getDashboardApplications: builder.query<PaginatedData<DashboardApplicationRow>, DashboardApplicationsQuery | void>({
@@ -192,6 +224,19 @@ export const dashboardApi = baseApi.injectEndpoints({
       query: (id) => `/dashboard/applications/${id}`,
       transformResponse: mapApplicationDetail,
       providesTags: (_r, _e, id) => [{ type: "Dashboard", id }],
+    }),
+    // Merged detail — the only endpoint that includes `loanAccount` (Active/Cleared
+    // status). Used per-loan on detail views only, never for portfolio-wide lists,
+    // to avoid N+1 fetching.
+    getApplicationFullDetail: builder.query<ApplicationFullDetail, { applicationId: string; page?: number; limit?: number }>({
+      query: ({ applicationId, ...params }) => ({ url: `/dashboard/applications/${applicationId}/detail`, params }),
+      transformResponse: (raw: ApplicationFullDetail) => ({
+        ...raw,
+        application: mapApplicationDetail(raw.application),
+        loanAccount: raw.loanAccount && mapLoanAccount(raw.loanAccount),
+        disbursement: raw.disbursement && { ...raw.disbursement, totalDisbursedAmount: toNumOrNull(raw.disbursement.totalDisbursedAmount) },
+      }),
+      providesTags: (_r, _e, { applicationId }) => [{ type: "Dashboard", id: `full-detail-${applicationId}` }],
     }),
 
     // ─── 3. Approval workflow ─────────────────────────────────────────────
@@ -347,6 +392,54 @@ export const dashboardApi = baseApi.injectEndpoints({
     }),
     getEmiNotificationTriggers: builder.query<EmiNotificationTrigger[], void>({
       query: () => "/dashboard/repayment/notification-triggers",
+    }),
+
+    // ─── 5b. Loan Servicing (Credit Manager only) ──────────────────────────
+    configureLoanServicing: builder.mutation<ConfigureLoanServicingResult, { applicationId: string; data: ConfigureLoanServicingBody }>({
+      query: ({ applicationId, data }) => ({
+        url: `/dashboard/repayment/${applicationId}/servicing/configure`,
+        method: "POST",
+        body: data,
+      }),
+      transformResponse: mapConfigureResult,
+      invalidatesTags: (_r, _e, { applicationId }) => loanServicingTags(applicationId),
+    }),
+    notifyLoanServicingBorrower: builder.mutation<NotifyBorrowerResult, string>({
+      query: (applicationId) => ({
+        url: `/dashboard/repayment/${applicationId}/servicing/notify-borrower`,
+        method: "POST",
+      }),
+      invalidatesTags: (_r, _e, applicationId) => loanServicingTags(applicationId),
+    }),
+    recordCollectionActivity: builder.mutation<CollectionActivityRecord, { applicationId: string; data: RecordCollectionActivityBody }>({
+      query: ({ applicationId, data }) => ({
+        url: `/dashboard/repayment/${applicationId}/collection-activity`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_r, _e, { applicationId }) => [{ type: "CollectionActivity", id: applicationId }],
+    }),
+    getCollectionActivity: builder.query<PaginatedData<CollectionActivityRecord>, { applicationId: string; page?: number; limit?: number }>({
+      query: ({ applicationId, ...params }) => ({ url: `/dashboard/repayment/${applicationId}/collection-activity`, params }),
+      providesTags: (_r, _e, { applicationId }) => [{ type: "CollectionActivity", id: applicationId }],
+    }),
+    flagLoanNeedsReview: builder.mutation<LoanAccountRecord, { applicationId: string; data: FlagNeedsReviewBody }>({
+      query: ({ applicationId, data }) => ({
+        url: `/dashboard/repayment/${applicationId}/needs-review`,
+        method: "PATCH",
+        body: data,
+      }),
+      transformResponse: mapLoanAccount,
+      invalidatesTags: (_r, _e, { applicationId }) => loanServicingTags(applicationId),
+    }),
+    resolveLoanReview: builder.mutation<LoanAccountRecord, { applicationId: string; data: ResolveReviewBody }>({
+      query: ({ applicationId, data }) => ({
+        url: `/dashboard/repayment/${applicationId}/resolve-review`,
+        method: "PATCH",
+        body: data,
+      }),
+      transformResponse: mapLoanAccount,
+      invalidatesTags: (_r, _e, { applicationId }) => loanServicingTags(applicationId),
     }),
 
     // ─── 6. Notifications ─────────────────────────────────────────────────
@@ -526,8 +619,10 @@ export const {
   useGetDashboardOverviewQuery,
   useGetCheckerQueueQuery,
   useGetDashboardAlertsQuery,
+  useGetPipelineStatsThisMonthQuery,
   useGetDashboardApplicationsQuery,
   useGetDashboardApplicationDetailQuery,
+  useGetApplicationFullDetailQuery,
   useGetApprovalSummaryQuery,
   useGetApprovalCreditScoreQuery,
   useGetApprovalNrbChecklistQuery,
@@ -549,6 +644,12 @@ export const {
   useGetRepaymentOverviewQuery,
   useMarkEmiPaidMutation,
   useGetEmiNotificationTriggersQuery,
+  useConfigureLoanServicingMutation,
+  useNotifyLoanServicingBorrowerMutation,
+  useRecordCollectionActivityMutation,
+  useGetCollectionActivityQuery,
+  useFlagLoanNeedsReviewMutation,
+  useResolveLoanReviewMutation,
   useGetNotificationLogQuery,
   useGetNotificationTemplatesQuery,
   useCreateNotificationTemplateMutation,

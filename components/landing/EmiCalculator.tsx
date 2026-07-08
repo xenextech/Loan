@@ -261,7 +261,7 @@ export default function EmiCalculator() {
             </div>
 
             {/* Select Lender */}
-            <div>
+            {/* <div>
               <div className="flex items-center justify-between">
                 <label className="text-[15px] font-semibold text-zinc-800">Select Lender</label>
                 <div className="relative">
@@ -311,7 +311,7 @@ export default function EmiCalculator() {
                   </AnimatePresence>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Loan Tenure */}
             <div>

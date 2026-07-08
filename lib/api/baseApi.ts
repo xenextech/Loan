@@ -68,6 +68,7 @@ export const baseApi = createApi({
     "CommissionPartner",
     "CommissionEntry",
     "GeneratedAgreement",
+    "CollectionActivity",
   ],
   endpoints: () => ({}),
 });

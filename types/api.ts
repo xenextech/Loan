@@ -372,6 +372,7 @@ export interface InitiatorApplicationRecord {
   purpose?: string;
   limit?: number;
   period?: number;
+  periodUnit?: "YEAR" | "MONTH";
   interestRate?: number;
   fee?: number;
   remarks?: string;
