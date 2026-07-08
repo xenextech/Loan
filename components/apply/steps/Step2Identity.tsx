@@ -25,11 +25,17 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { step2Schema, type Step2FormData } from "@/lib/validations/schemas";
 import FileUploadZone from "@/components/apply/fields/FileUploadZone";
-import { ArrowRight, ArrowLeft, Loader2, IdCard, MapPin, User2 } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Loader2,
+  IdCard,
+  MapPin,
+  User2,
+} from "lucide-react";
 import { useUploadDocumentMutation } from "@/lib/api/documentsApi";
 import { useAppSelector } from "@/lib/hooks";
 import type { DocumentType } from "@/types/api";
-
 
 interface Step2Props {
   defaultValues?: Partial<Step2FormData>;
@@ -40,12 +46,22 @@ interface Step2Props {
 }
 
 const PROVINCES = [
-  "Koshi", "Madhesh", "Bagmati", "Gandaki", "Lumbini", "Karnali", "Sudurpashchim",
+  "Koshi",
+  "Madhesh",
+  "Bagmati",
+  "Gandaki",
+  "Lumbini",
+  "Karnali",
+  "Sudurpashchim",
 ];
 
-
-
-const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
+const SectionHeading = ({
+  icon: Icon,
+  title,
+}: {
+  icon: React.ElementType;
+  title: string;
+}) => (
   <div className="flex items-center gap-2.5 mb-6">
     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
       <Icon className="w-4 h-4 text-primary" />
@@ -54,16 +70,27 @@ const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title:
   </div>
 );
 
-export default function Step2Identity({ defaultValues, onNext, onPrev, onDataChange, isSaving }: Step2Props) {
+export default function Step2Identity({
+  defaultValues,
+  onNext,
+  onPrev,
+  onDataChange,
+  isSaving,
+}: Step2Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
 
   const uploadFile = async (file: File, documentType: DocumentType) => {
-    if (!applicationId) { toast.error("No active application. Please refresh."); return; }
+    if (!applicationId) {
+      toast.error("No active application. Please refresh.");
+      return;
+    }
     try {
       await uploadDocument({ applicationId, documentType, file }).unwrap();
     } catch {
-      toast.error(`Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`);
+      toast.error(
+        `Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`,
+      );
     }
   };
 
@@ -106,17 +133,25 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
     if (file) uploadFile(file, "APPLICANT_PHOTO");
   };
 
+  const handleIdentityDocument = (file: File | null) => {
+    if (file) uploadFile(file, "IDENTITY_DOCUMENT");
+  };
+
   const identityLabels: Record<string, string> = {
     citizenship: "Citizenship Certificate",
     passport: "Passport",
     driving_license: "Driving License",
+    document: "Identity Document",
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onNext)} className="space-y-10">
         {/* Identity Type */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <SectionHeading icon={IdCard} title="Identity Document" />
 
           <FormField
@@ -129,12 +164,29 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
                   >
                     {[
-                      { value: "citizenship", label: "Citizenship", desc: "Nepal Government" },
-                      { value: "passport", label: "Passport", desc: "Government issued" },
-                      { value: "driving_license", label: "Driving License", desc: "DOTM issued" },
+                      {
+                        value: "citizenship",
+                        label: "Citizenship",
+                        desc: "Nepal Government",
+                      },
+                      {
+                        value: "passport",
+                        label: "Passport",
+                        desc: "Government issued",
+                      },
+                      {
+                        value: "driving_license",
+                        label: "Driving License",
+                        desc: "DOTM issued",
+                      },
+                      {
+                        value: "document",
+                        label: "Upload a Document",
+                        desc: "PDF, under 5MB",
+                      },
                     ].map((opt) => (
                       <Label
                         key={opt.value}
@@ -148,7 +200,9 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
                         <RadioGroupItem value={opt.value} id={opt.value} />
                         <div>
                           <p className="text-sm font-semibold">{opt.label}</p>
-                          <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {opt.desc}
+                          </p>
                         </div>
                       </Label>
                     ))}
@@ -171,21 +225,32 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
                 <p className="text-sm font-medium text-foreground mb-3">
                   Upload {identityLabels[identityType] ?? "Document"}
                 </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FileUploadZone
-                    label="Front Side"
-                    hint="Clear photo of the front"
-                    accept="image/jpeg,image/png"
-                    onFileSelect={handleIdentityFront}
-                  />
-                  <FileUploadZone
-                    label="Back Side"
-                    hint="Clear photo of the back"
-                    accept="image/jpeg,image/png"
-                    onFileSelect={handleIdentityBack}
-                  />
-                </div>
 
+                {identityType === "document" ? (
+                  <FileUploadZone
+                    label="Identity Document"
+                    hint="Upload a single PDF of your identity document"
+                    accept="application/pdf"
+                    maxSizeMB={5}
+                    variant="document"
+                    onFileSelect={handleIdentityDocument}
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FileUploadZone
+                      label="Front Side"
+                      hint="Clear photo of the front"
+                      accept="image/jpeg,image/png"
+                      onFileSelect={handleIdentityFront}
+                    />
+                    <FileUploadZone
+                      label="Back Side"
+                      hint="Clear photo of the back"
+                      accept="image/jpeg,image/png"
+                      onFileSelect={handleIdentityBack}
+                    />
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -270,7 +335,10 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Gender</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select gender" />
@@ -292,7 +360,10 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Occupation</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select occupation" />
@@ -301,7 +372,9 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
                     <SelectContent>
                       <SelectItem value="student">Student</SelectItem>
                       <SelectItem value="employed">Employed</SelectItem>
-                      <SelectItem value="self_employed">Self-Employed</SelectItem>
+                      <SelectItem value="self_employed">
+                        Self-Employed
+                      </SelectItem>
                       <SelectItem value="unemployed">Unemployed</SelectItem>
                     </SelectContent>
                   </Select>
@@ -326,7 +399,10 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Province</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select province" />
@@ -364,7 +440,10 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
                 <FormItem>
                   <FormLabel>Municipality / VDC</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Kathmandu Metropolitan" {...field} />
+                    <Input
+                      placeholder="e.g. Kathmandu Metropolitan"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -387,7 +466,9 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
 
           {/* Photo upload */}
           <div className="mt-6">
-            <p className="text-sm font-medium text-foreground mb-3">Applicant Photo</p>
+            <p className="text-sm font-medium text-foreground mb-3">
+              Applicant Photo
+            </p>
             <div className="max-w-[200px]">
               <FileUploadZone
                 label="Upload Photo"
@@ -402,11 +483,22 @@ export default function Step2Identity({ defaultValues, onNext, onPrev, onDataCha
 
         {/* Navigation */}
         <div className="flex justify-between pt-2">
-          <Button type="button" variant="outline" size="lg" className="h-12 px-6" onClick={onPrev}>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="h-12 px-6"
+            onClick={onPrev}
+          >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button type="submit" size="lg" disabled={isSaving} className="h-12 px-8 text-base font-semibold">
+          <Button
+            type="submit"
+            size="lg"
+            disabled={isSaving}
+            className="h-12 px-8 text-base font-semibold"
+          >
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

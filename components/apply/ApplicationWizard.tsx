@@ -20,10 +20,16 @@ import WizardProgress from "./WizardProgress";
 import Step1AboutYou from "./steps/Step1AboutYou";
 import Step2Identity from "./steps/Step2Identity";
 import Step3FamilyEducation from "./steps/Step3FamilyEducation";
-import Step4ReviewSubmit, { type Step4Declaration } from "./steps/Step4ReviewSubmit";
+import Step4ReviewSubmit, {
+  type Step4Declaration,
+} from "./steps/Step4ReviewSubmit";
 import SubmissionSuccess from "./SubmissionSuccess";
 import ContactGateModal, { type ContactEmails } from "./ContactGateModal";
-import type { Step1FormData, Step2FormData, Step3FormData } from "@/lib/validations/schemas";
+import type {
+  Step1FormData,
+  Step2FormData,
+  Step3FormData,
+} from "@/lib/validations/schemas";
 import { BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -57,7 +63,8 @@ export default function ApplicationWizard() {
   const [saveStep1, { isLoading: isSaving1 }] = useSaveStep1Mutation();
   const [saveStep2, { isLoading: isSaving2 }] = useSaveStep2Mutation();
   const [saveStep3, { isLoading: isSaving3 }] = useSaveStep3Mutation();
-  const [submitApplication, { isLoading: isSubmitting }] = useSubmitApplicationMutation();
+  const [submitApplication, { isLoading: isSubmitting }] =
+    useSubmitApplicationMutation();
 
   // Create draft on mount
   useEffect(() => {
@@ -65,10 +72,14 @@ export default function ApplicationWizard() {
     createDraft()
       .unwrap()
       .then((app) => {
-        dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
+        dispatch(
+          setApplicationId({ id: app.id, number: app.applicationNumber }),
+        );
       })
       .catch(() => {
-        toast.error("Failed to start application. Please refresh and try again.");
+        toast.error(
+          "Failed to start application. Please refresh and try again.",
+        );
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -92,11 +103,14 @@ export default function ApplicationWizard() {
 
   // ─── Navigation helpers ───────────────────────────────────────────────────
 
-  const goNext = useCallback((step: number) => {
-    setDirection(1);
-    setCompletedSteps((prev) => [...new Set([...prev, step])]);
-    dispatch(setStep(step + 1));
-  }, [dispatch]);
+  const goNext = useCallback(
+    (step: number) => {
+      setDirection(1);
+      setCompletedSteps((prev) => [...new Set([...prev, step])]);
+      dispatch(setStep(step + 1));
+    },
+    [dispatch],
+  );
 
   const goPrev = (step: number) => {
     setDirection(-1);
@@ -173,7 +187,7 @@ export default function ApplicationWizard() {
           applicationNumber: result.applicationNumber,
           parentLink: result.parentLink,
           collegeLink: result.collegeLink,
-        })
+        }),
       );
     } catch {
       toast.error("Submission failed. Please try again.");
@@ -198,8 +212,10 @@ export default function ApplicationWizard() {
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
       {/* Contact gate — shown after Step 3 Continue */}
-      <ContactGateModal isOpen={showContactGate} onComplete={handleContactGateComplete} />
-
+      <ContactGateModal
+        isOpen={showContactGate}
+        onComplete={handleContactGateComplete}
+      />
 
       {/* Fixed header with hide-on-scroll behaviour */}
       <motion.div
@@ -216,10 +232,22 @@ export default function ApplicationWizard() {
         >
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-14">
-              <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Image src="/logo-white-bg.svg" alt="Logo" width={180} height={180} />
+              <Link
+                href="/"
+                className="flex items-center gap-2 text-sm font-semibold text-foreground"
+              >
+                <Image
+                  src="/logo-white-bg.svg"
+                  alt="Logo"
+                  width={180}
+                  height={180}
+                />
               </Link>
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground gap-1.5"
+              >
                 <BookmarkCheck className="w-3.5 h-3.5" />
                 Save & Exit
               </Button>
@@ -274,10 +302,14 @@ export default function ApplicationWizard() {
                   {currentStep === 4 && "Review & submit"}
                 </h2>
                 <p className="text-muted-foreground text-sm mt-1.5">
-                  {currentStep === 1 && "Enter your personal contact information and your study plans."}
-                  {currentStep === 2 && "Upload your identity documents. We'll auto-fill details using OCR."}
-                  {currentStep === 3 && "Provide your family background and education fee information."}
-                  {currentStep === 4 && "Review your application carefully before final submission."}
+                  {currentStep === 1 &&
+                    "Enter your personal contact information and your study plans."}
+                  {currentStep === 2 &&
+                    "Upload your identity documents. We'll auto-fill details using OCR."}
+                  {currentStep === 3 &&
+                    "Provide your family background and education fee information."}
+                  {currentStep === 4 &&
+                    "Review your application carefully before final submission."}
                 </p>
               </div>
 
@@ -286,7 +318,9 @@ export default function ApplicationWizard() {
                   <Step1AboutYou
                     defaultValues={formData.step1}
                     onNext={handleStep1}
-                    onDataChange={(data) => dispatch(updateStepData({ step: "step1", data }))}
+                    onDataChange={(data) =>
+                      dispatch(updateStepData({ step: "step1", data }))
+                    }
                     isSaving={isSaving1}
                   />
                 )}
@@ -295,7 +329,9 @@ export default function ApplicationWizard() {
                     defaultValues={formData.step2}
                     onNext={handleStep2}
                     onPrev={() => goPrev(2)}
-                    onDataChange={(data) => dispatch(updateStepData({ step: "step2", data }))}
+                    onDataChange={(data) =>
+                      dispatch(updateStepData({ step: "step2", data }))
+                    }
                     isSaving={isSaving2}
                   />
                 )}
@@ -304,7 +340,9 @@ export default function ApplicationWizard() {
                     defaultValues={formData.step3}
                     onNext={handleStep3}
                     onPrev={() => goPrev(3)}
-                    onDataChange={(data) => dispatch(updateStepData({ step: "step3", data }))}
+                    onDataChange={(data) =>
+                      dispatch(updateStepData({ step: "step3", data }))
+                    }
                     isSaving={isSaving3}
                   />
                 )}
