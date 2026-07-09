@@ -21,6 +21,7 @@ export function VerificationFormPanel({ detail }: { detail: InitiatorApplication
       <div className="p-5 lg:p-6">
         <LoanAssessmentForm
           applicationId={detail.id}
+          hasInitiatorInfo={detail.hasInitiatorInfo}
           initialValues={{
             ...detail.assessment,
             applicantInfo: {

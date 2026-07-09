@@ -49,6 +49,16 @@ export function formatDate(iso: string | null | undefined): string {
   }).format(new Date(iso));
 }
 
+// "SELF_EMPLOYED" -> "Self Employed"
+export function humanizeEnum(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 export function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);

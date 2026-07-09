@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { formatNPR, toNumber } from "@/lib/formatters";
 import type { LoanApplication } from "@/types/api";
@@ -16,6 +17,7 @@ import {
   BookOpen,
   Wallet,
   CalendarDays,
+  Eye,
 } from "lucide-react";
 
 const STUDY_TYPE_LABELS: Record<string, string> = {
@@ -147,9 +149,17 @@ export function ApplicationCard({
           {/* Actions */}
           <div className="flex items-center gap-2 pt-3 border-t border-border">
             {isSubmitted ? (
-              <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Application under review
+              <div className="flex items-center justify-between w-full gap-2">
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Under review
+                </div>
+                <Link href={`/dashboard/applications/${app.id}`}>
+                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5">
+                    <Eye className="w-3.5 h-3.5" />
+                    View Details
+                  </Button>
+                </Link>
               </div>
             ) : (
               <>

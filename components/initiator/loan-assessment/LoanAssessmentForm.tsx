@@ -24,10 +24,12 @@ import { Step10ReviewSubmit } from "./steps/Step10ReviewSubmit";
 interface LoanAssessmentFormProps {
   applicationId: string;
   initialValues?: Partial<LoanAssessmentFormValues>;
+  /** True once POST .../initiator has ever succeeded for this application — see useLoanAssessmentForm. */
+  hasInitiatorInfo?: boolean;
   onSubmitted?: (values: LoanAssessmentSubmitValues) => void;
 }
 
-export function LoanAssessmentForm({ applicationId, initialValues, onSubmitted }: LoanAssessmentFormProps) {
+export function LoanAssessmentForm({ applicationId, initialValues, hasInitiatorInfo = false, onSubmitted }: LoanAssessmentFormProps) {
   const {
     form,
     currentStep,
@@ -39,11 +41,13 @@ export function LoanAssessmentForm({ applicationId, initialValues, onSubmitted }
     saveDraft,
     submit,
     lastSavedAt,
-  } = useLoanAssessmentForm(applicationId, initialValues);
+  } = useLoanAssessmentForm(applicationId, initialValues, hasInitiatorInfo);
 
   const step = STEPS[currentStep - 1];
   const isLastStep = currentStep === TOTAL_STEPS;
-  const isFirstStep = currentStep === 1;
+  // Step 1 only reads as "create" (Next) when no initiator record exists yet —
+  // otherwise this step behaves like every other: a PATCH-based Update.
+  const isFirstStep = currentStep === 1 && !hasInitiatorInfo;
 
   const handleSubmit = async () => {
     await submit(async (values) => {

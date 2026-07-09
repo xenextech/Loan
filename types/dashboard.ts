@@ -128,6 +128,16 @@ export interface PipelineStatsThisMonth {
 
 // ─── 3. Approval workflow ───────────────────────────────────────────────────
 
+/** Who completed a workflow stage, and when — null while that stage hasn't happened yet.
+ *  `name` always comes from the acting user's own account (fullName, falling back to
+ *  email), stamped server-side at the moment of the transition — see
+ *  DashboardApprovalService.resolveActingUser(). */
+export interface ApprovalStageActor {
+  id: string | null;
+  name: string | null;
+  approvedAt: string;
+}
+
 export interface ApprovalSummary {
   applicationId: string;
   applicationNumber: string | null;
@@ -142,6 +152,16 @@ export interface ApprovalSummary {
   riskGrade: string | null;
   collateralText: string | null;
   insuranceAttached: boolean;
+  approvals: {
+    initiator: ApprovalStageActor | null;
+    supporter: ApprovalStageActor | null;
+    checker: ApprovalStageActor | null;
+    approver: ApprovalStageActor | null;
+    /** Mirrors `checker` — CREDIT_MANAGER is the current name for that role (same
+     *  person, same "check" action). Kept separate so callers can use whichever
+     *  label matches the role terminology they're displaying. */
+    creditManager: ApprovalStageActor | null;
+  };
 }
 
 export interface RejectApplicationBody {

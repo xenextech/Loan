@@ -38,6 +38,7 @@ export type UserRole =
 export interface AuthUser {
   id: string;
   email: string;
+  fullName?: string | null;
   role: UserRole;
   isEmailVerified: boolean;
   createdAt: string;
@@ -45,7 +46,7 @@ export interface AuthUser {
 
 export interface LoginResponse {
   accessToken: string;
-  user: { id: string; email: string; role: UserRole };
+  user: { id: string; email: string; fullName?: string | null; role: UserRole };
 }
 
 // ─── Enums (match backend Prisma enums exactly) ───────────────────────────────
@@ -195,6 +196,10 @@ export interface LoanApplication {
   identityNumber?: string;
   identityName?: string;
   dob?: string;
+  // Computed on read by ApplicationsService.withComputedDob() — AD-canonical
+  // date of birth + live-calculated age, present on GET /applications/:id.
+  dobAd?: string;
+  age?: number;
   issuedDistrict?: string;
   issuedDate?: string;
   gender?: Gender;
@@ -241,6 +246,16 @@ export interface CollegeVerifiedItem {
   collegeVerification: CollegeVerification;
 }
 
+// Wire shape for GET /applications/initiator/queue — same as CollegeVerifiedItem
+// plus `source`, and `collegeVerification` is null for Initiator-created rows
+// (they never go through college verification).
+export interface InitiatorQueueItem {
+  applicationId: string;
+  source: 'STUDENT' | 'INITIATOR';
+  student: CollegeVerifiedStudent;
+  collegeVerification: CollegeVerification | null;
+}
+
 export interface InitiatorFamilyMemberRecord {
   id: string;
   personName?: string;
@@ -284,6 +299,11 @@ export interface InitiatorApplicationRecord {
   id: string;
   applicationNumber: string;
   status: AppStatus;
+  source: 'STUDENT' | 'INITIATOR';
+  // Stamped once, only by POST /applications/:id/initiator — the authoritative
+  // "has the initiator's Basic Information already been created" flag (see
+  // ApplicationInitiatorService.createInitiatorApplication on the backend).
+  initiatorUserId?: string | null;
   stage?: import('./dashboard').ApplicationStage | null;
   source?: 'STUDENT' | 'INITIATOR';
   userId?: string;
@@ -439,6 +459,59 @@ export interface InitiatorApplicationRecord {
   disbursementSection?: string;
   utilizationOfFund?: string;
   conclusionAndRecommendation?: string;
+}
+
+// ─── Application Tracker ──────────────────────────────────────────────────────
+// Mirrors edu-loan-backend/src/modules/applications/dto/application-tracker.dto.ts
+// (GET /applications/:id/tracker, STUDENT-only, ownership-enforced).
+
+export type TrackerStageKey =
+  | 'STUDENT'
+  | 'PARENT'
+  | 'COLLEGE'
+  | 'INITIATOR'
+  | 'SUPPORTER'
+  | 'CREDIT_MANAGER_REVIEW'
+  | 'APPROVER'
+  | 'CREDIT_MANAGER_SETUP'
+  | 'DISBURSEMENT';
+
+export type TrackerStageStatus =
+  | 'COMPLETED'
+  | 'IN_PROGRESS'
+  | 'PENDING'
+  | 'REJECTED'
+  | 'SENT_BACK'
+  | 'SKIPPED';
+
+export type TrackerOverallStatus =
+  | 'DRAFT'
+  | 'IN_PROGRESS'
+  | 'REJECTED'
+  | 'SENT_BACK'
+  | 'COMPLETED';
+
+export interface TrackerStage {
+  key: TrackerStageKey;
+  label: string;
+  role: UserRole;
+  status: TrackerStageStatus;
+  completedAt: string | null;
+  completedBy: string | null;
+  reason: string | null;
+}
+
+export interface ApplicationTracker {
+  applicationId: string;
+  applicationNumber: string | null;
+  currentStageKey: TrackerStageKey | null;
+  currentStageLabel: string | null;
+  currentOwnerRole: UserRole | null;
+  currentStatus: TrackerOverallStatus;
+  progressPercentage: number;
+  completedStages: number;
+  totalStages: number;
+  timeline: TrackerStage[];
 }
 
 // ─── Document ─────────────────────────────────────────────────────────────────

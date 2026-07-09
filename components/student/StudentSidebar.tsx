@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   FileEdit,
   Calculator,
+  Waypoints,
   LogOut,
   GraduationCap,
   Menu,
@@ -29,6 +30,12 @@ const NAV_ITEMS = [
     exact: true,
   },
   { href: "/dashboard/drafts", icon: FileEdit, label: "Drafts", exact: true },
+  {
+    href: "/dashboard/tracker",
+    icon: Waypoints,
+    label: "Application Tracker",
+    exact: false,
+  },
   {
     href: "/dashboard/loan-tools",
     icon: Calculator,

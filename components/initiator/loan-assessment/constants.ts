@@ -1,9 +1,6 @@
 import type { Path } from "react-hook-form";
-import type { StepDefinition, ApprovalRole } from "./types";
+import type { StepDefinition } from "./types";
 import type { LoanAssessmentFormValues } from "./schema";
-
-export const CURRENT_USER_ROLE: ApprovalRole = "INITIATOR";
-export const CURRENT_USER_NAME = "Rojina Shrestha";
 
 export const STEPS: StepDefinition[] = [
   { id: 1, key: "applicant", title: "Applicant Information", shortLabel: "Applicant", description: "Core KYC and relationship details for the borrower." },
@@ -162,7 +159,7 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
   },
   approval: {
     initiator: {
-      approverName: CURRENT_USER_NAME,
+      approverName: "",
       role: "INITIATOR",
       status: "PENDING",
       approvedDate: "",
@@ -172,6 +169,14 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
     support: {
       approverName: "",
       role: "SUPPORT",
+      status: "WAITING",
+      approvedDate: "",
+      remarks: "",
+      signature: "",
+    },
+    checker: {
+      approverName: "",
+      role: "CHECKER",
       status: "WAITING",
       approvedDate: "",
       remarks: "",

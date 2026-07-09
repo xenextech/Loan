@@ -1,9 +1,11 @@
 "use client";
 
-import { Lock, ShieldCheck } from "lucide-react";
+import { Lock, ShieldCheck, UserRound } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/formatters";
 import { SignaturePlaceholder } from "@/components/initiator/loan-assessment/ui/SignaturePlaceholder";
+import type { ApprovalStageActor } from "@/types/dashboard";
 
 interface RoleApprovalCardProps {
   roleLabel: string;
@@ -12,6 +14,10 @@ interface RoleApprovalCardProps {
   statusBadge: React.ReactNode;
   actionable: boolean;
   waitingMessage?: string;
+  /** Who last performed this role's action, and when — from `ApprovalSummary.approvals`
+   *  (stamped server-side from the signed-in account, never a typed value). Renders a
+   *  "Supported by …" line when present; omit or pass null while the stage hasn't happened. */
+  completedBy?: ApprovalStageActor | null;
   /** Typed personal confirmation shown above the action buttons — see caption below
    *  for why this isn't sent to the backend (there is no field for it there; the
    *  actor of record is always the signed-in account, not this free-typed value). */
@@ -32,6 +38,7 @@ export function RoleApprovalCard({
   statusBadge,
   actionable,
   waitingMessage,
+  completedBy,
   attestationName,
   onAttestationNameChange,
   children,
@@ -49,6 +56,16 @@ export function RoleApprovalCard({
       </div>
 
       <div className="p-4 space-y-4">
+        {completedBy && (
+          <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-3 py-2 text-xs text-foreground">
+            <UserRound className="w-3.5 h-3.5 shrink-0 text-primary" />
+            <span>
+              {roleLabel} by <span className="font-semibold">{completedBy.name ?? "—"}</span>
+              {completedBy.approvedAt && <span className="text-muted-foreground"> · {formatDate(completedBy.approvedAt)}</span>}
+            </span>
+          </div>
+        )}
+
         {!actionable && waitingMessage && (
           <div className="flex items-center gap-2 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
             <Lock className="w-3.5 h-3.5 shrink-0" />

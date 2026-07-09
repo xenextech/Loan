@@ -76,13 +76,22 @@ export const nrbReportingSchema = z.object({
 
 // ─── Step 3 — Credit Scoring ────────────────────────────────────────────────
 
+// Matches backend ParentsBorrowingsWithBFIs exactly (credit-score.enum.ts) —
+// scored categorically (see CREDIT_PARAMETERS.parentsBorrowingsWithBFIs), so
+// any other string is silently treated as "no data" by CreditScoreService.
+export const PARENTS_BORROWINGS_WITH_BFIS_OPTIONS = [
+  { value: "US", label: "Borrowing from Us" },
+  { value: "OTHER_BFI", label: "Borrowing from One Other BFI" },
+  { value: "OTHER_BFIS", label: "Borrowing from Multiple Other BFIs" },
+] as const;
+
 export const creditAssessmentSchema = z.object({
   creditLimit: optionalNumber,
   loanToValueRatio: optionalNumber,
   dsgir: optionalNumber,
   performanceYears: optionalNumber,
   bankingRelationshipScore: optionalNumber,
-  parentsBorrowingsWithBFIs: optionalText(60),
+  parentsBorrowingsWithBFIs: z.enum(["US", "OTHER_BFI", "OTHER_BFIS"]).optional().or(z.literal("")),
   sourceOfIncomeScore: optionalNumber,
   operationOfInstitution: optionalNumber,
   creditRiskScoring: optionalText(120),
@@ -208,7 +217,7 @@ export const approvalStatusSchema = z.enum([
 
 export const approvalEntrySchema = z.object({
   approverName: optionalText(120),
-  role: z.enum(["INITIATOR", "SUPPORT", "APPROVER"]),
+  role: z.enum(["INITIATOR", "SUPPORT", "CHECKER", "APPROVER"]),
   status: approvalStatusSchema,
   approvedDate: optionalText(20),
   remarks: optionalText(1000),
@@ -218,6 +227,7 @@ export const approvalEntrySchema = z.object({
 export const approvalSchema = z.object({
   initiator: approvalEntrySchema,
   support: approvalEntrySchema,
+  checker: approvalEntrySchema,
   approver: approvalEntrySchema,
 });
 

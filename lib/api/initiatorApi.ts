@@ -1,9 +1,9 @@
 import { baseApi } from "./baseApi";
-import type { CollegeVerifiedItem, InitiatorApplicationRecord, LoanApplication, PaginatedData } from "@/types/api";
+import type { CollegeVerifiedItem, InitiatorQueueItem, InitiatorApplicationRecord, LoanApplication, PaginatedData } from "@/types/api";
 import type { LoanAssessmentFormValues } from "@/components/initiator/loan-assessment/schema";
 import type { InitiatorApplicationDetail, InitiatorApplicationListItem } from "@/components/initiator/types/initiator";
 import type { NewApplicationDetailsSubmitValues } from "@/components/initiator/new-application-details/schema";
-import { toInitiatorDetail, toInitiatorListItem } from "./transforms";
+import { toInitiatorDetail, toInitiatorListItem, toInitiatorQueueListItem } from "./transforms";
 
 type ApplicantInfo = LoanAssessmentFormValues["applicantInfo"];
 
@@ -249,6 +249,7 @@ export const initiatorApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [
         { type: "Application", id: "initiator-college-verified-list" },
+        { type: "Application", id: "initiator-queue-list" },
         { type: "Dashboard", id: "applications-list" },
       ],
     }),
@@ -295,6 +296,29 @@ export const initiatorApi = baseApi.injectEndpoints({
           : [{ type: "Application" as const, id: "initiator-college-verified-list" }],
     }),
 
+    // Initiator work queue — college-verified applications AND Initiator-created
+    // applications, combined (GET /applications/initiator/queue). This is what
+    // powers the "My Queue" tab; unlike getCollegeVerifiedApplications above, it
+    // also surfaces applications created via createNewInitiatorApplication, which
+    // never go through college verification and so never appear in that list.
+    getInitiatorQueue: builder.query<
+      { paginated: PaginatedData<InitiatorQueueItem>; items: InitiatorApplicationListItem[] },
+      { page?: number; limit?: number } | void
+    >({
+      query: (params) => ({ url: "/applications/initiator/queue", params: params ?? undefined }),
+      transformResponse: (raw: PaginatedData<InitiatorQueueItem>) => ({
+        paginated: raw,
+        items: (raw.data ?? []).map(toInitiatorQueueListItem),
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.paginated.data.map(({ applicationId }) => ({ type: "Application" as const, id: applicationId })),
+              { type: "Application" as const, id: "initiator-queue-list" },
+            ]
+          : [{ type: "Application" as const, id: "initiator-queue-list" }],
+    }),
+
     // Initiator review workspace — full application record for a single applicant
     // (GET /applications/:applicationId/initiator).
     getInitiatorApplicationDetail: builder.query<InitiatorApplicationDetail, string>({
@@ -310,5 +334,6 @@ export const {
   useCreateInitiatorApplicationMutation,
   useUpdateInitiatorApplicationMutation,
   useGetCollegeVerifiedApplicationsQuery,
+  useGetInitiatorQueueQuery,
   useGetInitiatorApplicationDetailQuery,
 } = initiatorApi;

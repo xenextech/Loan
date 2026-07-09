@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -70,6 +70,18 @@ const SectionHeading = ({
   </div>
 );
 
+function getUploadErrorMessage(err: unknown): string | undefined {
+  if (err && typeof err === "object" && "data" in err) {
+    const data = (err as { data?: unknown }).data;
+    if (data && typeof data === "object" && "message" in data) {
+      const msg = (data as { message?: unknown }).message;
+      if (typeof msg === "string") return msg;
+      if (Array.isArray(msg)) return msg.join(", ");
+    }
+  }
+  return undefined;
+}
+
 export default function Step2Identity({
   defaultValues,
   onNext,
@@ -79,6 +91,9 @@ export default function Step2Identity({
 }: Step2Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
+  // Citizenship uploads as EITHER a front+back image pair OR a single PDF —
+  // never both (backend rejects mixing, see identity-document.util.ts).
+  const [citizenshipMode, setCitizenshipMode] = useState<"images" | "pdf">("images");
 
   const uploadFile = async (file: File, documentType: DocumentType) => {
     if (!applicationId) {
@@ -87,9 +102,10 @@ export default function Step2Identity({
     }
     try {
       await uploadDocument({ applicationId, documentType, file }).unwrap();
-    } catch {
+    } catch (err) {
       toast.error(
-        `Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`,
+        getUploadErrorMessage(err) ??
+          `Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`,
       );
     }
   };
@@ -226,30 +242,73 @@ export default function Step2Identity({
                   Upload {identityLabels[identityType] ?? "Document"}
                 </p>
 
-                {identityType === "document" ? (
+                {identityType === "citizenship" ? (
+                  <div className="space-y-4">
+                    <div className="inline-flex rounded-lg border border-border p-1 bg-muted/40">
+                      {(
+                        [
+                          { value: "images", label: "Upload as Images" },
+                          { value: "pdf", label: "Upload as PDF" },
+                        ] as const
+                      ).map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setCitizenshipMode(opt.value)}
+                          className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${
+                            citizenshipMode === opt.value
+                              ? "bg-background text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {citizenshipMode === "images" ? (
+                      // items-start: without it, CSS Grid's default row-stretch
+                      // makes both cells match the taller sibling's height once
+                      // one side is uploaded and the other still shows the
+                      // (taller) empty dropzone.
+                      <div
+                        key="citizenship-images"
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start"
+                      >
+                        <FileUploadZone
+                          label="Front Side"
+                          hint="Clear photo of the front"
+                          accept="image/jpeg,image/png"
+                          onFileSelect={handleIdentityFront}
+                        />
+                        <FileUploadZone
+                          label="Back Side"
+                          hint="Clear photo of the back"
+                          accept="image/jpeg,image/png"
+                          onFileSelect={handleIdentityBack}
+                        />
+                      </div>
+                    ) : (
+                      <FileUploadZone
+                        key="citizenship-pdf"
+                        label="Citizenship Document"
+                        hint="A single PDF of the full document, under 5MB"
+                        accept="application/pdf"
+                        maxSizeMB={5}
+                        variant="document"
+                        onFileSelect={handleIdentityDocument}
+                      />
+                    )}
+                  </div>
+                ) : (
                   <FileUploadZone
                     label="Identity Document"
-                    hint="Upload a single PDF of your identity document"
-                    accept="application/pdf"
+                    hint="Image or PDF of your identity document, under 5MB"
+                    accept="image/jpeg,image/png,application/pdf"
                     maxSizeMB={5}
                     variant="document"
                     onFileSelect={handleIdentityDocument}
                   />
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FileUploadZone
-                      label="Front Side"
-                      hint="Clear photo of the front"
-                      accept="image/jpeg,image/png"
-                      onFileSelect={handleIdentityFront}
-                    />
-                    <FileUploadZone
-                      label="Back Side"
-                      hint="Clear photo of the back"
-                      accept="image/jpeg,image/png"
-                      onFileSelect={handleIdentityBack}
-                    />
-                  </div>
                 )}
               </motion.div>
             )}

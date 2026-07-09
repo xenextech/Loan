@@ -34,6 +34,7 @@ export function mergeDefaults(overrides?: Partial<LoanAssessmentFormValues>): Lo
     approval: {
       initiator: { ...DEFAULT_LOAN_ASSESSMENT_VALUES.approval.initiator, ...overrides.approval?.initiator },
       support: { ...DEFAULT_LOAN_ASSESSMENT_VALUES.approval.support, ...overrides.approval?.support },
+      checker: { ...DEFAULT_LOAN_ASSESSMENT_VALUES.approval.checker, ...overrides.approval?.checker },
       approver: { ...DEFAULT_LOAN_ASSESSMENT_VALUES.approval.approver, ...overrides.approval?.approver },
     },
   };
@@ -47,7 +48,11 @@ export function mergeDefaults(overrides?: Partial<LoanAssessmentFormValues>): Lo
  * `localStorage` draft layers on top of that for unsaved edits since the last
  * successful PATCH, keyed by application id.
  */
-export function useLoanAssessmentForm(applicationId: string, initialValues?: Partial<LoanAssessmentFormValues>) {
+export function useLoanAssessmentForm(
+  applicationId: string,
+  initialValues?: Partial<LoanAssessmentFormValues>,
+  hasInitiatorInfo = false,
+) {
   const storageKey = `${DRAFT_STORAGE_PREFIX}${applicationId}`;
 
   const form = useForm<LoanAssessmentFormValues>({
@@ -133,10 +138,18 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
   /**
    * Drives the primary step button (Step 1 = "Next", every step after = "Update").
    * Step 1 creates the initiator record on the backend (Basic Information only,
-   * per the create DTO). Every step after that PATCHes the same record with the
-   * full accumulated form state — not just the current step's slice — so the
-   * backend stays in sync regardless of which step was last edited. Only
-   * advances to the next step once the request succeeds.
+   * per the create DTO) — but only the *first* time: `hasInitiatorInfo` reflects
+   * the application's actual state (whether POST .../initiator has ever
+   * succeeded for it), not just which step the wizard happens to be on. An
+   * application can already have initiator info by the time this form opens —
+   * e.g. one created via the "New Application" flow, which submits Basic
+   * Information as part of its own creation step — so re-running Step 1 here
+   * must PATCH like every other step, or the backend correctly 409s ("Initiator
+   * information already exists for this application. Use PATCH to update it.").
+   * Every step after Step 1 PATCHes the same record with the full accumulated
+   * form state — not just the current step's slice — so the backend stays in
+   * sync regardless of which step was last edited. Only advances to the next
+   * step once the request succeeds.
    */
   const submitStepAndAdvance = useCallback(async () => {
     if (isSyncingStep) return false; // guard against double-submit while a request is in flight
@@ -149,14 +162,15 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
       return false;
     }
 
+    const isFirstEverSave = currentStep === 1 && !hasInitiatorInfo;
     try {
-      if (currentStep === 1) {
+      if (isFirstEverSave) {
         await createInitiatorApplication({ applicationId, data: form.getValues("applicantInfo") }).unwrap();
       } else {
         await updateInitiatorApplication({ applicationId, data: form.getValues() }).unwrap();
       }
     } catch (err) {
-      toast.error(currentStep === 1 ? "Failed to submit applicant information" : "Failed to update the assessment", {
+      toast.error(isFirstEverSave ? "Failed to submit applicant information" : "Failed to update the assessment", {
         description: getApiErrorMessage(err) ?? "Please try again.",
       });
       return false;
@@ -166,7 +180,15 @@ export function useLoanAssessmentForm(applicationId: string, initialValues?: Par
     setCurrentStep(next);
     setMaxStepReached((prev) => Math.max(prev, next));
     return true;
-  }, [isSyncingStep, currentStep, form, applicationId, createInitiatorApplication, updateInitiatorApplication]);
+  }, [
+    isSyncingStep,
+    currentStep,
+    hasInitiatorInfo,
+    form,
+    applicationId,
+    createInitiatorApplication,
+    updateInitiatorApplication,
+  ]);
 
   const saveDraft = useCallback(() => {
     try {

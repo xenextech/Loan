@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Filter, CheckCircle2, Plus, Inbox } from "lucide-react";
+import { Search, Filter, CheckCircle2, Plus, Inbox, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNPR } from "@/lib/formatters";
 import { useInitiatorApplications } from "./hooks/useInitiatorApplications";
@@ -39,6 +39,12 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "rejected", label: "Rejected" },
   { key: "sent-back", label: "Sent Back" },
 ];
+
+const TAB_KEYS = new Set<TabKey>(TABS.map((t) => t.key));
+
+function isTabKey(value: string | null): value is TabKey {
+  return value !== null && TAB_KEYS.has(value as TabKey);
+}
 
 // "All" is backed by GET /dashboard/applications (every submitted application);
 // "My Queue" is backed by the college-verified review queue scoped to this initiator.
@@ -67,7 +73,9 @@ function TableSkeleton() {
 
 export default function InitiatorApplications() {
   const router = useRouter();
-  const [tab, setTab] = useState<TabKey>("all");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [tab, setTab] = useState<TabKey>(isTabKey(requestedTab) ? requestedTab : "all");
   const [search, setSearch] = useState("");
   const [collegeFilter, setCollegeFilter] = useState("all");
   const debouncedSearch = useDebounce(search, 300);
@@ -231,9 +239,15 @@ export default function InitiatorApplications() {
                         <p className="text-xs text-foreground max-w-44 truncate">{app.program}</p>
                       </TableCell>
                       <TableCell className="py-3.5">
-                        <Badge className="bg-[oklch(0.62_0.18_145)]/15 text-[oklch(0.42_0.18_145)] border-0 text-[10px] font-semibold gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Verified by College
-                        </Badge>
+                        {app.status === "INITIATOR_CREATED" ? (
+                          <Badge className="bg-[oklch(0.55_0.15_260)]/15 text-[oklch(0.42_0.15_260)] border-0 text-[10px] font-semibold gap-1">
+                            <UserPlus className="w-3 h-3" /> Initiator Created
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-[oklch(0.62_0.18_145)]/15 text-[oklch(0.42_0.18_145)] border-0 text-[10px] font-semibold gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Verified by College
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="py-3.5 text-right pr-5">
                         <Button
