@@ -1,5 +1,5 @@
 export type StudyType = "program" | "course" | "diploma" | "certification";
-export type IdentityType = "citizenship" | "passport" | "driving_license";
+export type IdentityType = "citizenship" | "passport" | "driving_license" | "document";
 export type MaritalStatus = "single" | "married" | "divorced" | "widowed";
 export type Gender = "male" | "female" | "other";
 export type Occupation = "student" | "employed" | "self_employed" | "unemployed";

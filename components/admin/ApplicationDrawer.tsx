@@ -56,6 +56,7 @@ const DOC_LABELS: Record<DocumentType, string> = {
   APPLICANT_PHOTO:      "Applicant Photo",
   IDENTITY_FRONT:       "Identity — Front",
   IDENTITY_BACK:        "Identity — Back",
+  IDENTITY_DOCUMENT:    "Identity Document",
   ACADEMIC_RECORD:      "Academic Records",
   FEE_STRUCTURE:        "Fee Structure",
   STUDENT_APPLICATION:  "Student Application",
@@ -73,6 +74,7 @@ const DOC_ORDER: DocumentType[] = [
   "APPLICANT_PHOTO",
   "IDENTITY_FRONT",
   "IDENTITY_BACK",
+  "IDENTITY_DOCUMENT",
   "ACADEMIC_RECORD",
   "FEE_STRUCTURE",
 ];

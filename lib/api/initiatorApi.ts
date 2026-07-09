@@ -2,6 +2,7 @@ import { baseApi } from "./baseApi";
 import type { CollegeVerifiedItem, InitiatorApplicationRecord, LoanApplication, PaginatedData } from "@/types/api";
 import type { LoanAssessmentFormValues } from "@/components/initiator/loan-assessment/schema";
 import type { InitiatorApplicationDetail, InitiatorApplicationListItem } from "@/components/initiator/types/initiator";
+import type { NewApplicationDetailsSubmitValues } from "@/components/initiator/new-application-details/schema";
 import { toInitiatorDetail, toInitiatorListItem } from "./transforms";
 
 type ApplicantInfo = LoanAssessmentFormValues["applicantInfo"];
@@ -193,21 +194,58 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
   };
 };
 
+// ─── "New Application" create body — CreateInitiatorNewApplicationDto ─────────
+// Backend composes this DTO from the student flow's own Step1Dto & Step2Dto &
+// Step3Dto (via IntersectionType), so field names match 1:1 — no remapping needed.
+
+const buildNewApplicationBody = (data: NewApplicationDetailsSubmitValues) => ({
+  fullName: data.fullName || undefined,
+  email: data.email || undefined,
+  phoneNumber: data.phoneNumber || undefined,
+  studyType: data.studyType || undefined,
+  courseName: data.courseName || undefined,
+  boardUniversity: data.boardUniversity || undefined,
+  courseDuration: data.courseDuration || undefined,
+  loanAmount: data.loanAmount,
+  identityType: data.identityType || undefined,
+  identityNumber: data.identityNumber || undefined,
+  identityName: data.identityName || undefined,
+  dobAd: data.dobAd || undefined,
+  dobBs: data.dobBs || undefined,
+  gender: data.gender || undefined,
+  occupation: data.occupation || undefined,
+  issuedDistrict: data.issuedDistrict || undefined,
+  issuedDate: data.issuedDate || undefined,
+  province: data.province || undefined,
+  district: data.district || undefined,
+  municipality: data.municipality || undefined,
+  ward: data.ward || undefined,
+  fatherName: data.fatherName || undefined,
+  motherName: data.motherName || undefined,
+  grandfatherName: data.grandfatherName || undefined,
+  maritalStatus: data.maritalStatus || undefined,
+  spouseName: data.spouseName || undefined,
+  expectedSalary: data.expectedSalary,
+  feeStructureMethod: data.feeStructureMethod || undefined,
+  feeStructureUrl: data.feeStructureUrl || undefined,
+  feeStructureText: data.feeStructureText || undefined,
+});
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 export const initiatorApi = baseApi.injectEndpoints({
   overrideExisting: process.env.NODE_ENV === "development",
   endpoints: (builder) => ({
     // "New Application" page — starts a brand new application from scratch, no
-    // pre-existing applicationId (POST /applications/initiator). Uses the same
-    // CreateInitiatorApplicationDto field mapping as the per-id create below, so
-    // the full Applicant Information set (not just 2-3 fields) is captured up
-    // front. Every later step continues via updateInitiatorApplication (PATCH).
-    createNewInitiatorApplication: builder.mutation<LoanApplication, ApplicantInfo>({
+    // pre-existing applicationId (POST /applications/initiator). Accepts the same
+    // personal/identity/family/study/loan fields as the student Step1-3 forms —
+    // see CreateInitiatorNewApplicationDto. Follow up with createInitiatorApplication
+    // below to attach the credit-appraisal "Basic Information" once the id exists.
+    createNewInitiatorApplication: builder.mutation<LoanApplication, NewApplicationDetailsSubmitValues>({
       query: (data) => ({
         url: "/applications/initiator",
         method: "POST",
-        body: buildInitiatorCreateBody(data),
+        body: buildNewApplicationBody(data),
       }),
       invalidatesTags: [
         { type: "Application", id: "initiator-college-verified-list" },

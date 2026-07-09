@@ -17,7 +17,7 @@ export const step1Schema = z.object({
 });
 
 export const step2Schema = z.object({
-  identityType: z.enum(["citizenship", "passport", "driving_license"]),
+  identityType: z.enum(["citizenship", "passport", "driving_license", "document"]),
   identityNumber: z.string().min(3, "Identity number is required"),
   identityName: z.string().min(2, "Name as on document is required"),
   dob: z.string().min(1, "Date of birth is required"),
