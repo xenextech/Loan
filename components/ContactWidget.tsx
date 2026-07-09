@@ -13,7 +13,7 @@ export default function ContactWidget() {
   // the parent — so the button stays right-most and the card
   // occupies the space to its left). Clicking the FAB still
   // toggles it closed/open.
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex items-end gap-3">
@@ -26,18 +26,9 @@ export default function ContactWidget() {
             initial={{ opacity: 0, x: 16, scale: 0.96 }}
             animate={{ opacity: 1, x: 0,  scale: 1    }}
             exit={{   opacity: 0, x: 16, scale: 0.96  }}
-            transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.30, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="bg-white rounded-2xl shadow-2xl shadow-black/12 border border-zinc-100 overflow-hidden w-60 relative"
           >
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="absolute top-2 right-2 p-1.5 text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors z-10"
-              aria-label="Close"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-
             {/* Phone number row */}
             <div className="px-4 pb-4 pt-5">
               <a
@@ -76,7 +67,7 @@ export default function ContactWidget() {
         {!open && (
           <span
             aria-hidden="true"
-            className="absolute inset-0 rounded-full bg-primary opacity-30 animate-ping"
+            className="absolute inset-0 rounded-full bg-primary opacity-0"
           />
         )}
 
@@ -88,9 +79,9 @@ export default function ContactWidget() {
               initial={{ rotate: -90, opacity: 0 }}
               animate={{ rotate: 0,   opacity: 1 }}
               exit={{   rotate:  90, opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              transition={{ duration: 0.25 }}
             >
-              <Phone className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </motion.span>
           ) : (
             <motion.span
