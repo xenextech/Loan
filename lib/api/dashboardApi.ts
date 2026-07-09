@@ -165,11 +165,13 @@ const mapCommissionEntry = (e: CommissionEntryRecord): CommissionEntryRecord => 
 const mapLoanAccount = (a: LoanAccountRecord): LoanAccountRecord => ({
   ...a,
   finalInterestRate: toNumOrNull(a.finalInterestRate),
+  finalPrincipalAmount: toNumOrNull(a.finalPrincipalAmount),
 });
 
 const mapConfigureResult = (a: ConfigureLoanServicingResult): ConfigureLoanServicingResult => ({
   ...a,
   finalInterestRate: toNumOrNull(a.finalInterestRate),
+  finalPrincipalAmount: toNumOrNull(a.finalPrincipalAmount),
 });
 
 // Loan servicing config/review changes only ever show up through the merged

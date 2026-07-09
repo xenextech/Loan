@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ import {
 import { Send, Settings2, PhoneCall, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/formatters";
+import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import {
   useConfigureLoanServicingMutation,
   useNotifyLoanServicingBorrowerMutation,
@@ -71,13 +73,17 @@ export default function LoanServicingPanel({
    *  principal used for EMI calculations, visible here but never editable. */
   disbursementAmount: number | null;
 }) {
+  const router = useRouter();
+  const basePath = useDashboardBasePath();
+
   const [configOpen, setConfigOpen] = useState(false);
   const [rate, setRate] = useState("");
   const [tenure, setTenure] = useState("");
   const [frequency, setFrequency] = useState<RepaymentFrequency>("MONTHLY");
+  const [interestFrequency, setInterestFrequency] = useState<RepaymentFrequency>("MONTHLY");
+  const [principalAmount, setPrincipalAmount] = useState("");
   const [grace, setGrace] = useState("0");
   const [startDate, setStartDate] = useState("");
-  const [computedResult, setComputedResult] = useState<{ installmentAmount: number; totalRepayable: number; numberOfInstallments: number } | null>(null);
 
   const tenureNum = Number(tenure);
   const periodMonths = FREQUENCY_PERIOD_MONTHS[frequency];
@@ -116,28 +122,20 @@ export default function LoanServicingPanel({
 
   const handleConfigure = async () => {
     try {
-      const result = await configureServicing({
+      await configureServicing({
         applicationId,
         data: {
           finalInterestRate: rate.trim() ? Number(rate) : undefined,
           finalTenureMonths: tenure.trim() ? Number(tenure) : undefined,
           repaymentFrequency: frequency,
+          interestFrequency,
+          finalPrincipalAmount: principalAmount.trim() ? Number(principalAmount) : undefined,
           gracePeriodMonths: grace.trim() ? Number(grace) : undefined,
           emiStartDate: startDate ? new Date(startDate).toISOString() : undefined,
         },
       }).unwrap();
-      setComputedResult({
-        installmentAmount: result.installmentAmount,
-        totalRepayable: result.totalRepayable,
-        numberOfInstallments: result.numberOfInstallments,
-      });
-      toast.success("Loan servicing configured and EMI schedule regenerated.");
-      setConfigOpen(false);
-      setRate("");
-      setTenure("");
-      setFrequency("MONTHLY");
-      setGrace("0");
-      setStartDate("");
+      toast.success("EMI has been scheduled and notified to students and parents");
+      router.push(basePath);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     }
@@ -252,6 +250,14 @@ export default function LoanServicingPanel({
             <p className="text-sm font-semibold text-foreground">{FREQUENCY_LABEL[loanAccount.repaymentFrequency]}</p>
           </div>
           <div>
+            <p className="text-xs text-muted-foreground">Interest Frequency</p>
+            <p className="text-sm font-semibold text-foreground">{loanAccount.interestFrequency !== null ? FREQUENCY_LABEL[loanAccount.interestFrequency] : "Same as EMI timeline"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Final Principal Amount</p>
+            <p className="text-sm font-semibold text-foreground">{loanAccount.finalPrincipalAmount !== null ? formatNPR(loanAccount.finalPrincipalAmount) : "Uses disbursed amount"}</p>
+          </div>
+          <div>
             <p className="text-xs text-muted-foreground">Grace Period</p>
             <p className="text-sm font-semibold text-foreground">{loanAccount.gracePeriodMonths} month(s)</p>
           </div>
@@ -259,22 +265,6 @@ export default function LoanServicingPanel({
             <p className="text-xs text-muted-foreground">First Due Date</p>
             <p className="text-sm font-semibold text-foreground">{loanAccount.firstDueDate ? formatDate(loanAccount.firstDueDate) : "—"}</p>
           </div>
-          {computedResult && (
-            <>
-              <div>
-                <p className="text-xs text-muted-foreground">Installment Amount</p>
-                <p className="text-sm font-semibold text-foreground">{formatNPR(computedResult.installmentAmount)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Repayable</p>
-                <p className="text-sm font-semibold text-foreground">{formatNPR(computedResult.totalRepayable)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Installments</p>
-                <p className="text-sm font-semibold text-foreground">{computedResult.numberOfInstallments}</p>
-              </div>
-            </>
-          )}
         </div>
         <p className="text-xs text-muted-foreground">
           {isConfigured ? `Configured ${formatDate(loanAccount.configuredAt)}` : "Not yet configured — the EMI schedule uses the originally approved terms."}
@@ -304,6 +294,21 @@ export default function LoanServicingPanel({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Interest Frequency</Label>
+                <Select value={interestFrequency} onValueChange={(v) => setInterestFrequency(v as RepaymentFrequency)}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.entries(FREQUENCY_LABEL) as [RepaymentFrequency, string][]).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Final Principal Amount</Label>
+                <Input type="number" min={1} value={principalAmount} onChange={(e) => setPrincipalAmount(e.target.value)} className="h-9 text-sm" placeholder="Uses disbursed amount" />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Grace Period (months)</Label>

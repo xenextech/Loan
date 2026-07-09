@@ -1,4 +1,4 @@
-import { EmiScheduleList } from "@/components/initiator/emi-schedule/EmiScheduleList";
+import { EmiScheduleList } from "@/components/credit-manager/emi-schedule/EmiScheduleList";
 
 export const metadata = {
   title: "EMI Schedule — Unnati Credit Manager Portal",

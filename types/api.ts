@@ -285,10 +285,14 @@ export interface InitiatorApplicationRecord {
   applicationNumber: string;
   status: AppStatus;
   stage?: import('./dashboard').ApplicationStage | null;
+  source?: 'STUDENT' | 'INITIATOR';
+  userId?: string;
   rejectionReason?: string | null;
   rejectedAt?: string | null;
+  rejectedByUserId?: string | null;
   sentBackReason?: string | null;
   sentBackAt?: string | null;
+  sentBackByUserId?: string | null;
   sentBackToStage?: import('./dashboard').ApplicationStage | null;
   nrbClassification?: import('./dashboard').NrbLoanClassification;
   nrbClassifiedAt?: string | null;
@@ -296,10 +300,11 @@ export interface InitiatorApplicationRecord {
   fullName?: string;
   email?: string;
   phoneNumber?: string;
-  identityType?: IdentityType;
+  identityType?: IdentityType | null;
   identityNumber?: string;
   identityName?: string;
   dateOfBirth?: string;
+  dobBs?: string | null;
   issuedDistrict?: string;
   issuedDate?: string;
   gender?: Gender;
@@ -313,6 +318,8 @@ export interface InitiatorApplicationRecord {
   grandfatherName?: string;
   maritalStatus?: MaritalStatus;
   spouseName?: string;
+  informationAccurate?: boolean | null;
+  authorizeVerification?: boolean | null;
   submittedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -321,6 +328,40 @@ export interface InitiatorApplicationRecord {
   documents?: Document[];
   collegeVerification?: CollegeVerification;
   parentVerification?: ParentVerification;
+
+  // ─── Approval workflow trail (who signed off each stage, and when) ─────────
+  initiatorUserId?: string | null;
+  initiatorName?: string | null;
+  initiatorPost?: string | null;
+  initiatorDate?: string | null;
+  initiatorSignature?: string | null;
+  supporterUserId?: string | null;
+  supporterName?: string | null;
+  supporterPost?: string | null;
+  supporterDate?: string | null;
+  supporterSignature?: string | null;
+  checkerUserId?: string | null;
+  checkerName?: string | null;
+  checkerPost?: string | null;
+  checkerDate?: string | null;
+  checkerSignature?: string | null;
+  approverUserId?: string | null;
+  approverName?: string | null;
+  approverPost?: string | null;
+  approverDate?: string | null;
+  approverSignature?: string | null;
+
+  // ─── Compliance / risk flags ────────────────────────────────────────────────
+  existingBankingRelationship?: string | null;
+  blacklistStatus?: string | null;
+  blacklistReason?: string | null;
+  blacklistDate?: string | null;
+  blacklistReferenceNumber?: string | null;
+  pepStatus?: string | null;
+  pepRemarks?: string | null;
+  pepCheckedAt?: string | null;
+  pepCheckedByUserId?: string | null;
+  moneyLaunderingRisk?: string | null;
 
   // ─── Initiator credit-appraisal fields (flat on LoanApplication) ────────────
   // Basic Information

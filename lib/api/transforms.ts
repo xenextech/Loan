@@ -330,7 +330,7 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
       email:           record.email ?? "",
       phoneNumber:     record.phoneNumber ?? "",
       identityName:    record.identityName,
-      identityType:    record.identityType,
+      identityType:    record.identityType ?? undefined,
       identityNumber:  record.identityNumber,
       dob:             record.dateOfBirth,
       issuedDistrict:  record.issuedDistrict,

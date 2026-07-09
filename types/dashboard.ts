@@ -571,6 +571,8 @@ export interface LoanAccountRecord {
   finalInterestRate: number | null;
   finalTenureMonths: number | null;
   repaymentFrequency: RepaymentFrequency;
+  interestFrequency: RepaymentFrequency | null;
+  finalPrincipalAmount: number | null;
   gracePeriodMonths: number;
   emiStartDate: string | null;
   firstDueDate: string | null;
@@ -593,6 +595,8 @@ export interface ConfigureLoanServicingBody {
   finalInterestRate?: number;
   finalTenureMonths?: number;
   repaymentFrequency?: RepaymentFrequency;
+  interestFrequency?: RepaymentFrequency;
+  finalPrincipalAmount?: number;
   gracePeriodMonths?: number;
   emiStartDate?: string;
 }

@@ -29,7 +29,7 @@ import {
 import type { EmiStatus } from "@/types/dashboard";
 import { NRB_CLASS_LABEL, NRB_CLASS_BADGE_CLASS } from "./nrbClassificationBadge";
 
-const STATUS_BADGE_CLASS: Record<EmiStatus, string> = {
+export const STATUS_BADGE_CLASS: Record<EmiStatus, string> = {
   UPCOMING: "bg-muted text-muted-foreground",
   PAID: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
   OVERDUE: "bg-destructive/10 text-destructive",
