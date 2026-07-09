@@ -208,7 +208,7 @@ export const approvalStatusSchema = z.enum([
 
 export const approvalEntrySchema = z.object({
   approverName: optionalText(120),
-  role: z.enum(["INITIATOR", "SUPPORT", "APPROVER"]),
+  role: z.enum(["INITIATOR", "SUPPORT", "CHECKER", "APPROVER"]),
   status: approvalStatusSchema,
   approvedDate: optionalText(20),
   remarks: optionalText(1000),
@@ -218,6 +218,7 @@ export const approvalEntrySchema = z.object({
 export const approvalSchema = z.object({
   initiator: approvalEntrySchema,
   support: approvalEntrySchema,
+  checker: approvalEntrySchema,
   approver: approvalEntrySchema,
 });
 

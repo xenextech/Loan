@@ -126,6 +126,10 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
           <ApprovalStatusBadge status={ap?.support?.status ?? "WAITING"} />
         </div>
         <div className="flex items-center gap-2">
+          <span className="text-[11px] text-muted-foreground w-16">Checker</span>
+          <ApprovalStatusBadge status={ap?.checker?.status ?? "WAITING"} />
+        </div>
+        <div className="flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground w-16">Approver</span>
           <ApprovalStatusBadge status={ap?.approver?.status ?? "WAITING"} />
         </div>

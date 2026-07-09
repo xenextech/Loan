@@ -2,7 +2,7 @@
 // Mirrors the eventual Prisma model — keep this the single source of truth
 // for the shape of the form so the Zod schema and API layer can both derive from it.
 
-export type ApprovalRole = "INITIATOR" | "SUPPORT" | "APPROVER";
+export type ApprovalRole = "INITIATOR" | "SUPPORT" | "CHECKER" | "APPROVER";
 
 /**
  * PENDING/WAITING/APPROVED/REJECTED are shared by every role. UNDER_REVIEW and
@@ -32,7 +32,7 @@ export interface ApprovalEntry {
 }
 
 /** Ordered so index comparisons double as "comes before" checks. */
-export const APPROVAL_SEQUENCE: ApprovalRole[] = ["INITIATOR", "SUPPORT", "APPROVER"];
+export const APPROVAL_SEQUENCE: ApprovalRole[] = ["INITIATOR", "SUPPORT", "CHECKER", "APPROVER"];
 
 export interface StepDefinition {
   id: number;

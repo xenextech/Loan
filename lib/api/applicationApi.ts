@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import type { LoanApplication, SubmitApplicationResult } from "@/types/api";
+import type { LoanApplication, SubmitApplicationResult, ApplicationTracker } from "@/types/api";
 import type { Step1FormData, Step2FormData, Step3FormData } from "@/lib/validations/schemas";
 import {
   toStudyType,
@@ -129,6 +129,12 @@ export const applicationApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/applications/${id}`, method: "DELETE" }),
       invalidatesTags: ["Application"],
     }),
+
+    // Student-facing lifecycle tracker: current stage, progress %, per-stage timeline
+    getApplicationTracker: builder.query<ApplicationTracker, string>({
+      query: (id) => `/applications/${id}/tracker`,
+      providesTags: (_r, _e, id) => [{ type: "Application", id: `${id}-tracker` }],
+    }),
   }),
 });
 
@@ -141,4 +147,5 @@ export const {
   useSaveStep3Mutation,
   useSubmitApplicationMutation,
   useDeleteDraftMutation,
+  useGetApplicationTrackerQuery,
 } = applicationApi;

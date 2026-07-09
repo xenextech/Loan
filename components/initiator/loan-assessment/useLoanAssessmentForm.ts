@@ -34,6 +34,7 @@ export function mergeDefaults(overrides?: Partial<LoanAssessmentFormValues>): Lo
     approval: {
       initiator: { ...DEFAULT_LOAN_ASSESSMENT_VALUES.approval.initiator, ...overrides.approval?.initiator },
       support: { ...DEFAULT_LOAN_ASSESSMENT_VALUES.approval.support, ...overrides.approval?.support },
+      checker: { ...DEFAULT_LOAN_ASSESSMENT_VALUES.approval.checker, ...overrides.approval?.checker },
       approver: { ...DEFAULT_LOAN_ASSESSMENT_VALUES.approval.approver, ...overrides.approval?.approver },
     },
   };
