@@ -11,11 +11,13 @@ import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useCreateNewInitiatorApplicationMutation, useCreateInitiatorApplicationMutation } from "@/lib/api/initiatorApi";
+import { useUploadDocumentMutation } from "@/lib/api/documentsApi";
 import { applicantInfoSchema, type LoanAssessmentFormValues } from "./loan-assessment/schema";
 import { DEFAULT_LOAN_ASSESSMENT_VALUES } from "./loan-assessment/constants";
 import { Step1ApplicantInfo } from "./loan-assessment/steps/Step1ApplicantInfo";
-import { NewApplicationDetailsForm } from "./new-application-details/NewApplicationDetailsForm";
+import { NewApplicationDetailsForm, type StagedDocuments } from "./new-application-details/NewApplicationDetailsForm";
 import type { NewApplicationDetailsSubmitValues } from "./new-application-details/schema";
+import type { DocumentType } from "@/types/api";
 
 // Same shape/validation as Step 1 of the full loan assessment form — reusing
 // `Step1ApplicantInfo` here keeps this page's fields identical to the ones the
@@ -43,6 +45,7 @@ export function NewApplicationForm() {
 
   const [createNewApplication, { isLoading: isCreating }] = useCreateNewInitiatorApplicationMutation();
   const [createInitiatorApplication, { isLoading: isAttaching }] = useCreateInitiatorApplicationMutation();
+  const [uploadDocument] = useUploadDocumentMutation();
   const isSubmitting = isCreating || isAttaching;
 
   const form = useForm<NewApplicationValues>({
@@ -51,10 +54,25 @@ export function NewApplicationForm() {
     mode: "onBlur",
   });
 
-  const handleDetailsSubmit = async (details: NewApplicationDetailsSubmitValues) => {
+  const handleDetailsSubmit = async (details: NewApplicationDetailsSubmitValues, documents: StagedDocuments) => {
     try {
       const created = await createNewApplication(details).unwrap();
       setCreatedApplication(created);
+
+      // Uploads are optional and best-effort — a failed upload shouldn't block
+      // moving on to the credit-appraisal step; the initiator can re-upload
+      // later from the application's document review workspace.
+      const uploads = await Promise.allSettled(
+        Object.entries(documents).map(([documentType, file]) =>
+          uploadDocument({ applicationId: created.id, documentType: documentType as DocumentType, file: file as File }).unwrap(),
+        ),
+      );
+      const failedCount = uploads.filter((r) => r.status === "rejected").length;
+      if (failedCount > 0) {
+        toast.warning(`${failedCount} document${failedCount > 1 ? "s" : ""} failed to upload`, {
+          description: "You can re-upload them later from the application's review page.",
+        });
+      }
 
       // Pre-fill Step 2 (Applicant Info) from the details form
       form.reset({
@@ -105,7 +123,7 @@ export function NewApplicationForm() {
       }).unwrap();
 
       toast.success("Application completed successfully");
-      router.push(`/initiator/applications/${createdApplication.id}`);
+      router.push("/initiator/applications?tab=my-queue");
     } catch (err) {
       toast.error("Failed to complete application", {
         description: getApiErrorMessage(err) ?? "Please try again.",

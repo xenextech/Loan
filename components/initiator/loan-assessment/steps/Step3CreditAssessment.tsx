@@ -2,6 +2,8 @@ import { Gauge } from "lucide-react";
 import { SectionCard, FormSection } from "../ui/SectionCard";
 import { NumberField } from "../fields/NumberField";
 import { TextField } from "../fields/TextField";
+import { SelectField } from "../fields/SelectField";
+import { PARENTS_BORROWINGS_WITH_BFIS_OPTIONS } from "../schema";
 
 export function Step3CreditAssessment() {
   return (
@@ -13,7 +15,11 @@ export function Step3CreditAssessment() {
           <NumberField name="creditAssessment.dsgir" label="DSGIR (%)" suffix="%" />
           <NumberField name="creditAssessment.performanceYears" label="Performance Years" />
           <NumberField name="creditAssessment.bankingRelationshipScore" label="Banking Relationship Score" />
-          <TextField name="creditAssessment.parentsBorrowingsWithBFIs" label="Parents/Subsidiaries Borrowings with BFIs" placeholder="e.g. 1200000" />
+          <SelectField
+            name="creditAssessment.parentsBorrowingsWithBFIs"
+            label="Parents/Subsidiaries Borrowings with BFIs"
+            options={PARENTS_BORROWINGS_WITH_BFIS_OPTIONS}
+          />
           <NumberField name="creditAssessment.sourceOfIncomeScore" label="Source of Income Score" />
           <NumberField name="creditAssessment.operationOfInstitution" label="Operation of Institution" />
         </FormSection>

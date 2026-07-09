@@ -9,6 +9,7 @@ import type {
   FeeStructureMethod,
   LoanApplication,
   CollegeVerifiedItem,
+  InitiatorQueueItem,
   InitiatorApplicationRecord,
   Document as ApiDocument,
   DocumentType,
@@ -22,7 +23,7 @@ import type {
   InitiatorApplicationListItem,
   InitiatorDocumentSet,
 } from "@/components/initiator/types/initiator";
-import type { LoanAssessmentFormValues } from "@/components/initiator/loan-assessment/schema";
+import { PARENTS_BORROWINGS_WITH_BFIS_OPTIONS, type LoanAssessmentFormValues } from "@/components/initiator/loan-assessment/schema";
 
 // ─── To-backend transforms ────────────────────────────────────────────────────
 
@@ -110,6 +111,20 @@ export const toInitiatorListItem = (item: CollegeVerifiedItem): InitiatorApplica
   collegeVerifiedAt: item.collegeVerification.submittedAt ?? "",
 });
 
+// Convert a queue row (college-verified OR Initiator-created) → Initiator dashboard
+// table row. Unlike toInitiatorListItem, collegeVerification may be null here —
+// Initiator-created applications never go through college verification.
+export const toInitiatorQueueListItem = (item: InitiatorQueueItem): InitiatorApplicationListItem => ({
+  id:                item.applicationId,
+  applicationNumber: item.student.applicationNumber,
+  studentName:       item.student.fullName ?? "—",
+  collegeName:       item.collegeVerification?.collegeName ?? "—",
+  loanAmount:        toNumber(item.student.loanInformation?.loanAmount),
+  program:           item.student.studyInformation?.courseName ?? "—",
+  status:            item.source === "INITIATOR" ? "INITIATOR_CREATED" : "VERIFIED_BY_COLLEGE",
+  collegeVerifiedAt: item.collegeVerification?.submittedAt ?? "",
+});
+
 // Only these document types are uploaded by the student during the application itself.
 const STUDENT_DOCUMENT_TYPES = new Set<DocumentType>([
   "APPLICANT_PHOTO",
@@ -188,6 +203,13 @@ const toDateInputValue = (iso?: string): string => (iso ? iso.slice(0, 10) : "")
 
 const toYesNo = (value?: boolean): "Yes" | "No" | undefined => (value === undefined ? undefined : value ? "Yes" : "No");
 
+// Backend enforces this as a closed enum (@IsEnum(ParentsBorrowingsWithBFIs)), but the
+// wire type is still `string` — narrow against the same option list the form's
+// SelectField uses, rather than trusting the value or duplicating the enum here.
+const PARENTS_BORROWINGS_WITH_BFIS_VALUES = new Set<string>(PARENTS_BORROWINGS_WITH_BFIS_OPTIONS.map((o) => o.value));
+const toParentsBorrowingsWithBFIs = (value?: string | null): LoanAssessmentFormValues["creditAssessment"]["parentsBorrowingsWithBFIs"] =>
+  value && PARENTS_BORROWINGS_WITH_BFIS_VALUES.has(value) ? (value as "US" | "OTHER_BFI" | "OTHER_BFIS") : "";
+
 export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): Partial<LoanAssessmentFormValues> => {
   const g = record.personalGuarantee;
   const ins = record.insurance;
@@ -235,7 +257,7 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
       dsgir: toOptionalNumber(record.dsgir),
       performanceYears: toOptionalNumber(record.performanceYears),
       bankingRelationshipScore: toOptionalNumber(record.bankingRelationshipScore),
-      parentsBorrowingsWithBFIs: record.parentsBorrowingsWithBFIs ?? "",
+      parentsBorrowingsWithBFIs: toParentsBorrowingsWithBFIs(record.parentsBorrowingsWithBFIs),
       sourceOfIncomeScore: toOptionalNumber(record.sourceOfIncomeScore),
       operationOfInstitution: toOptionalNumber(record.operationOfInstitution),
       creditRiskScoring: record.creditRiskScoring ?? "",
@@ -321,7 +343,7 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
     collegeName:       collegeVerification?.collegeName ?? "—",
     loanAmount:        toNumber(loanInformation?.loanAmount),
     program:           studyInformation?.courseName ?? "—",
-    status:            "VERIFIED_BY_COLLEGE",
+    status:            record.source === "INITIATOR" ? "INITIATOR_CREATED" : "VERIFIED_BY_COLLEGE",
     collegeVerifiedAt: collegeVerification?.submittedAt ?? "",
     submittedAt:       record.submittedAt ?? record.createdAt,
     workflowStage:     "Initiator Review",
@@ -381,5 +403,6 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
       collegeVerification,
     ),
     assessment: toAssessmentInitialValues(record),
+    hasInitiatorInfo: Boolean(record.initiatorUserId),
   };
 };

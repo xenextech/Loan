@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import InitiatorApplications from "@/components/initiator/Applications";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function ApplicationsPage() {
-  return <InitiatorApplications />;
+  return (
+    <Suspense>
+      <InitiatorApplications />
+    </Suspense>
+  );
 }

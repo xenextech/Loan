@@ -6,7 +6,7 @@ export interface InitiatorApplicationListItem {
   collegeName: string;
   loanAmount: number;
   program: string;
-  status: "VERIFIED_BY_COLLEGE";
+  status: "VERIFIED_BY_COLLEGE" | "INITIATOR_CREATED";
   collegeVerifiedAt: string;
 }
 
@@ -92,6 +92,10 @@ export interface InitiatorApplicationDetail extends InitiatorApplicationListItem
   workflowStage: string;
   /** Previously-saved Loan Assessment Form values, mapped from the backend record — pre-fills the form on reopen. */
   assessment: Partial<import("../loan-assessment/schema").LoanAssessmentFormValues>;
+  /** True once POST /applications/:id/initiator has ever succeeded for this application —
+   *  tells the Loan Assessment Form's Step 1 to PATCH instead of re-attempting a POST
+   *  (which the backend correctly rejects with 409 once the record already exists). */
+  hasInitiatorInfo: boolean;
 }
 
 /**

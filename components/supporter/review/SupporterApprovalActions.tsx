@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Undo2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppSelector } from "@/lib/hooks";
-import { useSupportApplicationMutation, useSendBackApplicationMutation } from "@/lib/api/dashboardApi";
+import { useSupportApplicationMutation, useSendBackApplicationMutation, useGetApprovalSummaryQuery } from "@/lib/api/dashboardApi";
 import { RoleApprovalCard } from "@/components/initiator/approval/RoleApprovalCard";
 import { STAGE_LABEL, STAGE_BADGE_CLASS, NO_STAGE_LABEL, NO_STAGE_BADGE_CLASS } from "@/components/initiator/approval/stageBadge";
 import type { ApplicationStage } from "@/types/dashboard";
@@ -57,6 +57,10 @@ export function SupporterApprovalActions({ applicationId, stage }: { application
 
   const [supportApplication, { isLoading: isSupporting }] = useSupportApplicationMutation();
   const [sendBackApplication, { isLoading: isSendingBack }] = useSendBackApplicationMutation();
+  // Who last supported this application, and when — invalidated automatically
+  // after `supportApplication` succeeds (see approvalTransitionTags), so this
+  // refetches and shows the name without a page reload.
+  const { data: summary } = useGetApprovalSummaryQuery(applicationId);
 
   const actionable = SUPPORT_ACTIONABLE_STAGES.includes(stage);
   const isSigned = attestationName.trim().length > 0;
@@ -98,6 +102,7 @@ export function SupporterApprovalActions({ applicationId, stage }: { application
         waitingMessage={
           actionable ? undefined : `This application is at the ${stage ? STAGE_LABEL[stage] : "Not started"} stage — no Support action is available here.`
         }
+        completedBy={summary?.approvals.supporter}
         attestationName={attestationName}
         onAttestationNameChange={setAttestationName}
       >

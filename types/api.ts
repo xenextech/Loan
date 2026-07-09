@@ -246,6 +246,16 @@ export interface CollegeVerifiedItem {
   collegeVerification: CollegeVerification;
 }
 
+// Wire shape for GET /applications/initiator/queue — same as CollegeVerifiedItem
+// plus `source`, and `collegeVerification` is null for Initiator-created rows
+// (they never go through college verification).
+export interface InitiatorQueueItem {
+  applicationId: string;
+  source: 'STUDENT' | 'INITIATOR';
+  student: CollegeVerifiedStudent;
+  collegeVerification: CollegeVerification | null;
+}
+
 export interface InitiatorFamilyMemberRecord {
   id: string;
   personName?: string;
@@ -289,6 +299,11 @@ export interface InitiatorApplicationRecord {
   id: string;
   applicationNumber: string;
   status: AppStatus;
+  source: 'STUDENT' | 'INITIATOR';
+  // Stamped once, only by POST /applications/:id/initiator — the authoritative
+  // "has the initiator's Basic Information already been created" flag (see
+  // ApplicationInitiatorService.createInitiatorApplication on the backend).
+  initiatorUserId?: string | null;
   stage?: import('./dashboard').ApplicationStage | null;
   rejectionReason?: string | null;
   rejectedAt?: string | null;

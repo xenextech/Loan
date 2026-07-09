@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidBsDateString } from "@/lib/bsDate";
 
 // ─── Option lists — values match the backend enums exactly (Step1/2/3Dto via
 // CreateInitiatorNewApplicationDto), since this form's payload is sent as-is,
@@ -78,7 +79,9 @@ export const newApplicationDetailsSchema = z
     identityNumber: optionalText(60),
     identityName: optionalText(200),
     dobAd: optionalText(20),
-    dobBs: optionalText(20),
+    dobBs: optionalText(20).refine((val) => !val || isValidBsDateString(val), {
+      message: "Enter a valid BS date (YYYY-MM-DD, 2000-2090)",
+    }),
     gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
     occupation: z.enum(["STUDENT", "EMPLOYED", "SELF_EMPLOYED", "UNEMPLOYED"]).optional(),
     issuedDistrict: optionalText(120),
