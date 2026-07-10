@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Filter, CheckCircle2, Plus, Inbox, UserPlus } from "lucide-react";
+import { Search, Filter, CheckCircle2, Plus, Inbox, UserPlus, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatNPR } from "@/lib/formatters";
 import { useInitiatorApplications } from "./hooks/useInitiatorApplications";
@@ -80,7 +80,7 @@ export default function InitiatorApplications() {
   const [collegeFilter, setCollegeFilter] = useState("all");
   const debouncedSearch = useDebounce(search, 300);
 
-  const { data: applications, isLoading } = useInitiatorApplications();
+  const { data: applications, isLoading, isError, refetch } = useInitiatorApplications();
 
   const colleges = useMemo(
     () => Array.from(new Set(applications.map((app) => app.collegeName))).sort(),
@@ -196,6 +196,17 @@ export default function InitiatorApplications() {
               </div>
             ) : isLoading ? (
               <TableSkeleton />
+            ) : isError ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-3 text-center px-6">
+                <Inbox className="w-8 h-8 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">Couldn&apos;t load your queue</p>
+                <p className="text-xs text-muted-foreground max-w-sm">
+                  Something went wrong while fetching your applications. Please try again.
+                </p>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => refetch()}>
+                  <RefreshCw className="w-3.5 h-3.5" /> Retry
+                </Button>
+              </div>
             ) : rows.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 gap-3">
                 <Inbox className="w-8 h-8 text-muted-foreground" />

@@ -18,6 +18,8 @@ import {
   Calculator,
   Waypoints,
   Wallet,
+  Bell,
+  FolderOpen,
   LogOut,
   GraduationCap,
   Menu,
@@ -41,6 +43,18 @@ const NAV_ITEMS = [
     href: "/dashboard/repayment",
     icon: Wallet,
     label: "Repayment",
+    exact: false,
+  },
+  {
+    href: "/dashboard/notifications",
+    icon: Bell,
+    label: "Notifications",
+    exact: false,
+  },
+  {
+    href: "/dashboard/document-vault",
+    icon: FolderOpen,
+    label: "Document Vault",
     exact: false,
   },
   {

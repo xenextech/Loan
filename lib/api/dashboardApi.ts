@@ -19,6 +19,7 @@ import type {
   DisbursementTrancheRecord,
   EmiScheduleEntryRecord,
   RepaymentOverview,
+  RepaymentStatusRecord,
   MarkEmiPaidBody,
   EmiNotificationTrigger,
   OverdueBucket,
@@ -60,6 +61,8 @@ import type {
   RecordCollectionActivityBody,
   FlagNeedsReviewBody,
   ResolveReviewBody,
+  CompleteClearanceBody,
+  CompleteClearanceResult,
   PipelineStatsThisMonth,
 } from "@/types/dashboard";
 
@@ -169,6 +172,12 @@ const mapLoanAccount = (a: LoanAccountRecord): LoanAccountRecord => ({
 });
 
 const mapConfigureResult = (a: ConfigureLoanServicingResult): ConfigureLoanServicingResult => ({
+  ...a,
+  finalInterestRate: toNumOrNull(a.finalInterestRate),
+  finalPrincipalAmount: toNumOrNull(a.finalPrincipalAmount),
+});
+
+const mapCompleteClearanceResult = (a: CompleteClearanceResult): CompleteClearanceResult => ({
   ...a,
   finalInterestRate: toNumOrNull(a.finalInterestRate),
   finalPrincipalAmount: toNumOrNull(a.finalPrincipalAmount),
@@ -395,6 +404,13 @@ export const dashboardApi = baseApi.injectEndpoints({
     getEmiNotificationTriggers: builder.query<EmiNotificationTrigger[], void>({
       query: () => "/dashboard/repayment/notification-triggers",
     }),
+    // Per-application monitoring snapshot for the Credit Manager's Repayment
+    // Monitoring section — status, aging counts, outstanding balance, next
+    // due date, penal interest — distinct from the raw schedule table above.
+    getRepaymentStatus: builder.query<RepaymentStatusRecord, string>({
+      query: (applicationId) => `/dashboard/repayment/${applicationId}/status`,
+      providesTags: (_r, _e, applicationId) => [{ type: "EmiSchedule", id: applicationId }],
+    }),
 
     // ─── 5b. Loan Servicing (Credit Manager only) ──────────────────────────
     configureLoanServicing: builder.mutation<ConfigureLoanServicingResult, { applicationId: string; data: ConfigureLoanServicingBody }>({
@@ -441,6 +457,18 @@ export const dashboardApi = baseApi.injectEndpoints({
         body: data,
       }),
       transformResponse: mapLoanAccount,
+      invalidatesTags: (_r, _e, { applicationId }) => loanServicingTags(applicationId),
+    }),
+    // Stage 7 — explicit closure confirmation once every installment is PAID;
+    // 400s server-side otherwise (surfaced via the mutation's error, not
+    // checked client-side, since the count is authoritative server data).
+    completeClearance: builder.mutation<CompleteClearanceResult, { applicationId: string; data: CompleteClearanceBody }>({
+      query: ({ applicationId, data }) => ({
+        url: `/dashboard/repayment/${applicationId}/complete-clearance`,
+        method: "POST",
+        body: data,
+      }),
+      transformResponse: mapCompleteClearanceResult,
       invalidatesTags: (_r, _e, { applicationId }) => loanServicingTags(applicationId),
     }),
 
@@ -646,12 +674,14 @@ export const {
   useGetRepaymentOverviewQuery,
   useMarkEmiPaidMutation,
   useGetEmiNotificationTriggersQuery,
+  useGetRepaymentStatusQuery,
   useConfigureLoanServicingMutation,
   useNotifyLoanServicingBorrowerMutation,
   useRecordCollectionActivityMutation,
   useGetCollectionActivityQuery,
   useFlagLoanNeedsReviewMutation,
   useResolveLoanReviewMutation,
+  useCompleteClearanceMutation,
   useGetNotificationLogQuery,
   useGetNotificationTemplatesQuery,
   useCreateNotificationTemplateMutation,

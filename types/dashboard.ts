@@ -19,6 +19,7 @@ export type CommissionEntryStatus = "PENDING" | "INVOICE_DUE" | "PAID";
 export type AuditCategory = "APPROVAL" | "DISBURSEMENT" | "REPAYMENT" | "COMMISSION" | "SYSTEM";
 export type InsurancePolicyStatus = "ACTIVE" | "EXPIRING_SOON" | "EXPIRED";
 export type LoanAccountStatus = "ACTIVE" | "CLEARED" | "NEEDS_REVIEW";
+export type RepaymentStatus = "NOT_CONFIGURED" | "ON_TRACK" | "OVERDUE" | "NEEDS_REVIEW" | "CLEARED";
 export type CollectionActivityType = "CALL" | "SMS" | "EMAIL" | "WHATSAPP" | "VISIT" | "NOTE" | "OTHER";
 
 // Bank approval workflow stage — separate from ApplicationStatus (DRAFT/SUBMITTED).
@@ -323,6 +324,31 @@ export interface RepaymentOverview {
   overdue181to365: { amount: number; count: number };
   overdue365Plus: { amount: number; count: number };
   collectionEfficiency: number | null;
+}
+
+/** Per-application repayment monitoring snapshot — GET
+ *  /dashboard/repayment/:applicationId/status. Already all plain numbers on
+ *  the wire (the backend service reduces every Decimal field with Number()
+ *  before returning), so no toNumber() transform is needed on this one. */
+export interface RepaymentStatusRecord {
+  applicationId: string;
+  applicationNumber: string | null;
+  borrowerName: string | null;
+  loanAccountStatus: LoanAccountStatus | null;
+  repaymentStatus: RepaymentStatus;
+  totalInstallments: number;
+  paidInstallments: number;
+  upcomingInstallments: number;
+  overdueInstallments: number;
+  partialInstallments: number;
+  totalPaid: number;
+  totalRepayable: number;
+  outstandingBalance: number;
+  nextDueDate: string | null;
+  nextDueAmount: number | null;
+  oldestOverdueDueDate: string | null;
+  daysOverdue: number;
+  penalInterestAccrued: number;
 }
 
 /** NRB loan classification — driven by the oldest unpaid installment's
@@ -657,6 +683,16 @@ export interface FlagNeedsReviewBody {
 
 export interface ResolveReviewBody {
   resolutionNotes?: string;
+}
+
+/** Stage 7 — POST /dashboard/repayment/:applicationId/complete-clearance.
+ *  400s server-side if any installment is still unpaid. */
+export interface CompleteClearanceBody {
+  remarks?: string;
+}
+
+export interface CompleteClearanceResult extends LoanAccountRecord {
+  notification: NotifyBorrowerResult | null;
 }
 
 /** The one merged-detail endpoint that includes `loanAccount` — every other

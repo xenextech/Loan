@@ -18,6 +18,7 @@ import {
   GitBranch,
   Wallet,
   Calendar,
+  Activity,
   Bell,
   FolderOpen,
   ShieldCheck,
@@ -70,6 +71,12 @@ const NAV_GROUPS = [
         href: "/credit-manager/emi-schedule",
         icon: Calendar,
         label: "EMI Schedule",
+        exact: false,
+      },
+      {
+        href: "/credit-manager/repayment-monitoring",
+        icon: Activity,
+        label: "Repayment Monitoring",
         exact: false,
       },
       {

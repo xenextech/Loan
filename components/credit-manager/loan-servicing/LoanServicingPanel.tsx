@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Send, Settings2, PhoneCall, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { Send, Settings2, PhoneCall, ShieldAlert, CheckCircle2, FileCheck2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/formatters";
 import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
@@ -27,6 +27,7 @@ import {
   useGetCollectionActivityQuery,
   useFlagLoanNeedsReviewMutation,
   useResolveLoanReviewMutation,
+  useCompleteClearanceMutation,
 } from "@/lib/api/dashboardApi";
 import { formatNPR } from "@/lib/formatters";
 import type { CollectionActivityType, LoanAccountRecord, RepaymentFrequency } from "@/types/dashboard";
@@ -98,11 +99,15 @@ export default function LoanServicingPanel({
   const [reviewReason, setReviewReason] = useState("");
   const [resolveNotes, setResolveNotes] = useState("");
 
+  const [clearanceOpen, setClearanceOpen] = useState(false);
+  const [clearanceRemarks, setClearanceRemarks] = useState("");
+
   const [configureServicing, { isLoading: configuring }] = useConfigureLoanServicingMutation();
   const [notifyBorrower, { isLoading: notifying }] = useNotifyLoanServicingBorrowerMutation();
   const [recordActivity, { isLoading: recordingActivity }] = useRecordCollectionActivityMutation();
   const [flagNeedsReview, { isLoading: flagging }] = useFlagLoanNeedsReviewMutation();
   const [resolveReview, { isLoading: resolving }] = useResolveLoanReviewMutation();
+  const [completeClearance, { isLoading: clearing }] = useCompleteClearanceMutation();
   const { data: activityLog, isLoading: activityLoading } = useGetCollectionActivityQuery(
     { applicationId, page: 1, limit: 10 },
     { skip: !applicationId },
@@ -186,6 +191,17 @@ export default function LoanServicingPanel({
       await resolveReview({ applicationId, data: { resolutionNotes: resolveNotes.trim() || undefined } }).unwrap();
       toast.success("Loan resolved back to Active.");
       setResolveNotes("");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    }
+  };
+
+  const handleCompleteClearance = async () => {
+    try {
+      await completeClearance({ applicationId, data: { remarks: clearanceRemarks.trim() || undefined } }).unwrap();
+      toast.success("Loan cleared — the student and parent have been notified.");
+      setClearanceOpen(false);
+      setClearanceRemarks("");
     } catch (err) {
       toast.error(getApiErrorMessage(err));
     }
@@ -439,6 +455,40 @@ export default function LoanServicingPanel({
                 />
                 <Button size="sm" variant="destructive" onClick={handleFlagReview} disabled={flagging || !reviewReason.trim()}>
                   Move to Needs Review
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {!isNeedsReview && !isCleared && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="w-3.5 h-3.5 text-muted-foreground" />
+                <h2 className="text-sm font-bold text-foreground">Complete Clearance</h2>
+              </div>
+              <Button size="sm" variant="outline" className={cn(clearanceOpen && "bg-muted")} onClick={() => setClearanceOpen((v) => !v)}>
+                Release Loan
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Closes out the loan once every installment is fully paid. Rejected with an error if any installment is still unpaid.
+            </p>
+            {clearanceOpen && (
+              <div className="rounded-lg border border-border p-4 space-y-3 bg-muted/20">
+                <Textarea
+                  placeholder="Remarks (optional) — e.g. all installments settled on schedule"
+                  value={clearanceRemarks}
+                  onChange={(e) => setClearanceRemarks(e.target.value)}
+                  rows={2}
+                  className="text-sm"
+                />
+                <Button size="sm" onClick={handleCompleteClearance} disabled={clearing} className="gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Confirm &amp; Release Loan
                 </Button>
               </div>
             )}

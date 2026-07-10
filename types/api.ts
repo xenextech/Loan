@@ -307,7 +307,6 @@ export interface InitiatorApplicationRecord {
   // ApplicationInitiatorService.createInitiatorApplication on the backend).
   initiatorUserId?: string | null;
   stage?: import('./dashboard').ApplicationStage | null;
-  source?: 'STUDENT' | 'INITIATOR';
   userId?: string;
   rejectionReason?: string | null;
   rejectedAt?: string | null;
@@ -352,7 +351,6 @@ export interface InitiatorApplicationRecord {
   parentVerification?: ParentVerification;
 
   // ─── Approval workflow trail (who signed off each stage, and when) ─────────
-  initiatorUserId?: string | null;
   initiatorName?: string | null;
   initiatorPost?: string | null;
   initiatorDate?: string | null;
