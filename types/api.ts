@@ -1,3 +1,5 @@
+import type { EmiStatus, RepaymentFrequency } from "./dashboard";
+
 // Backend API response envelope
 export interface ApiResponse<T> {
   success: boolean;
@@ -501,6 +503,60 @@ export interface TrackerStage {
   reason: string | null;
 }
 
+// ─── Repayment (nested in ApplicationTracker, populated once the Credit
+// Manager has configured loan servicing and the EMI schedule exists) ────────
+
+export type RepaymentStatus =
+  | "NOT_CONFIGURED"
+  | "ON_TRACK"
+  | "OVERDUE"
+  | "NEEDS_REVIEW"
+  | "CLEARED";
+
+export interface RepaymentLoanSummary {
+  approvedAmount: number;
+  finalDisbursementAmount: number;
+  interestRate: number;
+  interestFrequency: RepaymentFrequency;
+  repaymentFrequency: RepaymentFrequency;
+  tenureMonths: number;
+  gracePeriodMonths: number;
+  totalRepayable: number;
+}
+
+export interface RepaymentNextPayment {
+  dueDate: string | null;
+  amount: number | null;
+  daysRemaining: number | null;
+  status: RepaymentStatus;
+}
+
+export interface RepaymentScheduleEntry {
+  installmentNumber: number;
+  dueDate: string;
+  emiAmount: number;
+  principalComponent: number;
+  interestComponent: number;
+  outstandingBalance: number;
+  status: EmiStatus;
+}
+
+export interface RepaymentProgress {
+  totalInstallments: number;
+  paidInstallments: number;
+  remainingInstallments: number;
+  outstandingBalance: number;
+  totalPaid: number;
+  totalRemaining: number;
+}
+
+export interface RepaymentTrackerData {
+  loanSummary: RepaymentLoanSummary;
+  nextPayment: RepaymentNextPayment;
+  schedule: RepaymentScheduleEntry[];
+  progress: RepaymentProgress;
+}
+
 export interface ApplicationTracker {
   applicationId: string;
   applicationNumber: string | null;
@@ -512,6 +568,8 @@ export interface ApplicationTracker {
   completedStages: number;
   totalStages: number;
   timeline: TrackerStage[];
+  // Null until the Credit Manager has configured loan servicing.
+  repayment: RepaymentTrackerData | null;
 }
 
 // ─── Document ─────────────────────────────────────────────────────────────────

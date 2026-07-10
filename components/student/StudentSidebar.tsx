@@ -17,6 +17,7 @@ import {
   FileEdit,
   Calculator,
   Waypoints,
+  Wallet,
   LogOut,
   GraduationCap,
   Menu,
@@ -34,6 +35,12 @@ const NAV_ITEMS = [
     href: "/dashboard/tracker",
     icon: Waypoints,
     label: "Application Tracker",
+    exact: false,
+  },
+  {
+    href: "/dashboard/repayment",
+    icon: Wallet,
+    label: "Repayment",
     exact: false,
   },
   {

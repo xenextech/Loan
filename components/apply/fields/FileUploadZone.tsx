@@ -153,7 +153,7 @@ export default function FileUploadZone({
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             className={cn(
-              "flex w-full max-w-full min-w-0 flex-col items-center justify-center cursor-pointer rounded-xl border-2 border-dashed transition-all",
+              "relative flex w-full max-w-full min-w-0 flex-col items-center justify-center cursor-pointer rounded-xl border-2 border-dashed transition-all",
               isPhoto ? "h-40" : "py-8 px-6",
               dragging
                 ? "border-primary bg-primary/10 scale-[1.01]"

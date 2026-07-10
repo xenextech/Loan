@@ -242,7 +242,6 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
             ) : (
               <>
                 Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
               </>
             )}
             <ArrowRight className="w-4 h-4 ml-2" />

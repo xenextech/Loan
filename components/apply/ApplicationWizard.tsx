@@ -209,7 +209,7 @@ export default function ApplicationWizard() {
               : "bg-card shadow-sm"
           }`}
         >
-          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-14">
               <Link
                 href="/"
@@ -218,18 +218,10 @@ export default function ApplicationWizard() {
                 <Image
                   src="/logo-white-bg.svg"
                   alt="Logo"
-                  width={180}
-                  height={180}
+                  width={120}
+                  height={120}
                 />
               </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-muted-foreground gap-1.5"
-              >
-                <BookmarkCheck className="w-3.5 h-3.5" />
-                Save & Exit
-              </Button>
             </div>
           </div>
         </div>
@@ -240,7 +232,7 @@ export default function ApplicationWizard() {
 
       {/* Progress */}
       <div className="bg-card border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-5">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5">
           <WizardProgress
             currentStep={currentStep}
             completedSteps={completedSteps}
@@ -253,7 +245,7 @@ export default function ApplicationWizard() {
       </div>
 
       {/* Step content */}
-      <div className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-10">
+      <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10">
         {isCreating ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
             Preparing your application…
