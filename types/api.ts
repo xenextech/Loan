@@ -665,7 +665,7 @@ export interface OfferLetterRecord extends OfferLetterListItem {
   validUntilBS?: string;
   studentDobAD?: string;
   studentDobBS?: string;
-  citizenshipNo?: string;
+  citizenshipNumber?: string;
   fatherName?: string;
   motherName?: string;
   permanentAddress?: string;

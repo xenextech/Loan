@@ -6,6 +6,7 @@
 export const DOCUMENT_CATEGORIES = [
   "Offer Letter",
   "Acceptance Agreement",
+  "Bonafide Agreement",
   "Enrollment Certificate",
   "Admission Letter",
   "Tuition Fee Structure",
@@ -35,4 +36,8 @@ export interface DocumentVaultItem {
   downloadUrl: string | null;
   previewUrl: string | null;
   status: DocumentStatus;
+  /** Present once backed by the real Document Vault API (linked documents only). */
+  applicationId?: string;
+  applicationNumber?: string | null;
+  documentType?: string;
 }

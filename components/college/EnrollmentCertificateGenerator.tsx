@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCreateEnrollmentCertMutation } from "@/lib/api/templateApi";
+import { useGetMyVerificationsQuery } from "@/lib/api/collegeApi";
+import { buildEnrollmentCertificateHtml } from "@/lib/documentTemplates/enrollmentCertificateTemplate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -205,6 +207,24 @@ export default function EnrollmentCertificateGenerator() {
   const [createEnrollmentCert, { isLoading: isSaving }] =
     useCreateEnrollmentCertMutation();
 
+  // ── Link to application (optional) ────────────────────────────────────────
+  const { data: verifications } = useGetMyVerificationsQuery();
+  const [applicationId, setApplicationId] = useState<string | undefined>(
+    undefined,
+  );
+
+  function handleApplicationSelect(value: string) {
+    if (value === "none") {
+      setApplicationId(undefined);
+      return;
+    }
+    setApplicationId(value);
+    const match = verifications?.find((v) => v.applicationId === value);
+    if (match?.studentName && !studentName) {
+      setStudentName(match.studentName);
+    }
+  }
+
   const today = new Date().toLocaleDateString("en-NP", {
     day: "numeric",
     month: "long",
@@ -233,6 +253,7 @@ export default function EnrollmentCertificateGenerator() {
       return;
     }
     const response = await createEnrollmentCert({
+      ...(applicationId && { applicationId }),
       college: {
         collegeName,
         collegeCode: collegeCode || undefined,
@@ -288,157 +309,37 @@ export default function EnrollmentCertificateGenerator() {
       return;
     }
 
-    const logoHtml = logoUrl
-      ? `<img src="${logoUrl}" alt="${collegeName}" style="height:56px;object-fit:contain;margin-right:14px">`
-      : `<div style="width:52px;height:52px;background:#dcfce7;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-right:14px;font-size:18px;font-weight:800;color:#166534">${collegeName.charAt(0)}</div>`;
-
-    const certRows = [
-      [
-        "Active Enrollment",
-        isEnrolled ? "✓ Confirmed — Currently Enrolled" : "✗ Not Confirmed",
-      ],
-      ["Academic Backlogs", hasBacklogs ? "✗ Yes (has backlogs)" : "✓ None"],
-      [
-        "Disciplinary Hold",
-        disciplinaryHold ? "✗ Yes — Hold Placed" : "✓ None",
-      ],
-      [
-        "Fee Dues (NPR)",
-        feeDue > 0
-          ? `Rs ${feeDue.toLocaleString("en-IN")}`
-          : "✓ Nil (Fully Paid)",
-      ],
-    ]
-      .map(
-        ([f, v], i) =>
-          `<tr style="background:${i % 2 === 1 ? "#f9fafb" : "#fff"}">
-          <td style="padding:7px 12px;border:1px solid #d1d5db;width:50%;font-weight:500">${f}</td>
-          <td style="padding:7px 12px;border:1px solid #d1d5db">${v}</td>
-        </tr>`,
-      )
-      .join("");
-
-    const studentRows = [
-      ["Student Full Name", studentName],
-      ["TU / University Roll No.", tuRollNo || "—"],
-      ["Enrollment No.", enrollmentNo || "—"],
-      ["Program / Course", programName || "—"],
-      ["Current Year", `${currentYear} Year`],
-      ["Current Semester", `Semester ${currentSem}`],
-      ["Academic Year (BS)", academicYearBS],
-      ["Enrollment Status", studentStatus],
-    ]
-      .map(
-        ([f, v], i) =>
-          `<tr style="background:${i % 2 === 1 ? "#f9fafb" : "#fff"}">
-          <td style="padding:6px 12px;border:1px solid #d1d5db;color:#6b7280">${f}</td>
-          <td style="padding:6px 12px;border:1px solid #d1d5db;font-weight:500">${v}</td>
-        </tr>`,
-      )
-      .join("");
-
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Enrollment Certificate — ${studentName}</title>
-  <style>
-    @page { size: A4; margin: 18mm 22mm; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Times New Roman", Times, serif; font-size: 11pt; color: #111; line-height: 1.6; }
-    .header { border-bottom: 2.5px solid #15c35b; padding-bottom: 14px; margin-bottom: 14px; display: flex; align-items: center; }
-    .college-name { font-size: 14pt; font-weight: 800; color: #0a7a38; text-transform: uppercase; }
-    .college-meta { font-size: 8.5pt; color: #6b7280; margin-top: 3px; line-height: 1.45; }
-    .meta-row { display: flex; justify-content: space-between; font-size: 9pt; color: #6b7280; margin-bottom: 12px; }
-    .title-box { border: 2px solid #15c35b; text-align: center; padding: 12px 16px; margin-bottom: 16px; border-radius: 6px; }
-    .title-box h2 { font-size: 15pt; color: #166534; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; }
-    .title-box p  { font-size: 9pt; color: #166534; margin-top: 4px; }
-    .body-text { font-size: 10.5pt; margin-bottom: 14px; line-height: 1.8; text-align: justify; }
-    h4.section-head { font-size: 10pt; font-weight: 700; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 9.5pt; }
-    table thead tr { background: #15803d; color: #fff; }
-    table thead th { padding: 8px 12px; text-align: left; }
-    .cert-box { background: #f0fdf4; border-left: 3px solid #22c55e; padding: 10px 16px; margin-bottom: 16px; font-size: 9pt; line-height: 1.65; border-radius: 0 4px 4px 0; }
-    .signatures { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 14px; border-top: 1px solid #d1d5db; }
-    .sig { text-align: center; width: 42%; font-size: 9pt; }
-    .sig-line { border-top: 1px solid #9ca3af; margin: 42px 14px 7px; }
-    .sig-name { font-weight: 600; }
-    .sig-sub  { font-size: 8.5pt; color: #6b7280; }
-    .footer   { text-align: center; font-size: 8pt; color: #9ca3af; margin-top: 18px; }
-    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    ${logoHtml}
-    <div>
-      <div class="college-name">${collegeName}</div>
-      <div class="college-meta">
-        ${collegeAffiliation ? `Affiliated to ${collegeAffiliation}` : ""}${collegeRegNo ? ` | Reg. No.: ${collegeRegNo}` : ""}
-        ${collegeAddress ? `<br>${collegeAddress}` : ""}
-        ${[collegePhone, collegeEmail, collegeWebsite].filter(Boolean).length ? `<br>${[collegePhone, collegeEmail, collegeWebsite].filter(Boolean).join(" · ")}` : ""}
-      </div>
-    </div>
-  </div>
-
-  <div class="meta-row">
-    <span><strong>Ref. No.:</strong> ${fullRefNo}</span>
-    <span><strong>Date (AD):</strong> ${issuedDateAD || displayDate}${issuedDateBS ? ` &nbsp;/&nbsp; ${issuedDateBS} (BS)` : ""}</span>
-  </div>
-
-  <div class="title-box">
-    <h2>Enrollment Certificate</h2>
-    <p>Issued for Education Loan Processing · NRB Compliant · ${collegeName}</p>
-  </div>
-
-  <div class="body-text">
-    This is to certify that <strong>${studentName}</strong>${tuRollNo ? `, bearing Roll No. <strong>${tuRollNo}</strong>,` : ""}
-    is a <em>bona fide</em> student of <strong>${collegeName}</strong>${collegeAffiliation ? `, affiliated to ${collegeAffiliation}` : ""},
-    currently enrolled in the <strong>${programName || "—"}</strong> program
-    (Enrollment No.: <strong>${enrollmentNo || "—"}</strong>)
-    during the Academic Year <strong>${academicYearBS}</strong>.
-    The student is presently in <strong>${currentYear} Year / Semester ${currentSem}</strong>
-    with an enrollment status of <strong>${studentStatus}</strong>.<br><br>
-    This Enrollment Certificate is issued on behalf of the institution at the student's request,
-    solely for the purpose of applying for an education loan at an NRB-licensed bank or
-    financial institution, and shall remain valid for the academic year stated above.
-  </div>
-
-  <h4 class="section-head">Academic Status</h4>
-  <table>
-    <thead><tr><th style="width:38%">Field</th><th>Details</th></tr></thead>
-    <tbody>${studentRows}</tbody>
-  </table>
-
-  <h4 class="section-head">College Certifications for Bank</h4>
-  <table>
-    <thead><tr><th style="width:50%">Certification</th><th>Status</th></tr></thead>
-    <tbody>${certRows}</tbody>
-  </table>
-
-  <div class="cert-box">
-    <strong>Official Certification:</strong> ${collegeName} hereby certifies that all the above
-    information is true, accurate, and verifiable. This document carries the official seal of
-    the institution and is digitally registered on the Unnati platform.<br>
-    <strong style="color:#166534">Verify at:</strong> ${qrVerifyUrl} &nbsp;|&nbsp; Token: <strong>${qrToken}</strong>
-  </div>
-
-  <div class="signatures">
-    <div class="sig"><div class="sig-line"></div><div class="sig-name">Registrar / Academic Officer</div><div class="sig-sub">${collegeName}</div></div>
-    <div class="sig"><div class="sig-line"></div><div class="sig-name">Principal / Campus Chief</div><div class="sig-sub">${collegeName} &nbsp;[Stamp]</div></div>
-  </div>
-
-  <div class="footer">
-    Generated via Unnati Digital Platform · NRB Unified Directive 2081 · ${collegeName}${collegeRegNo ? ` · Reg. ${collegeRegNo}` : ""}
-  </div>
-
-  <script>
-    window.onload = function () {
-      setTimeout(function () { window.print(); window.onfocus = function () { window.close(); }; }, 200);
-    };
-  </script>
-</body>
-</html>`;
+    const html = buildEnrollmentCertificateHtml(
+      {
+        collegeName,
+        collegeCode,
+        collegeAddress,
+        collegeRegNo,
+        collegeAffiliation,
+        collegePhone,
+        collegeEmail,
+        collegeWebsite,
+        logoUrl,
+        refNo,
+        issuedDateAD,
+        issuedDateBS,
+        studentFullName: studentName,
+        tuRollNo,
+        enrollmentNo,
+        programName,
+        currentYear,
+        currentSemester: currentSem,
+        academicYearBS,
+        studentStatus,
+        isEnrolled,
+        hasBacklogs,
+        disciplinaryHold,
+        feeDueRs: feeDue,
+        qrToken,
+        qrVerifyUrl,
+      },
+      { autoPrint: true },
+    );
 
     const win = window.open("", "_blank");
     if (!win) {
@@ -537,6 +438,39 @@ export default function EnrollmentCertificateGenerator() {
             </div>
 
             <CardContent className="p-5 space-y-6">
+              {/* ── Link to application (optional) ── */}
+              <div className="p-3 rounded-lg border border-dashed border-border bg-muted/20">
+                <Field label="Link to loan application (optional)">
+                  <Select
+                    value={applicationId ?? "none"}
+                    onValueChange={handleApplicationSelect}
+                  >
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Not linked to an application" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" className="text-xs">
+                        Not linked
+                      </SelectItem>
+                      {verifications?.map((v) => (
+                        <SelectItem
+                          key={v.applicationId}
+                          value={v.applicationId}
+                          className="text-xs"
+                        >
+                          {v.applicationNumber} — {v.studentName ?? "Unnamed"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  When linked, this document becomes visible in the
+                  student&apos;s Document Vault and notifies the loan&apos;s
+                  student, initiator, supporter, checker, and approver.
+                </p>
+              </div>
+
               {/* College */}
               <div>
                 <SectionHead id="sec-college" label="College / Institution" />

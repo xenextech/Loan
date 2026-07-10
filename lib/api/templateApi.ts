@@ -44,13 +44,14 @@ interface QrPayload {
 // ─── Offer Letter payloads ────────────────────────────────────────────────────
 
 interface OfferLetterPayload {
+  applicationId?: string;
   college: CollegePayload;
   document: DocumentPayload;
   student: {
     studentFullName: string;
     studentDobAD?: string;
     studentDobBS?: string;
-    citizenshipNo?: string;
+    citizenshipNumber?: string;
     fatherName?: string;
     motherName?: string;
     permanentAddress?: string;
@@ -82,6 +83,7 @@ interface OfferLetterPayload {
 // ─── Agreement / Bonafide payloads ────────────────────────────────────────────
 
 interface AgreementPayload {
+  applicationId?: string;
   college: CollegePayload;
   document: Omit<DocumentPayload, "validUntilAD" | "validUntilBS">;
   student: {
@@ -101,6 +103,7 @@ interface AgreementPayload {
 // ─── Enrollment Certificate payloads ─────────────────────────────────────────
 
 interface EnrollmentCertPayload {
+  applicationId?: string;
   college: CollegePayload & { collegeCode?: string };
   document: Omit<DocumentPayload, "validUntilAD" | "validUntilBS">;
   student: {

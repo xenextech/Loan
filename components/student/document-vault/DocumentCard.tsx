@@ -54,6 +54,12 @@ export function DocumentCard({ document }: { document: DocumentVaultItem }) {
             <p className="text-muted-foreground">File</p>
             <p className="font-medium text-foreground">{document.fileType} · {document.fileSize}</p>
           </div>
+          {document.applicationNumber && (
+            <div className="col-span-2">
+              <p className="text-muted-foreground">Application</p>
+              <p className="font-medium text-foreground">{document.applicationNumber}</p>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 mt-auto pt-1">
