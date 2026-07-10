@@ -1,7 +1,7 @@
 // Wire shapes for the credit-ops dashboard module (`/dashboard/*`).
 // See edu-loan-backend/src/modules/dashboard/README.md for the authoritative contract.
 
-import type { PaginatedData } from "./api";
+import type { PaginatedData, UserRole } from "./api";
 
 // ─── Shared enums (mirror backend Prisma enums exactly) ───────────────────────
 
@@ -652,6 +652,7 @@ export interface RecordCollectionActivityBody {
 
 export interface FlagNeedsReviewBody {
   reason: string;
+  assignedRole?: UserRole;
 }
 
 export interface ResolveReviewBody {

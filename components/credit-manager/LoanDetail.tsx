@@ -224,7 +224,7 @@ export default function CreditManagerLoanDetail({ id }: { id: string }) {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
           <div>
             <p className="text-xs text-muted-foreground">Loan Amount</p>
-            <p className="text-sm font-semibold text-foreground">{formatNPR(application.creditLimit ?? 0)}</p>
+            <p className="text-sm font-semibold text-foreground">{formatNPR(application?.loanInformation?.loanAmount ?? 0)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Interest Rate</p>
