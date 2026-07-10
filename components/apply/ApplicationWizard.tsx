@@ -24,7 +24,6 @@ import Step4ReviewSubmit, {
   type Step4Declaration,
 } from "./steps/Step4ReviewSubmit";
 import SubmissionSuccess from "./SubmissionSuccess";
-import ContactGateModal, { type ContactEmails } from "./ContactGateModal";
 import type {
   Step1FormData,
   Step2FormData,
@@ -55,8 +54,6 @@ export default function ApplicationWizard() {
   const [direction, setDirection] = useState<1 | -1>(1);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const [showContactGate, setShowContactGate] = useState(false);
-  const [contactEmails, setContactEmails] = useState<ContactEmails>({});
   const lastScrollY = useRef(0);
 
   const [createDraft, { isLoading: isCreating }] = useCreateDraftMutation();
@@ -143,7 +140,6 @@ export default function ApplicationWizard() {
     goNext(2);
   };
 
-  // Step 3 → save, then open the contact-gate before advancing to Step 4
   const handleStep3 = async (data: Step3FormData) => {
     dispatch(updateStepData({ step: "step3", data }));
     if (applicationId) {
@@ -153,16 +149,7 @@ export default function ApplicationWizard() {
         toast.error("Failed to save. Your data is kept locally.");
       }
     }
-    setCompletedSteps((prev) => [...new Set([...prev, 3])]);
-    // Open the contact-gate modal — it will call goNext(3) when done
-    setShowContactGate(true);
-  };
-
-  const handleContactGateComplete = (emails: ContactEmails) => {
-    setContactEmails(emails);
-    setShowContactGate(false);
-    setDirection(1);
-    dispatch(setStep(4));
+    goNext(3);
   };
 
   const handleSubmit = async (decl: Step4Declaration) => {
@@ -179,8 +166,6 @@ export default function ApplicationWizard() {
         id: applicationId,
         informationAccurate: decl.informationAccurate,
         authorizeVerification: decl.authorizeVerification,
-        parentContactEmail: contactEmails.parentEmail,
-        collegeContactEmail: contactEmails.collegeEmail,
       }).unwrap();
       dispatch(
         setSubmitted({
@@ -211,12 +196,6 @@ export default function ApplicationWizard() {
 
   return (
     <div className="min-h-screen bg-muted/30 flex flex-col">
-      {/* Contact gate — shown after Step 3 Continue */}
-      <ContactGateModal
-        isOpen={showContactGate}
-        onComplete={handleContactGateComplete}
-      />
-
       {/* Fixed header with hide-on-scroll behaviour */}
       <motion.div
         className="fixed top-0 left-0 right-0 z-40"

@@ -116,16 +116,6 @@ export default function Step4ReviewSubmit({
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      <div className="rounded-xl border border-primary/20 bg-primary/5 px-5 py-4">
-        <p className="text-sm font-semibold text-foreground">
-          Please review all details before submitting.
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Once submitted, you cannot edit your application. Contact support for
-          corrections.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Personal */}
         <ReviewCard

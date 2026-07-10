@@ -2,7 +2,6 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { ThreeLine } from "@/public/svg/svgIcons";
 
@@ -158,7 +157,7 @@ export default function CTASection() {
               >
                 <Link
                   href="/apply"
-                  className="inline-flex items-center gap-2 bg-gray-900 text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-lg shadow-black/15 hover:bg-white/90 transition-colors"
+                  className="inline-flex items-center gap-2 bg-gray-900 text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-lg shadow-black/15 hover:bg-gray-800/90 transition-colors"
                 >
                   Apply For Loan
                   <ArrowRight className="w-4 h-4" />

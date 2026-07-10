@@ -242,18 +242,10 @@ export default function CollegeVerifyPage({
         >
           {/* Intro */}
           <div className="text-center mb-8">
-            <Link href="/" className="flex items-center gap-2.5 mb-2">
-              <Image
-                src="/logo-white-bg.svg"
-                alt="Logo"
-                width={180}
-                height={180}
-              />
-            </Link>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="max-w-4xl text-2xl font-bold text-foreground text-center">
               Please review the student&apos;s application and complete the
-              verification form below.
-            </p>
+              loan request verification below.
+            </h1>
           </div>
 
           {/* Account CTA — adapts based on auth state */}
