@@ -30,18 +30,24 @@ import {
   Mail,
   GraduationCap,
   AlertCircle,
-  UserPlus,
   Upload,
   FileText,
   Loader2,
   Users,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import {
   useGetApplicationByParentTokenQuery,
   useSubmitParentProfileMutation,
   useUploadParentSalarySheetMutation,
+  useUploadParentIdentityDocumentMutation,
+  useUpdateParentDocumentLabelMutation,
+  type ParentIdentityDocumentType,
 } from "@/lib/api/collegeApi";
 import { formatNPR } from "@/lib/formatters";
+import type { ParentDocument } from "@/types/api";
 
 const nepaliPhone = z
   .string()
@@ -60,19 +66,121 @@ const parentFormSchema = z.object({
 });
 type ParentFormValues = z.infer<typeof parentFormSchema>;
 
-function FileUploadRow({
+function getApiErrorMessage(err: unknown): string {
+  if (err && typeof err === "object" && "data" in err) {
+    const data = (err as { data?: { message?: string | string[] } }).data;
+    if (data?.message) return Array.isArray(data.message) ? data.message.join(", ") : data.message;
+  }
+  if (err && typeof err === "object" && "status" in err) {
+    const status = (err as { status?: unknown }).status;
+    if (typeof status === "number") return `Request failed with status ${status}. Please try again.`;
+  }
+  return "Something went wrong. Please try again.";
+}
+
+// Inline click-to-edit label — used for every uploaded document (identity
+// docs and salary sheets alike) since the backend lets the parent rename any of them.
+function DocumentLabel({
+  token,
+  documentId,
   label,
-  hint,
-  onUpload,
-  isUploading,
-  existingUrl,
+  fallback,
 }: {
-  label: string;
-  hint: string;
-  onUpload: (file: File) => void;
-  isUploading: boolean;
-  existingUrl?: string;
+  token: string;
+  documentId: string;
+  label?: string | null;
+  fallback: string;
 }) {
+  const [updateLabel, { isLoading }] = useUpdateParentDocumentLabelMutation();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(label ?? "");
+
+  const handleSave = async () => {
+    if (!value.trim()) return;
+    try {
+      await updateLabel({ token, documentId, label: value.trim() }).unwrap();
+      setEditing(false);
+    } catch (err) {
+      toast.error("Failed to update label", { description: getApiErrorMessage(err) });
+    }
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <Input
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="h-7 text-xs w-40"
+          autoFocus
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          onClick={handleSave}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Check className="w-3 h-3" />
+          )}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          onClick={() => {
+            setEditing(false);
+            setValue(label ?? "");
+          }}
+        >
+          <X className="w-3 h-3" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors group"
+    >
+      {label || fallback}
+      <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-60 transition-opacity shrink-0" />
+    </button>
+  );
+}
+
+// NID / PAN ID — exactly one document each, re-uploading replaces the previous file.
+function IdentityDocumentCard({
+  token,
+  documentType,
+  title,
+  hint,
+  document,
+}: {
+  token: string;
+  documentType: ParentIdentityDocumentType;
+  title: string;
+  hint: string;
+  document?: ParentDocument;
+}) {
+  const [uploadDoc, { isLoading }] = useUploadParentIdentityDocumentMutation();
+
+  const handleUpload = async (file: File) => {
+    try {
+      await uploadDoc({ token, documentType, file }).unwrap();
+      toast.success(`${title} uploaded`);
+    } catch (err) {
+      toast.error("Upload failed", { description: getApiErrorMessage(err) });
+    }
+  };
+
   return (
     <div className="border border-dashed border-border rounded-xl p-4">
       <div className="flex items-start justify-between gap-3">
@@ -81,28 +189,38 @@ function FileUploadRow({
             <FileText className="w-4 h-4 text-muted-foreground" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">{label}</p>
+            <p className="text-sm font-semibold text-foreground">{title}</p>
             <p className="text-xs text-muted-foreground">{hint}</p>
-            {existingUrl && (
-              <a
-                href={existingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-primary hover:underline mt-0.5 inline-block"
-              >
-                View uploaded file
-              </a>
+            {document && (
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <a
+                  href={document.publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline"
+                >
+                  View uploaded file
+                </a>
+                <span className="text-muted-foreground text-xs">·</span>
+                <DocumentLabel
+                  token={token}
+                  documentId={document.id}
+                  label={document.label}
+                  fallback={title}
+                />
+              </div>
             )}
           </div>
         </div>
         <label className="shrink-0">
           <input
             type="file"
-            accept=".pdf,.doc,.docx,image/*"
+            accept=".pdf,image/*"
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) onUpload(file);
+              if (file) handleUpload(file);
+              e.target.value = "";
             }}
           />
           <Button
@@ -110,15 +228,125 @@ function FileUploadRow({
             variant="outline"
             size="sm"
             className="gap-1.5 cursor-pointer"
+            disabled={isLoading}
             asChild
           >
             <span>
-              {isUploading ? (
+              {isLoading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
                 <Upload className="w-3.5 h-3.5" />
               )}
-              {existingUrl ? "Replace" : "Upload"}
+              {document ? "Replace" : "Upload"}
+            </span>
+          </Button>
+        </label>
+      </div>
+    </div>
+  );
+}
+
+// Salary sheets — any number of documents, never overwritten. Parents can
+// upload several at once and label each one individually afterwards.
+function SalarySheetSection({
+  token,
+  documents,
+}: {
+  token: string;
+  documents: ParentDocument[];
+}) {
+  const [uploadSheets, { isLoading }] = useUploadParentSalarySheetMutation();
+  const [pendingLabel, setPendingLabel] = useState("");
+
+  const handleUpload = async (files: FileList) => {
+    try {
+      await uploadSheets({
+        token,
+        files: Array.from(files),
+        label: pendingLabel.trim() || undefined,
+      }).unwrap();
+      toast.success(
+        files.length > 1 ? "Salary sheets uploaded" : "Salary sheet uploaded",
+      );
+      setPendingLabel("");
+    } catch (err) {
+      toast.error("Upload failed", { description: getApiErrorMessage(err) });
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {documents.length > 0 && (
+        <div className="space-y-2">
+          {documents.map((doc, i) => (
+            <div
+              key={doc.id}
+              className="flex items-center justify-between gap-3 border border-border rounded-lg px-3 py-2.5"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                <DocumentLabel
+                  token={token}
+                  documentId={doc.id}
+                  label={doc.label}
+                  fallback={`Salary Sheet ${i + 1}`}
+                />
+              </div>
+              <a
+                href={doc.publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary hover:underline shrink-0"
+              >
+                View
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="border border-dashed border-border rounded-xl p-4 space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">
+            Add Salary Sheet{documents.length > 0 ? "(s)" : ""}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            PDF or image, max 5 MB each. You can select multiple files at once,
+            and previously uploaded sheets are kept.
+          </p>
+        </div>
+        <Input
+          placeholder="Optional label (e.g. March Salary)"
+          value={pendingLabel}
+          onChange={(e) => setPendingLabel(e.target.value)}
+          className="h-9 text-sm"
+        />
+        <label className="block">
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.length) handleUpload(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 cursor-pointer w-full"
+            disabled={isLoading}
+            asChild
+          >
+            <span>
+              {isLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Upload className="w-3.5 h-3.5" />
+              )}
+              {isLoading ? "Uploading…" : "Choose file(s)"}
             </span>
           </Button>
         </label>
@@ -137,8 +365,6 @@ export default function ParentVerifyPage({
     useGetApplicationByParentTokenQuery(token);
   const [submitProfile, { isLoading: isSubmittingProfile }] =
     useSubmitParentProfileMutation();
-  const [uploadSalarySheet, { isLoading: isUploadingSS }] =
-    useUploadParentSalarySheetMutation();
   const [formSubmitted, setFormSubmitted] = useState(false);
 
   const form = useForm<ParentFormValues>({
@@ -194,19 +420,17 @@ export default function ParentVerifyPage({
         description: "Your information has been submitted successfully.",
       });
       setFormSubmitted(true);
-    } catch {
-      toast.error("Failed to save. Please try again.");
+    } catch (err) {
+      toast.error("Failed to save", { description: getApiErrorMessage(err) });
     }
   };
 
-  const handleSalarySheetUpload = async (file: File) => {
-    try {
-      await uploadSalarySheet({ token, file }).unwrap();
-      toast.success("Salary sheet uploaded");
-    } catch {
-      toast.error("Upload failed. Please try again.");
-    }
-  };
+  const documents = data.documents ?? [];
+  const nidDocument = documents.find((d) => d.documentType === "NID");
+  const panDocument = documents.find((d) => d.documentType === "PAN_ID");
+  const salarySheets = documents.filter(
+    (d) => d.documentType === "SALARY_SHEET",
+  );
 
   const appFields = [
     {
@@ -389,8 +613,8 @@ export default function ParentVerifyPage({
                   Information Submitted
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Your details have been saved. You can still upload your salary
-                  sheet below.
+                  Your details have been saved. You can still upload documents
+                  below.
                 </p>
               </CardContent>
             </Card>
@@ -511,30 +735,48 @@ export default function ParentVerifyPage({
                           </FormItem>
                         )}
                       />
+
+                      
                     </div>
+ {/* Documents — always available, independent of profile submission */}
+          <Card className="shadow-sm">
+            <CardContent className="p-6 space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  Required Documents
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Upload your identity documents and salary sheet(s). Labels
+                  can be edited any time — click a document&apos;s name to rename it.
+                </p>
+              </div>
 
-                    {/* Salary sheet upload */}
-                    <Card className="shadow-sm">
-                      <CardContent className="p-6 space-y-4">
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">
-                            Required Document
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            Upload your latest salary sheet or income proof. PDF
-                            or image, max 5 MB.
-                          </p>
-                        </div>
-                        <FileUploadRow
-                          label="Salary Sheet / Income Proof"
-                          hint="Latest 3-month salary slip or bank statement"
-                          onUpload={handleSalarySheetUpload}
-                          isUploading={isUploadingSS}
-                          existingUrl={data.verification?.salarySheetPublicUrl}
-                        />
-                      </CardContent>
-                    </Card>
+              <IdentityDocumentCard
+                token={token}
+                documentType="NID"
+                title="National ID / Citizenship"
+                hint="Front and back in a single file, or the citizenship certificate"
+                document={nidDocument}
+              />
 
+              <IdentityDocumentCard
+                token={token}
+                documentType="PAN_ID"
+                title="PAN Card"
+                hint="Permanent Account Number card"
+                document={panDocument}
+              />
+
+              <Separator />
+
+              <SalarySheetSection token={token} documents={salarySheets} />
+            </CardContent>
+          </Card>
+
+          <p className="text-xs text-center text-muted-foreground px-4 pb-4">
+            This verification portal is provided by Unnati. Data is encrypted
+            and handled securely.
+          </p>
                     <Button
                       type="submit"
                       className="w-full gap-2"
@@ -553,10 +795,7 @@ export default function ParentVerifyPage({
             </Card>
           )}
 
-          <p className="text-xs text-center text-muted-foreground px-4 pb-4">
-            This verification portal is provided by Unnati. Data is encrypted
-            and handled securely.
-          </p>
+         
         </motion.div>
       </main>
     </div>

@@ -27,14 +27,14 @@ const STUDY_TYPE_OPTIONS: { value: StudyType; label: string }[] = [
 ];
 
 function EmiCalculatorCard() {
-  const [principal, setPrincipal] = useState(500000);
-  const [annualRate, setAnnualRate] = useState(9.5);
+  const [loanAmount, setLoanAmount] = useState(500000);
+  const [interestRate, setInterestRate] = useState(9.5);
   const [tenureMonths, setTenureMonths] = useState(60);
   const [calculateEmi, { data: result, isLoading, error }] = useCalculateEmiMutation();
 
   const handleCalculate = async () => {
     try {
-      await calculateEmi({ principal, annualRate, tenureMonths }).unwrap();
+      await calculateEmi({ loanAmount, interestRate, tenureMonths }).unwrap();
     } catch {
       toast.error("Couldn't calculate EMI. Please check your inputs and try again.");
     }
@@ -54,8 +54,8 @@ function EmiCalculatorCard() {
             <Label className="text-[10px] text-muted-foreground">Loan amount (NPR)</Label>
             <Input
               type="number"
-              value={principal}
-              onChange={(e) => setPrincipal(Number(e.target.value) || 0)}
+              value={loanAmount}
+              onChange={(e) => setLoanAmount(Number(e.target.value) || 0)}
               className="h-9 text-sm"
             />
           </div>
@@ -64,8 +64,8 @@ function EmiCalculatorCard() {
             <Input
               type="number"
               step="0.1"
-              value={annualRate}
-              onChange={(e) => setAnnualRate(Number(e.target.value) || 0)}
+              value={interestRate}
+              onChange={(e) => setInterestRate(Number(e.target.value) || 0)}
               className="h-9 text-sm"
             />
           </div>
@@ -126,18 +126,12 @@ function EmiCalculatorCard() {
 function EligibilityCheckerCard() {
   const [studyType, setStudyType] = useState<StudyType>("PROGRAM");
   const [loanAmount, setLoanAmount] = useState(500000);
-  const [monthlySalary, setMonthlySalary] = useState(0);
-  const [tenureMonths, setTenureMonths] = useState(60);
+  const [expectedSalary, setExpectedSalary] = useState(0);
   const [checkEligibility, { data: result, isLoading, error }] = useCheckEligibilityMutation();
 
   const handleCheck = async () => {
     try {
-      await checkEligibility({
-        studyType,
-        loanAmount,
-        monthlySalary: monthlySalary || undefined,
-        tenureMonths: tenureMonths || undefined,
-      }).unwrap();
+      await checkEligibility({ studyType, loanAmount, expectedSalary }).unwrap();
     } catch {
       toast.error("Couldn't check eligibility. Please check your inputs and try again.");
     }
@@ -178,20 +172,11 @@ function EligibilityCheckerCard() {
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Family monthly income (NPR, optional)</Label>
+            <Label className="text-[10px] text-muted-foreground">Expected monthly salary after course (NPR, optional)</Label>
             <Input
               type="number"
-              value={monthlySalary}
-              onChange={(e) => setMonthlySalary(Number(e.target.value) || 0)}
-              className="h-9 text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Tenure (months, optional)</Label>
-            <Input
-              type="number"
-              value={tenureMonths}
-              onChange={(e) => setTenureMonths(Number(e.target.value) || 0)}
+              value={expectedSalary}
+              onChange={(e) => setExpectedSalary(Number(e.target.value) || 0)}
               className="h-9 text-sm"
             />
           </div>

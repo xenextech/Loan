@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -91,9 +91,6 @@ export default function Step2Identity({
 }: Step2Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
-  // Citizenship uploads as EITHER a front+back image pair OR a single PDF —
-  // never both (backend rejects mixing, see identity-document.util.ts).
-  const [citizenshipMode, setCitizenshipMode] = useState<"images" | "pdf">("images");
 
   const uploadFile = async (file: File, documentType: DocumentType) => {
     if (!applicationId) {
@@ -238,78 +235,40 @@ export default function Step2Identity({
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-4"
               >
-                <p className="text-sm font-medium text-foreground mb-3">
-                  Upload {identityLabels[identityType] ?? "Document"}
-                </p>
+                <div className="space-y-1 mb-3">
+                  <p className="text-sm font-medium text-foreground">
+                    Upload {identityLabels[identityType] ?? "Document"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Upload any combination — front image, back image, and/or a PDF. All fields are optional but at least one must be provided.
+                  </p>
+                </div>
 
-                {identityType === "citizenship" ? (
-                  <div className="space-y-4">
-                    <div className="inline-flex rounded-lg border border-border p-1 bg-muted/40">
-                      {(
-                        [
-                          { value: "images", label: "Upload as Images" },
-                          { value: "pdf", label: "Upload as PDF" },
-                        ] as const
-                      ).map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setCitizenshipMode(opt.value)}
-                          className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                            citizenshipMode === opt.value
-                              ? "bg-background text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    {citizenshipMode === "images" ? (
-                      // items-start: without it, CSS Grid's default row-stretch
-                      // makes both cells match the taller sibling's height once
-                      // one side is uploaded and the other still shows the
-                      // (taller) empty dropzone.
-                      <div
-                        key="citizenship-images"
-                        className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start"
-                      >
-                        <FileUploadZone
-                          label="Front Side"
-                          hint="Clear photo of the front"
-                          accept="image/jpeg,image/png"
-                          onFileSelect={handleIdentityFront}
-                        />
-                        <FileUploadZone
-                          label="Back Side"
-                          hint="Clear photo of the back"
-                          accept="image/jpeg,image/png"
-                          onFileSelect={handleIdentityBack}
-                        />
-                      </div>
-                    ) : (
-                      <FileUploadZone
-                        key="citizenship-pdf"
-                        label="Citizenship Document"
-                        hint="A single PDF of the full document, under 5MB"
-                        accept="application/pdf"
-                        maxSizeMB={5}
-                        variant="document"
-                        onFileSelect={handleIdentityDocument}
-                      />
-                    )}
-                  </div>
-                ) : (
+                {/* Front + Back images — available for all identity types */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                   <FileUploadZone
-                    label="Identity Document"
-                    hint="Image or PDF of your identity document, under 5MB"
-                    accept="image/jpeg,image/png,application/pdf"
-                    maxSizeMB={5}
-                    variant="document"
-                    onFileSelect={handleIdentityDocument}
+                    label="Front Side"
+                    hint="Image or PDF of the front side"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onFileSelect={handleIdentityFront}
                   />
-                )}
+                  <FileUploadZone
+                    label="Back Side"
+                    hint="Image or PDF of the back side"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onFileSelect={handleIdentityBack}
+                  />
+                </div>
+
+                {/* Single document / PDF — available for all identity types */}
+                <FileUploadZone
+                  label={identityType === "citizenship" ? "Full Document (PDF)" : "Identity Document"}
+                  hint="Image or PDF of your full identity document, under 5MB"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  maxSizeMB={5}
+                  variant="document"
+                  onFileSelect={handleIdentityDocument}
+                />
               </motion.div>
             )}
           </AnimatePresence>

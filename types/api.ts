@@ -97,6 +97,25 @@ export interface ParentVerification {
   submittedAt?: string;
 }
 
+export type ParentDocumentType = 'NID' | 'PAN_ID' | 'SALARY_SHEET';
+
+export interface ParentDocument {
+  id: string;
+  parentVerificationId: string;
+  documentType: ParentDocumentType;
+  label?: string | null;
+  fileName: string;
+  originalFileName: string;
+  mimeType: string;
+  size: number;
+  bucketName: string;
+  filePath: string;
+  publicUrl: string;
+  uploadedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ParentApplicationView {
   applicationNumber: string;
   studentName?: string;
@@ -109,6 +128,7 @@ export interface ParentApplicationView {
   loanAmount?: number;
   submittedAt?: string;
   verification?: ParentVerification;
+  documents: ParentDocument[];
 }
 
 // ─── College verification ────────────────────────────────────────────────────
@@ -633,8 +653,7 @@ export interface EligibilityResult {
 export interface EligibilityRequest {
   studyType: StudyType;
   loanAmount: number;
-  monthlySalary?: number;
-  tenureMonths?: number;
+  expectedSalary: number;
 }
 
 // ─── College Document Templates ───────────────────────────────────────────────

@@ -123,7 +123,7 @@ export function NewApplicationForm() {
       }).unwrap();
 
       toast.success("Application completed successfully");
-      router.push("/initiator/applications?tab=my-queue");
+      router.push("/initiator");
     } catch (err) {
       toast.error("Failed to complete application", {
         description: getApiErrorMessage(err) ?? "Please try again.",

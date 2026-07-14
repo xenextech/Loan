@@ -4,8 +4,11 @@ import type {
   CollegeMyVerification,
   CollegeVerification,
   ParentApplicationView,
+  ParentDocument,
   ParentVerification,
 } from "@/types/api";
+
+export type ParentIdentityDocumentType = "NID" | "PAN_ID";
 
 export const collegeApi = baseApi.injectEndpoints({
   overrideExisting: process.env.NODE_ENV === "development",
@@ -36,12 +39,45 @@ export const collegeApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, { token }) => [{ type: "Application" as const, id: `parent-${token}` }],
     }),
 
-    uploadParentSalarySheet: builder.mutation<ParentVerification, { token: string; file: File }>({
-      query: ({ token, file }) => {
+    uploadParentSalarySheet: builder.mutation<
+      ParentDocument[],
+      { token: string; files: File[]; label?: string }
+    >({
+      query: ({ token, files, label }) => {
         const formData = new FormData();
-        formData.append("file", file);
+        files.forEach((file) => formData.append("files", file));
+        if (label) formData.append("label", label);
         return { url: `/parent/${token}/salary-sheet`, method: "POST", body: formData };
       },
+      invalidatesTags: (_r, _e, { token }) => [{ type: "Application" as const, id: `parent-${token}` }],
+    }),
+
+    uploadParentIdentityDocument: builder.mutation<
+      ParentDocument,
+      { token: string; documentType: ParentIdentityDocumentType; file: File; label?: string }
+    >({
+      query: ({ token, documentType, file, label }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        if (label) formData.append("label", label);
+        return {
+          url: `/parent/${token}/documents/${documentType}`,
+          method: "POST",
+          body: formData,
+        };
+      },
+      invalidatesTags: (_r, _e, { token }) => [{ type: "Application" as const, id: `parent-${token}` }],
+    }),
+
+    updateParentDocumentLabel: builder.mutation<
+      ParentDocument,
+      { token: string; documentId: string; label: string }
+    >({
+      query: ({ token, documentId, label }) => ({
+        url: `/parent/${token}/documents/${documentId}/label`,
+        method: "PATCH",
+        body: { label },
+      }),
       invalidatesTags: (_r, _e, { token }) => [{ type: "Application" as const, id: `parent-${token}` }],
     }),
 
@@ -101,6 +137,8 @@ export const {
   useGetApplicationByParentTokenQuery,
   useSubmitParentProfileMutation,
   useUploadParentSalarySheetMutation,
+  useUploadParentIdentityDocumentMutation,
+  useUpdateParentDocumentLabelMutation,
   useGetMyVerificationsQuery,
   useGetApplicationByCollegeTokenQuery,
   useSubmitCollegeFormMutation,
