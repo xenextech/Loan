@@ -1,43 +1,30 @@
 "use client";
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import { Wallet, Building2, ClipboardCheck, Smartphone, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
-
-
-
-
 
 /* ─── Card data ──────────────────────────────────────────────────────────── */
 const CARDS = [
   {
-    
-    title: "Fast & Simple Application",
-    description:
-      "Complete your education loan application online in just a few steps. Upload your documents securely and track your application from anywhere.",
-    illustration:"/assets/why.png",
-    accent: "#EEF7FC",
-    badge: "Minutes, not days",
-    badgeColor: "bg-blue-50 text-primary",
+    title: "Financing",
+    gif: <Image src="/assets/earning.png" alt="Financing" width={80} height={80}  />,
+    items: ["Education Loans", "Skill Loans", "No-Collateral Options", "Flexible Tenure"],
   },
   {
-   
-    title: "Compare Trusted Bank Options",
-    description:
-      "Access education loan offers from trusted banking partners in one place, making it easier to choose the option that best fits your needs.",
-    illustration:"/assets/why2.png",
-    accent: "#F0FDF4",
-    badge: "12+ Partner banks",
-    badgeColor: "bg-green-50 text-green-700",
+    title: "Partner Banks",
+    gif: <Image src="/assets/stakeholder.png" alt="Partner Banks" width={80} height={80}  />, 
+    items: ["12+ Partner Banks", "Best-Rate Matching", "NRB-Regulated Lenders"],
   },
   {
-
-    title: "Secure & Transparent Process",
-    description:
-      "Your personal information is protected with secure technology, and you'll receive clear updates throughout every stage of your loan application.",
-    illustration: "/assets/why3.png",
-    accent: "#F5F3FF",
-    badge: "Bank-grade security",
-    badgeColor: "bg-violet-50 text-violet-700",
+    title: "Application Support",
+    gif: <Image src="/assets/customer.png" alt="Application Support" width={80} height={80}  />,
+    items: ["Eligibility Check", "Document Checklist", "Application Tracking", "Dedicated Support"],
+  },
+  {
+    title: "Digital Tools",
+    gif: <Image src="/assets/calculator-tool.png" alt="Digital Tools" width={80} height={80}  />,
+    items: ["EMI Calculator", "Online Application", "Real-time Status", "Secure Document Upload"],
   },
 ] as const;
 
@@ -66,22 +53,8 @@ export default function WhyChooseUs() {
           </p>
           <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight leading-tight mb-4">
             Why {" "}
-            <span className="relative inline-block bg-linear-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">
+            <span className="inline-block bg-linear-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">
              Choose Us?
-              <svg
-                className="absolute -bottom-1 left-0 w-full overflow-visible"
-                viewBox="0 0 140 8"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
-                  stroke="#22C55E"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
             </span>
           </h2>
           <p className="text-base text-zinc-500 leading-relaxed max-w-md mx-auto">
@@ -90,34 +63,44 @@ export default function WhyChooseUs() {
         </motion.div>
 
         {/* ── Cards grid ───────────────────────────────────────────────── */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10 max-w-6xl mx-auto">
-          {CARDS.map(({ title, description, illustration: Illustration, }, i) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          {CARDS.map(({ title, gif, items }, i) => (
             <motion.div
               key={title}
               initial={{ opacity: 0, y: 24 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.45, delay: 0.08 + i * 0.1 }}
-              className="flex flex-col group  hover:-translate-y-1 transition-all duration-300"
+              whileHover={{
+                scale: 1.04,
+                y: -4,
+                transition: { type: "spring", stiffness: 300, damping: 20 },
+              }}
+              className="rounded-2xl bg-white border border-zinc-100 px-6 py-7 shadow-sm hover:shadow-lg hover:border-primary/20 transition-shadow duration-300 cursor-pointer"
             >
-              {/* Illustration */}
-              <div className="w-full h-[200px] flex items-center justify-center overflow-hidden shrink-0">
-                <Image src={Illustration} alt={title} width={200} height={200} />
-              </div>
+              {/* Icon */}
+              <span className="flex items-center justify-center w-11 h-11 rounded-xl mb-5">
+                {gif}
+              </span>
 
-              {/* Content */}
-              <div className="flex flex-col flex-1">
-                
-                {/* Title */}
-                <h3 className="text-[17px] font-bold text-zinc-900 leading-snug mb-2 flex items-center gap-2">
-                 
-                  {title}
-                </h3>
+              {/* Title */}
+              <h3 className="text-[17px] font-bold text-zinc-900 leading-snug mb-3">
+                {title}
+              </h3>
 
-                {/* Description */}
-                <p className="text-sm text-zinc-500 leading-relaxed">
-                  {description}
-                </p>
-              </div>
+              {/* Checklist */}
+              <ul>
+                {items.map((item, j) => (
+                  <li
+                    key={item}
+                    className={`flex items-center gap-2.5 py-2.5 text-[13.5px] text-zinc-600 ${
+                      j < items.length - 1 ? "border-b border-zinc-200/70" : ""
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </motion.div>
           ))}
         </div>

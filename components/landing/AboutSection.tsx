@@ -44,24 +44,11 @@ export default function AboutSection() {
               className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight leading-tight mb-5 max-w-lg"
             >
               A simpler path to education{" "}
-              <span className="relative inline-block">
+              <span className="inline-block">
                 <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">
                   financing in Nepal
                 </span>
-                <svg
-                  className="absolute -bottom-1 left-0 w-full overflow-visible"
-                  viewBox="0 0 140 8"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
-                    stroke="#22C55E"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+          
               </span>
             </motion.h2>
 

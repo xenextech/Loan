@@ -15,7 +15,7 @@ const FAQS = [
   },
   {
     q: "What is the maximum loan amount I can get?",
-    a: "You can apply for up to NPR 50,00,000 (50 Lakhs) depending on your institution, course, and family income. Loans up to NPR 7.5 Lakhs require no collateral; amounts above that require eligible property as security.",
+    a: "You can apply for up to NPR 15,00,000 (15 Lakhs) depending on your institution, course, and family income. Loans up to NPR 7.5 Lakhs require no collateral; amounts above that require eligible property as security.",
   },
   {
     q: "What documents do I need to submit?",
@@ -59,24 +59,10 @@ export default function FAQSection() {
           </p>
           <h2 className="text-3xl font-bold text-zinc-900 tracking-tight leading-tight mb-3">
             Got questions? We&apos;ve{" "}
-            <span className="relative inline-block">
+            <span className="inline-block">
               <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">
                 got answers.
               </span>
-              <svg
-                className="absolute -bottom-1 left-0 w-full overflow-visible"
-                viewBox="0 0 140 8"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
-                  stroke="#22C55E"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
             </span>
           </h2>
         </motion.div>

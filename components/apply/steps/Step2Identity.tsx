@@ -315,7 +315,7 @@ export default function Step2Identity({
                 <FormItem>
                   <FormLabel>Document Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="Auto-filled from document" {...field} />
+                    <Input placeholder="Enter Your Document Number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -328,7 +328,7 @@ export default function Step2Identity({
                 <FormItem>
                   <FormLabel>Issued District</FormLabel>
                   <FormControl>
-                    <Input placeholder="Auto-filled from document" {...field} />
+                    <Input placeholder="Enter Issued District" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
