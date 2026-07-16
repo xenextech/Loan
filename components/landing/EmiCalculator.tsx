@@ -13,7 +13,7 @@ const LENDERS = [
 ] as const;
 
 const LOAN_MIN    = 50_000;
-const LOAN_MAX    = 1_000_000;
+const LOAN_MAX    = 1_500_000;
 const TENURE_MIN  = 1;
 const TENURE_MAX  = 7;
 
@@ -207,22 +207,9 @@ export default function EmiCalculator() {
           </p>
           <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight">
             Find the right loan{" "}
-            <span className="relative inline-block">
+            <span className="inline-block">
               <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">for you.</span>
-              <svg
-                className="absolute -bottom-1 left-0 w-full overflow-visible"
-                viewBox="0 0 140 8"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
-                  stroke="#22C55E"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+           
             </span>
           </h2>
         </motion.div>
@@ -256,7 +243,7 @@ export default function EmiCalculator() {
               />
               <div className="flex justify-between">
                 <span className="text-[11px] text-zinc-400">Rs.50,000</span>
-                <span className="text-[11px] text-zinc-400">Rs.10,00,000</span>
+                <span className="text-[11px] text-zinc-400">Rs.15,00,000</span>
               </div>
             </div>
 

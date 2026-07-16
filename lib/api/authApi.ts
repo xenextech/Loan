@@ -22,7 +22,7 @@ export const authApi = baseApi.injectEndpoints({
 
     resetPassword: builder.mutation<
       { message: string },
-      { token: string; password: string; confirmPassword: string }
+      { token: string; password: string }
     >({
       query: (body) => ({ url: "/auth/reset-password", method: "POST", body }),
     }),

@@ -6,7 +6,7 @@ import {
   Zap, ShieldCheck, CheckCircle2, Clock, ArrowRight, ChevronRight,
 } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription,
+  Dialog, DialogClose, DialogContent, DialogTrigger, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -57,6 +57,56 @@ const BRANCHES = [
   "Chitwan", "Butwal", "Biratnagar", "Birgunj",
 ];
 
+/* ─── Affordability math ─────────────────────────────────────────────────── */
+// Indicative only — lenders typically cap the EMI at some share of net monthly
+// income (FOIR). We use a conservative 50% so the pre-check errs cautious;
+// partner banks apply their own underwriting after full review.
+const MAX_EMI_TO_INCOME_RATIO = 0.5;
+
+// Platform-wide loan ceiling — keep in sync with lib/validations/schemas.ts
+// and components/apply/fields/LoanAmountField.tsx.
+const MAX_LOAN_AMOUNT = 1_500_000;
+
+// The tenure field is visually capped at 1–15 years, but a number input's
+// min/max attributes don't actually block keyboard entry (someone can type
+// "1e10" or any huge value) — clamp so Math.pow can't overflow to Infinity.
+const TENURE_MIN_YEARS = 1;
+const TENURE_MAX_YEARS = 15;
+
+function clampFinite(n: number, min: number, max: number, fallback = min) {
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+function calcEmi(principal: number, annualRatePct: number, tenureYears: number) {
+  const months = Math.round(tenureYears * 12);
+  if (!(principal > 0) || !(months > 0)) return 0;
+  const r = annualRatePct / 12 / 100;
+  if (!(r > 0)) return principal / months;
+  const factor = Math.pow(1 + r, months);
+  if (!Number.isFinite(factor) || factor <= 1) return principal / months;
+  const emi = (principal * r * factor) / (factor - 1);
+  return Number.isFinite(emi) ? emi : 0;
+}
+
+// Inverse of calcEmi — the largest principal a given monthly EMI budget supports.
+function calcMaxPrincipal(maxEmi: number, annualRatePct: number, tenureYears: number) {
+  const months = Math.round(tenureYears * 12);
+  if (!(maxEmi > 0) || !(months > 0)) return 0;
+  const r = annualRatePct / 12 / 100;
+  if (!(r > 0)) return maxEmi * months;
+  const factor = Math.pow(1 + r, months);
+  if (!Number.isFinite(factor) || factor <= 1) return maxEmi * months;
+  const principal = (maxEmi * (factor - 1)) / (r * factor);
+  return Number.isFinite(principal) ? principal : maxEmi / r;
+}
+
+function formatLakh(rs: number) {
+  const safeRs = Number.isFinite(rs) ? Math.max(rs, 0) : 0;
+  const lakhs = safeRs / 100_000;
+  return `${lakhs >= 10 ? Math.round(lakhs) : lakhs.toFixed(1)} L`;
+}
+
 /* ─── Eligibility form (inside dialog) ──────────────────────────────────── */
 export function EligibilityForm({ onDone }: { onDone: () => void }) {
   const [form, setForm]           = useState<FormState>(INITIAL_FORM);
@@ -76,26 +126,76 @@ export function EligibilityForm({ onDone }: { onDone: () => void }) {
 
   const isValid = confirmed && REQUIRED.every((k) => form[k] !== "");
 
+  // Derives a sanction estimate, EMI, and score from what was actually
+  // entered, instead of a result that never changes with the inputs.
+  const eligibility = useMemo(() => {
+    const salary       = clampFinite(Number(form.salary), 0, 10_000_000, 0);
+    const otherEmis    = clampFinite(Number(form.otherEmis), 0, 10_000_000, 0);
+    const loanAmount   = clampFinite(Number(form.loanAmount), 0, MAX_LOAN_AMOUNT, 0);
+    const tenureYears  = clampFinite(Number(form.tenure), TENURE_MIN_YEARS, TENURE_MAX_YEARS, TENURE_MIN_YEARS);
+    const rate         = clampFinite(Number(form.interestRate), 0, 100, 0);
+
+    const disposableIncome = Math.max(salary - otherEmis, 0);
+    const maxAffordableEmi = disposableIncome * MAX_EMI_TO_INCOME_RATIO;
+    const maxSanction      = calcMaxPrincipal(maxAffordableEmi, rate, tenureYears);
+    const requestedEmi     = calcEmi(loanAmount, rate, tenureYears);
+
+    const affordabilityRatio = maxAffordableEmi > 0 ? requestedEmi / maxAffordableEmi : Infinity;
+
+    const score = isFinite(affordabilityRatio)
+      ? Math.min(100, Math.max(0, Math.round(
+          affordabilityRatio <= 1
+            ? 70 + (1 - affordabilityRatio) * 30
+            : 70 - (affordabilityRatio - 1) * 70,
+        )))
+      : 0;
+
+    // The most this person could ever be sanctioned — income affordability
+    // AND the platform's product cap, whichever is lower.
+    const sanctionCeiling = Math.min(maxSanction, MAX_LOAN_AMOUNT);
+    // Banks don't sanction more than what's requested, so once the request
+    // fits inside the ceiling the range should track the requested amount —
+    // not an income figure unrelated to what was actually asked for.
+    const sanctionHigh = loanAmount > 0 ? Math.min(loanAmount, sanctionCeiling) : sanctionCeiling;
+    const sanctionLow  = sanctionHigh * (affordabilityRatio <= 1 ? 0.85 : 0.6);
+
+    return {
+      sanctionLow,
+      sanctionHigh,
+      requestedEmi,
+      score,
+      qualifies: affordabilityRatio <= 1.1, // small buffer over the strict cap
+    };
+  }, [form.salary, form.otherEmis, form.loanAmount, form.tenure, form.interestRate]);
+
   /* ── Submit → show result state ── */
   if (submitted) {
+    const { sanctionLow, sanctionHigh, score, qualifies } = eligibility;
+
     return (
       <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-          <CheckCircle2 className="w-8 h-8 text-green-600" />
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${qualifies ? "bg-green-100" : "bg-amber-100"}`}>
+          <CheckCircle2 className={`w-8 h-8 ${qualifies ? "text-green-600" : "text-amber-600"}`} />
         </div>
         <h3 className="text-xl font-bold text-zinc-900 mb-2">Eligibility check complete!</h3>
-        <p className="text-sm text-zinc-500 mb-1">Based on your inputs, you appear to qualify for an education loan.</p>
+        <p className="text-sm text-zinc-500 mb-1">
+          {qualifies
+            ? "Based on your inputs, you appear to qualify for an education loan."
+            : "Your requested amount is higher than your current income comfortably supports. Consider a lower amount, a longer tenure, or a co-applicant."}
+        </p>
         <p className="text-xs text-zinc-400 mb-8">Final eligibility is determined by the partner bank after full review.</p>
 
         <div className="w-full max-w-sm bg-[#F8F6F1] border border-zinc-200 rounded-2xl p-5 mb-8 text-left">
           <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Indicative Sanction</p>
-          <p className="text-2xl font-bold text-primary mb-3">Rs. 8 – 15 L</p>
+          <p className="text-2xl font-bold text-primary mb-3">
+            Rs. {formatLakh(sanctionLow)} – {formatLakh(sanctionHigh)}
+          </p>
           <div className="w-full h-2 bg-zinc-200 rounded-full mb-1.5 overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500" style={{ width: "78%" }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500" style={{ width: `${score}%` }} />
           </div>
           <div className="flex justify-between text-xs text-zinc-500">
             <span>Eligibility score</span>
-            <span className="font-bold text-zinc-900">78 / 100</span>
+            <span className="font-bold text-zinc-900">{score} / 100</span>
           </div>
         </div>
 
@@ -107,13 +207,15 @@ export function EligibilityForm({ onDone }: { onDone: () => void }) {
             Start Full Application
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <button
-            type="button"
-            onClick={onDone}
-            className="text-sm font-medium text-zinc-500 hover:text-zinc-700 px-4 py-3 rounded-xl transition-colors"
-          >
-            Close
-          </button>
+          <DialogClose asChild>
+            <button
+              type="button"
+              onClick={onDone}
+              className="text-sm font-medium text-zinc-500 hover:text-zinc-700 px-4 py-3 rounded-xl transition-colors"
+            >
+              Close
+            </button>
+          </DialogClose>
         </div>
       </div>
     );
@@ -145,7 +247,7 @@ export function EligibilityForm({ onDone }: { onDone: () => void }) {
     />
   );
 
-  const rsInput = (key: FormKey, placeholder: string) => (
+  const rsInput = (key: FormKey, placeholder: string, max?: number) => (
     <div className="flex h-10">
       <div className="flex items-center px-3 text-xs font-semibold text-zinc-500 bg-zinc-100 border border-r-0 border-zinc-200 rounded-l-lg select-none whitespace-nowrap">
         Rs.
@@ -154,6 +256,7 @@ export function EligibilityForm({ onDone }: { onDone: () => void }) {
         id={key}
         type="number"
         min="0"
+        max={max}
         value={form[key]}
         onChange={(e) => update(key, e.target.value)}
         placeholder={placeholder}
@@ -279,7 +382,7 @@ export function EligibilityForm({ onDone }: { onDone: () => void }) {
               className="h-10 border-zinc-200 rounded-lg text-sm bg-zinc-50 text-zinc-500 cursor-not-allowed placeholder:text-zinc-400"
             />
           )}
-          {field("loanAmount", "Loan Amount", true, rsInput("loanAmount", "Loan Amount"))}
+          {field("loanAmount", "Loan Amount", true, rsInput("loanAmount", "Loan Amount", MAX_LOAN_AMOUNT))}
 
           {/* Row 6 — single col */}
           <div className="lg:col-span-1">
@@ -361,22 +464,9 @@ export default function EligibilityChecker() {
               {/* Headline */}
               <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight leading-[1.08] mb-3">
                 See if you{" "}
-                <span className="relative inline-block">
+                <span className="inline-block">
                   <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent">qualify</span>
-                  <svg
-                    className="absolute -bottom-1 left-0 w-full overflow-visible"
-                    viewBox="0 0 140 8"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M2 5.5 Q22 1.5 42 5.5 Q62 9.5 82 5.5 Q102 1.5 122 5.5 Q132 7.5 138 5.5"
-                      stroke="#22C55E"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                
                 </span>
                 {" "}— before<br className="hidden sm:block" /> you apply.
               </h2>

@@ -6,7 +6,7 @@ import { motion, useInView } from "framer-motion";
 const STATS = [
   {
     title: "Financing Up To",
-    content: "10 Lakhs",
+    content: "15 Lakhs",
     description: "For Education Loans",
   },
   {
