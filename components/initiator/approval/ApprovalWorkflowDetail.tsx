@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, FileText, XCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, displayName } from "@/lib/formatters";
 import {
   useGetDashboardApplicationDetailQuery,
   useGetApprovalSummaryQuery,
@@ -215,7 +215,7 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
                     <Badge className="border-0 text-[10px] font-semibold mr-1.5 align-middle bg-muted text-muted-foreground">
                       {event.category}
                     </Badge>
-                    <span className="font-semibold">{event.user?.email ?? "System"}</span> — {event.action.replaceAll("_", " ").toLowerCase()}
+                    <span className="font-semibold">{displayName(event.user, "System")}</span> — {event.action.replaceAll("_", " ").toLowerCase()}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(event.createdAt)}</p>
                 </div>

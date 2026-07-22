@@ -17,6 +17,7 @@ const toOptions = (values: readonly string[]) => values.map((v) => ({ value: v, 
 export function Step5SecurityGuarantee() {
   const { control } = useFormContext<LoanAssessmentFormValues>();
   const security = useWatch({ control, name: "security" });
+  const blacklistedStatus = useWatch({ control, name: "applicantInfo.blacklistedStatus" });
 
   const fmv = Number(security?.fmv);
   const proposedLoan = Number(security?.proposedLoan);
@@ -48,7 +49,9 @@ export function Step5SecurityGuarantee() {
           <NumberField name="security.guarantor.netWorth" label="Net Worth" suffix="NPR" />
           <SelectField name="security.guarantor.guarantorConsent" label="Guarantor Consent" options={toOptions(YES_NO_OPTIONS)} />
           <SelectField name="security.guarantor.ciclStatus" label="CICL Status Clear" options={toOptions(YES_NO_OPTIONS)} />
-          <DateField name="security.guarantor.blackListedDate" label="Blacklisted Date" />
+          {blacklistedStatus === "BLACKLISTED" && (
+            <DateField name="security.guarantor.blackListedDate" label="Blacklisted Date" />
+          )}
           <DateField name="security.guarantor.releasedDate" label="Released Date" />
         </FormSection>
         <div className="mt-4">

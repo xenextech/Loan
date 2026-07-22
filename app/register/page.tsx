@@ -20,6 +20,8 @@ import Image from "next/image";
 
 const registerSchema = z
   .object({
+    firstName: z.string().trim().min(1, "First name is required").max(60),
+    lastName: z.string().trim().min(1, "Last name is required").max(60),
     email: z.string().email("Enter a valid email address"),
     password: z
       .string()
@@ -70,7 +72,12 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     try {
-      await register({ email: data.email, password: data.password }).unwrap();
+      await register({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        password: data.password,
+      }).unwrap();
       setSubmittedEmail(data.email);
       setSubmitted(true);
     } catch (err: unknown) {
@@ -137,6 +144,46 @@ export default function RegisterPage() {
             className="space-y-5"
             noValidate
           >
+            {/* Name */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="firstName" className="text-sm font-medium">
+                  First name
+                </Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  autoComplete="given-name"
+                  placeholder="Ram"
+                  className={errors.firstName ? "border-destructive" : ""}
+                  {...field("firstName")}
+                />
+                {errors.firstName && (
+                  <p className="text-xs text-destructive">
+                    {errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="lastName" className="text-sm font-medium">
+                  Last name
+                </Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  autoComplete="family-name"
+                  placeholder="Sharma"
+                  className={errors.lastName ? "border-destructive" : ""}
+                  {...field("lastName")}
+                />
+                {errors.lastName && (
+                  <p className="text-xs text-destructive">
+                    {errors.lastName.message}
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Email */}
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-sm font-medium">

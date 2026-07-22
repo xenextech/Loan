@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { displayName } from "@/lib/formatters";
 import { useAppSelector } from "@/lib/hooks";
 import { useCheckApplicationMutation } from "@/lib/api/dashboardApi";
 import { RoleApprovalCard } from "@/components/initiator/approval/RoleApprovalCard";
@@ -46,7 +47,8 @@ function getApiErrorMessage(err: unknown): string | undefined {
  */
 export function CheckerApprovalActions({ applicationId, stage }: { applicationId: string; stage: ApplicationStage | null }) {
   const router = useRouter();
-  const userEmail = useAppSelector((s) => s.auth.user?.email);
+  const currentUser = useAppSelector((s) => s.auth.user);
+  const userDisplayName = displayName(currentUser, "your account");
   const [attestationName, setAttestationName] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -91,7 +93,7 @@ export function CheckerApprovalActions({ applicationId, stage }: { applicationId
           <CheckCircle2 className="w-3.5 h-3.5" /> Mark as Checked
         </Button>
         {!isSigned && (
-          <p className="text-[11px] text-muted-foreground/70">Type your name above ({userEmail ?? "your account"}) to enable this action.</p>
+          <p className="text-[11px] text-muted-foreground/70">Type your name above ({userDisplayName}) to enable this action.</p>
         )}
       </RoleApprovalCard>
 

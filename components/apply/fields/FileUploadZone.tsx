@@ -1,9 +1,16 @@
 "use client";
 import { useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, X, FileText, Image, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, X, FileText, Image, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
+export interface ExistingFile {
+  name: string;
+  url: string;
+  mimeType?: string;
+  sizeKB?: number;
+}
 
 interface FileUploadZoneProps {
   label: string;
@@ -13,6 +20,12 @@ interface FileUploadZoneProps {
   hint?: string;
   variant?: "default" | "photo" | "document";
   className?: string;
+  /** A file already uploaded to the server for this field (e.g. from a previous visit to this step). */
+  existingFile?: ExistingFile | null;
+  /** Called when the user removes a previously-uploaded (server-side) file. */
+  onRemoveExisting?: () => void;
+  /** True while a removal of the existing file is in flight. */
+  isRemoving?: boolean;
 }
 
 export default function FileUploadZone({
@@ -23,11 +36,24 @@ export default function FileUploadZone({
   hint,
   variant = "default",
   className,
+  existingFile,
+  onRemoveExisting,
+  isRemoving,
 }: FileUploadZoneProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Once the user removes the server-side file, stop showing it even if the
+  // parent hasn't refetched yet (avoids it flashing back before invalidation).
+  // Reset whenever a *different* existing file shows up, using the
+  // render-time "adjust state while rendering" pattern instead of an effect.
+  const [dismissedExisting, setDismissedExisting] = useState(false);
+  const [lastSeenUrl, setLastSeenUrl] = useState(existingFile?.url ?? null);
+  if ((existingFile?.url ?? null) !== lastSeenUrl) {
+    setLastSeenUrl(existingFile?.url ?? null);
+    setDismissedExisting(false);
+  }
 
   const handleFile = useCallback(
     (f: File) => {
@@ -64,29 +90,49 @@ export default function FileUploadZone({
     if (selected) handleFile(selected);
   };
 
+  const showingExisting = !file && !!existingFile && !dismissedExisting;
+
   const removeFile = () => {
-    setFile(null);
-    setPreview(null);
-    onFileSelect?.(null);
+    if (file) {
+      setFile(null);
+      setPreview(null);
+      onFileSelect?.(null);
+      return;
+    }
+    if (showingExisting) {
+      setDismissedExisting(true);
+      onRemoveExisting?.();
+    }
   };
 
   const isPhoto = variant === "photo";
   const inputId = `upload-${label.replace(/\s+/g, "-").toLowerCase()}`;
+
+  const displayName = file?.name ?? existingFile?.name ?? "";
+  const displayPreview =
+    preview ??
+    (showingExisting && existingFile?.mimeType?.startsWith("image/")
+      ? existingFile.url
+      : null);
+  const displaySizeKB = file ? file.size / 1024 : existingFile?.sizeKB;
 
   // Prefer the filename extension over the raw MIME subtype — subtypes like
   // "vnd.openxmlformats-officedocument.wordprocessingml.document" (.docx) are
   // long, unbroken strings with no whitespace, and were overflowing this row
   // since only the filename line (not this one) had truncation applied.
   const fileTypeLabel = (() => {
-    const ext = file?.name.includes(".") ? file.name.split(".").pop() : undefined;
+    const ext = displayName.includes(".") ? displayName.split(".").pop() : undefined;
     if (ext && ext.length <= 6) return ext.toUpperCase();
-    return file?.type.split("/")[1]?.toUpperCase() ?? "FILE";
+    const mime = file?.type ?? existingFile?.mimeType;
+    return mime?.split("/")[1]?.toUpperCase() ?? "FILE";
   })();
+
+  const hasFile = !!file || showingExisting;
 
   return (
     <div className={cn("space-y-2 w-full min-w-0", className)}>
       <AnimatePresence mode="wait">
-        {file ? (
+        {hasFile ? (
           <motion.div
             key="uploaded"
             initial={{ opacity: 0, scale: 0.96 }}
@@ -97,19 +143,19 @@ export default function FileUploadZone({
               isPhoto ? "h-40" : "p-4"
             )}
           >
-            {preview && isPhoto ? (
+            {displayPreview && isPhoto ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-            ) : preview ? (
+              <img src={displayPreview} alt="Preview" className="w-full h-full object-cover" />
+            ) : displayPreview ? (
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-12 h-12 rounded-lg overflow-hidden border border-border shrink-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={preview} alt="" className="w-full h-full object-cover" />
+                  <img src={displayPreview} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{file.name}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {(file.size / 1024).toFixed(0)} KB
+                    {displaySizeKB !== undefined ? `${displaySizeKB.toFixed(0)} KB` : "Uploaded"}
                   </p>
                 </div>
                 <CheckCircle2 className="w-5 h-5 text-[oklch(0.62_0.18_145)] shrink-0" />
@@ -120,9 +166,10 @@ export default function FileUploadZone({
                   <FileText className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{file.name}</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {(file.size / 1024).toFixed(0)} KB · {fileTypeLabel}
+                    {displaySizeKB !== undefined ? `${displaySizeKB.toFixed(0)} KB · ` : "Uploaded · "}
+                    {fileTypeLabel}
                   </p>
                 </div>
                 <CheckCircle2 className="w-5 h-5 text-[oklch(0.62_0.18_145)] shrink-0" />
@@ -133,10 +180,15 @@ export default function FileUploadZone({
               type="button"
               variant="ghost"
               size="icon"
+              disabled={isRemoving}
               className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 hover:bg-background shadow-sm"
               onClick={removeFile}
             >
-              <X className="w-3.5 h-3.5" />
+              {isRemoving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <X className="w-3.5 h-3.5" />
+              )}
             </Button>
           </motion.div>
         ) : (

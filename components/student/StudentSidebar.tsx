@@ -23,6 +23,7 @@ import {
   LogOut,
   GraduationCap,
   Menu,
+  Inbox,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -47,8 +48,8 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/notifications",
-    icon: Bell,
-    label: "Notifications",
+    icon: Inbox,
+    label: "Inbox",
     exact: false,
   },
   {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { Form } from "@/components/ui/form";
@@ -49,6 +50,14 @@ export function LoanAssessmentForm({ applicationId, initialValues, hasInitiatorI
   // otherwise this step behaves like every other: a PATCH-based Update.
   const isFirstStep = currentStep === 1 && !hasInitiatorInfo;
 
+  // This form renders both in a plain page (window scrolls) and inside the
+  // review split-screen's own overflow-y-auto column — scrollIntoView finds
+  // whichever scrollable ancestor actually applies, unlike window.scrollTo.
+  const topRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [currentStep]);
+
   const handleSubmit = async () => {
     await submit(async (values) => {
       toast.success("Loan Assessment submitted", {
@@ -61,6 +70,7 @@ export function LoanAssessmentForm({ applicationId, initialValues, hasInitiatorI
   return (
     <Form {...form}>
       <div className="space-y-5">
+        <div ref={topRef} />
         <div className="rounded-xl border border-border bg-card px-4 py-4 sm:px-5">
           <Stepper currentStep={currentStep} maxStepReached={maxStepReached} onStepClick={goToStep} />
         </div>

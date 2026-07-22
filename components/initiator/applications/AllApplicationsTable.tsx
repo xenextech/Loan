@@ -19,6 +19,7 @@ import { useGetDashboardApplicationsQuery } from "@/lib/api/dashboardApi";
 import { useDebounce } from "@/lib/useDebounce";
 import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
 import { STAGE_LABEL, STAGE_BADGE_CLASS, NO_STAGE_LABEL, NO_STAGE_BADGE_CLASS } from "../approval/stageBadge";
+import type { DashboardApplicationsFilter } from "@/types/dashboard";
 
 function TableSkeleton() {
   return (
@@ -40,19 +41,27 @@ function TableSkeleton() {
 }
 
 /**
- * Every submitted application across the platform, every stage — backed by
- * GET /dashboard/applications (unfiltered), the same data source
- * `ApprovalWorkflowList` uses. Row clicks go to `${basePath}/applications/:id`,
- * so this is reused as-is by both the Initiator ("All" tab in Applications) and
- * the Supporter ("All" tab in their own Applications page) — each role's
+ * Every submitted application across the platform — backed by
+ * GET /dashboard/applications, the same data source `ApprovalWorkflowList`
+ * uses. Unfiltered by default (the "All" tab); pass `filter` to scope it to
+ * a stage-based queue instead (Pending Approval/Disbursed/Rejected/Sent
+ * Back tabs) — the backend combines `filter` and `search` rather than
+ * treating them as mutually exclusive. Row clicks go to
+ * `${basePath}/applications/:id`, so this is reused as-is by both the
+ * Initiator and the Supporter's own Applications page — each role's
  * `applications/[id]` route renders that role's own detail page.
  */
-export function AllApplicationsTable({ search }: { search: string }) {
+export function AllApplicationsTable({ search, filter }: { search: string; filter?: DashboardApplicationsFilter }) {
   const router = useRouter();
   const basePath = useDashboardBasePath();
   const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching } = useGetDashboardApplicationsQuery({ page, limit: 20, search: debouncedSearch || undefined });
+  const { data, isLoading, isFetching } = useGetDashboardApplicationsQuery({
+    page,
+    limit: 20,
+    search: debouncedSearch || undefined,
+    filter,
+  });
 
   const rows = data?.data ?? [];
 

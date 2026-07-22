@@ -8,6 +8,7 @@ export const step1Schema = z.object({
   email: z.string().email("Enter a valid email address"),
   studyType: z.enum(["program", "course", "diploma", "certification"]),
   courseName: z.string().min(2, "Course name is required"),
+  collegeName: z.string().min(2, "College name is required"),
   boardUniversity: z.string().min(2, "Board or university name is required"),
   courseDuration: z.string().min(1, "Course duration is required"),
   loanAmount: z

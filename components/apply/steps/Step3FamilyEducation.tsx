@@ -4,9 +4,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { useUploadDocumentMutation } from "@/lib/api/documentsApi";
+import {
+  useUploadDocumentMutation,
+  useGetDocumentsQuery,
+  useDeleteDocumentMutation,
+} from "@/lib/api/documentsApi";
 import { useAppSelector } from "@/lib/hooks";
-import type { DocumentType } from "@/types/api";
+import type { Document, DocumentType } from "@/types/api";
 import {
   Form,
   FormControl,
@@ -85,6 +89,24 @@ export default function Step3FamilyEducation({
 }: Step3Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
+  const [deleteDocument, { isLoading: isDeleting }] =
+    useDeleteDocumentMutation();
+  const { data: documents } = useGetDocumentsQuery(applicationId ?? "", {
+    skip: !applicationId,
+  });
+
+  const docFor = (documentType: DocumentType): Document | undefined =>
+    documents?.find((d) => d.documentType === documentType);
+
+  const toExisting = (doc: Document | undefined) =>
+    doc
+      ? {
+          name: doc.originalFileName,
+          url: doc.publicUrl,
+          mimeType: doc.mimeType,
+          sizeKB: doc.size / 1024,
+        }
+      : null;
 
   const uploadFile = async (file: File, documentType: DocumentType) => {
     if (!applicationId) {
@@ -96,6 +118,18 @@ export default function Step3FamilyEducation({
     } catch {
       toast.error(
         `Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`,
+      );
+    }
+  };
+
+  const removeUploadedFile = async (documentType: DocumentType) => {
+    const doc = docFor(documentType);
+    if (!applicationId || !doc) return;
+    try {
+      await deleteDocument({ applicationId, documentId: doc.id }).unwrap();
+    } catch {
+      toast.error(
+        `Failed to remove ${documentType.replace(/_/g, " ").toLowerCase()}`,
       );
     }
   };
@@ -124,6 +158,9 @@ export default function Step3FamilyEducation({
     onDataChange?.(watchedValues);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(watchedValues)]);
+
+  const academicRecordDoc = toExisting(docFor("ACADEMIC_RECORD"));
+  const feeStructureDoc = toExisting(docFor("FEE_STRUCTURE"));
 
   return (
     <Form {...form}>
@@ -274,6 +311,9 @@ export default function Step3FamilyEducation({
             onFileSelect={(file) => {
               if (file) uploadFile(file, "ACADEMIC_RECORD");
             }}
+            existingFile={academicRecordDoc}
+            onRemoveExisting={() => removeUploadedFile("ACADEMIC_RECORD")}
+            isRemoving={isDeleting}
           />
         </motion.div>
 
@@ -344,6 +384,9 @@ export default function Step3FamilyEducation({
                   onFileSelect={(file) => {
                     if (file) uploadFile(file, "FEE_STRUCTURE");
                   }}
+                  existingFile={feeStructureDoc}
+                  onRemoveExisting={() => removeUploadedFile("FEE_STRUCTURE")}
+                  isRemoving={isDeleting}
                 />
               </motion.div>
             )}

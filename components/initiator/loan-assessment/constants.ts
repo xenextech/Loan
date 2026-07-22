@@ -165,6 +165,8 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
       approvedDate: "",
       remarks: "",
       signature: "",
+      branchName: "",
+      designation: "",
     },
     support: {
       approverName: "",

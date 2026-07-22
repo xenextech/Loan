@@ -1,7 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, ExternalLink, CheckCircle2, Clock } from "lucide-react";
-import type { InitiatorCollegeVerification } from "../types/initiator";
+import { Building2, Eye, CheckCircle2, Clock } from "lucide-react";
+import { DocumentModal } from "../review/DocumentModal";
+import type { DocumentItem, InitiatorCollegeVerification } from "../types/initiator";
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
   if (value === undefined || value === null || value === "") return null;
@@ -22,6 +26,14 @@ export default function CollegeReviewCard({
 }: {
   verification: InitiatorCollegeVerification;
 }) {
+  const [activeDocument, setActiveDocument] = useState<DocumentItem | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openDocument = (doc: DocumentItem) => {
+    setActiveDocument(doc);
+    setModalOpen(true);
+  };
+
   return (
     <Card className="border-border shadow-none">
       <CardHeader className="px-5 py-3.5 border-b border-border flex flex-row items-center justify-between">
@@ -50,30 +62,39 @@ export default function CollegeReviewCard({
         {verification.offerLetterPublicUrl && (
           <div className="flex items-baseline justify-between py-2 border-b border-border/50 gap-6">
             <span className="text-xs text-muted-foreground shrink-0">Offer Letter</span>
-            <a
-              href={verification.offerLetterPublicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() =>
+                openDocument({ id: "college-offer-letter", label: "Offer Letter", fileType: "pdf", url: verification.offerLetterPublicUrl! })
+              }
               className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1"
             >
-              View <ExternalLink className="w-2.5 h-2.5" />
-            </a>
+              Preview <Eye className="w-2.5 h-2.5" />
+            </button>
           </div>
         )}
         {verification.enrollmentDocPublicUrl && (
           <div className="flex items-baseline justify-between py-2 gap-6">
             <span className="text-xs text-muted-foreground shrink-0">Enrollment Doc</span>
-            <a
-              href={verification.enrollmentDocPublicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() =>
+                openDocument({
+                  id: "college-enrollment-doc",
+                  label: "Enrollment Document",
+                  fileType: "pdf",
+                  url: verification.enrollmentDocPublicUrl!,
+                })
+              }
               className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1"
             >
-              View <ExternalLink className="w-2.5 h-2.5" />
-            </a>
+              Preview <Eye className="w-2.5 h-2.5" />
+            </button>
           </div>
         )}
       </CardContent>
+
+      <DocumentModal document={activeDocument} open={modalOpen} onOpenChange={setModalOpen} />
     </Card>
   );
 }

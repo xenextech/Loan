@@ -55,7 +55,7 @@ export function CheckerAssessmentPanel({ detail }: { detail: CheckerApplicationD
               <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
               <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">1. Student Information</h3>
             </div>
-            <StudentInfoCard student={detail.studentInfo} />
+            <StudentInfoCard student={detail.studentInfo} documents={detail.documents.student} />
           </section>
 
           <Separator />
@@ -65,7 +65,7 @@ export function CheckerAssessmentPanel({ detail }: { detail: CheckerApplicationD
               <Users className="w-3.5 h-3.5 text-muted-foreground" />
               <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">2. Parent Information</h3>
             </div>
-            <ParentVerificationCard verification={detail.parentVerification} />
+            <ParentVerificationCard verification={detail.parentVerification} documents={detail.documents.parent} />
           </section>
 
           <Separator />

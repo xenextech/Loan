@@ -1,6 +1,6 @@
 import { baseApi } from "./baseApi";
 import { toNumber, toOptionalNumber } from "@/lib/formatters";
-import type { PaginatedData } from "@/types/api";
+import type { PaginatedData, StudentConsentRecord } from "@/types/api";
 import type { InitiatorApplicationRecord } from "@/types/api";
 import type {
   DashboardOverview,
@@ -12,6 +12,7 @@ import type {
   CreditScoreResult,
   NrbChecklist,
   AuditLogRow,
+  SendStudentConsentResult,
   DisbursementPendingRow,
   DisbursementConditionRecord,
   ConfirmDisbursementBody,
@@ -131,12 +132,19 @@ const mapApplicationDetail = (record: InitiatorApplicationRecord): InitiatorAppl
 
 // A stage transition changes the application's own detail/summary/activity,
 // and can shift it in/out of the checker queue and the applications list.
+// Also invalidates "Application" — support()/check()/approve()/reject()/
+// sendBack() all stamp the approval chain's *Name/*Date/*Status columns onto
+// the same LoanApplication row that GET /applications/:id/initiator reads
+// (see useGetInitiatorApplicationDetailQuery, which feeds AssessmentSummary's
+// per-role status badges) — without this, that query stays cached with the
+// pre-action state and the badge never advances past Pending/Waiting.
 const approvalTransitionTags = (applicationId: string) => [
   { type: "Dashboard" as const, id: applicationId },
   { type: "Dashboard" as const, id: `approval-summary-${applicationId}` },
   { type: "Dashboard" as const, id: `approval-activity-${applicationId}` },
   { type: "Dashboard" as const, id: "applications-list" },
   { type: "Dashboard" as const, id: "overview" },
+  { type: "Application" as const, id: applicationId },
 ];
 
 const mapEmiEntry = (e: EmiScheduleEntryRecord): EmiScheduleEntryRecord => ({
@@ -265,6 +273,21 @@ export const dashboardApi = baseApi.injectEndpoints({
     getApprovalActivity: builder.query<PaginatedData<AuditLogRow>, { applicationId: string; page?: number; limit?: number }>({
       query: ({ applicationId, ...params }) => ({ url: `/dashboard/approval/${applicationId}/activity`, params }),
       providesTags: (_r, _e, { applicationId }) => [{ type: "Dashboard", id: `approval-activity-${applicationId}` }],
+    }),
+
+    // Approver-authored terms & conditions sent to the student via magic link
+    // for their consent (see StudentConsentPanel).
+    getStudentConsent: builder.query<StudentConsentRecord | null, string>({
+      query: (applicationId) => `/dashboard/approval/${applicationId}/student-consent`,
+      providesTags: (_r, _e, applicationId) => [{ type: "Dashboard", id: `student-consent-${applicationId}` }],
+    }),
+    sendStudentConsent: builder.mutation<SendStudentConsentResult, { applicationId: string; termsText: string }>({
+      query: ({ applicationId, termsText }) => ({
+        url: `/dashboard/approval/${applicationId}/student-consent`,
+        method: "POST",
+        body: { termsText },
+      }),
+      invalidatesTags: (_r, _e, { applicationId }) => [{ type: "Dashboard", id: `student-consent-${applicationId}` }],
     }),
 
     // Stage transitions — each is guarded server-side by role (support: SUPPORTER;
@@ -657,6 +680,8 @@ export const {
   useGetApprovalCreditScoreQuery,
   useGetApprovalNrbChecklistQuery,
   useGetApprovalActivityQuery,
+  useGetStudentConsentQuery,
+  useSendStudentConsentMutation,
   useSupportApplicationMutation,
   useCheckApplicationMutation,
   useApproveApplicationMutation,

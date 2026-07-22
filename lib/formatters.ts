@@ -49,6 +49,17 @@ export function formatDate(iso: string | null | undefined): string {
   }).format(new Date(iso));
 }
 
+// Prefer a real name over email wherever a user is displayed — fullName was
+// never captured before registration required first/last name, so plenty of
+// existing accounts (and any lookup that only selects email) still fall
+// through to the email fallback.
+export function displayName(
+  user: { fullName?: string | null; email?: string | null } | null | undefined,
+  fallback = "—",
+): string {
+  return user?.fullName || user?.email || fallback;
+}
+
 // "SELF_EMPLOYED" -> "Self Employed"
 export function humanizeEnum(value: string | null | undefined): string | undefined {
   if (!value) return undefined;

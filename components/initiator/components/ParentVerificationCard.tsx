@@ -1,8 +1,14 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, ExternalLink, CheckCircle2, Clock } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Users, ExternalLink, CheckCircle2, Clock, FileStack } from "lucide-react";
 import { formatDate } from "@/lib/formatters";
-import type { InitiatorParentVerification } from "../types/initiator";
+import { DocumentGrid } from "../review/DocumentSection";
+import { DocumentModal } from "../review/DocumentModal";
+import type { DocumentItem, InitiatorParentVerification } from "../types/initiator";
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
   if (value === undefined || value === null || value === "") return null;
@@ -21,10 +27,15 @@ function InfoRow({ label, value }: { label: string; value?: string | number | nu
  */
 export default function ParentVerificationCard({
   verification,
+  documents,
 }: {
   verification: InitiatorParentVerification | null;
+  /** Parent's uploaded documents (NID, PAN card, every labeled salary sheet) — omit to fall back to the legacy single salary-sheet link. */
+  documents?: DocumentItem[];
 }) {
   const submitted = Boolean(verification?.submittedAt);
+  const [activeDocument, setActiveDocument] = useState<DocumentItem | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <Card className="border-border shadow-none">
@@ -55,22 +66,43 @@ export default function ParentVerificationCard({
             <InfoRow label="Salary Bank Name" value={verification.salaryBankName} />
             <InfoRow label="Bank Account Number" value={verification.bankAccountNumber} />
             <InfoRow label="Submitted On" value={verification.submittedAt ? formatDate(verification.submittedAt) : undefined} />
-            {verification.salarySheetPublicUrl && (
-              <div className="flex items-baseline justify-between py-2 gap-6">
-                <span className="text-xs text-muted-foreground shrink-0">Salary Sheet</span>
-                <a
-                  href={verification.salarySheetPublicUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1"
-                >
-                  View <ExternalLink className="w-2.5 h-2.5" />
-                </a>
+
+            {documents !== undefined ? (
+              <div className="pt-2">
+                <Separator className="mb-3" />
+                <div className="flex items-center gap-1.5 mb-2">
+                  <FileStack className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Documents</span>
+                </div>
+                <DocumentGrid
+                  documents={documents}
+                  onOpen={(doc) => {
+                    setActiveDocument(doc);
+                    setModalOpen(true);
+                  }}
+                  emptyLabel="No parent documents uploaded yet."
+                />
               </div>
+            ) : (
+              verification.salarySheetPublicUrl && (
+                <div className="flex items-baseline justify-between py-2 gap-6">
+                  <span className="text-xs text-muted-foreground shrink-0">Salary Sheet</span>
+                  <a
+                    href={verification.salarySheetPublicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1"
+                  >
+                    View <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+              )
             )}
           </>
         )}
       </CardContent>
+
+      <DocumentModal document={activeDocument} open={modalOpen} onOpenChange={setModalOpen} />
     </Card>
   );
 }

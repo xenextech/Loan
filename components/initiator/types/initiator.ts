@@ -20,6 +20,7 @@ export interface InitiatorStudentInfo {
   identityNumber?: string;
   dob?: string;
   issuedDistrict?: string;
+  issuedDate?: string;
   gender?: string;
   maritalStatus?: string;
   occupation?: string;

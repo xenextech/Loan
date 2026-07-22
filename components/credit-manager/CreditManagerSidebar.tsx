@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
+import { displayName } from "@/lib/formatters";
 import {
   LayoutDashboard,
   FileText,
@@ -27,6 +28,7 @@ import {
   LogOut,
   Landmark,
   Menu,
+  Inbox,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -81,8 +83,8 @@ const NAV_GROUPS = [
       },
       {
         href: "/credit-manager/notification",
-        icon: Bell,
-        label: "Notification",
+        icon: Inbox,
+        label: "Inbox",
         exact: false,
       },
     ],
@@ -199,7 +201,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               Credit Manager Portal
             </p>
             <p className="text-[10px] text-muted-foreground truncate">
-              {user?.email ?? "Unnati Credit Manager"}
+              {displayName(user, "Unnati Credit Manager")}
             </p>
           </div>
         </div>

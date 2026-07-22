@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, FileText, AlertTriangle, Users, GraduationCap, School, ShieldCheck, History } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatNPR, formatDate } from "@/lib/formatters";
+import { formatNPR, formatDate, displayName } from "@/lib/formatters";
 import {
   useGetApplicationFullDetailQuery,
   useGetEmiNotificationTriggersQuery,
@@ -403,7 +403,7 @@ export default function CreditManagerLoanDetail({ id }: { id: string }) {
           <GraduationCap className="w-3.5 h-3.5 text-muted-foreground" />
           <h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">Student Information</h2>
         </div>
-        <StudentInfoCard student={initiatorDetail.studentInfo} />
+        <StudentInfoCard student={initiatorDetail.studentInfo} documents={initiatorDetail.documents.student} />
       </div>
 
       <div className="space-y-3">
@@ -411,7 +411,7 @@ export default function CreditManagerLoanDetail({ id }: { id: string }) {
           <Users className="w-3.5 h-3.5 text-muted-foreground" />
           <h2 className="text-xs font-semibold text-foreground uppercase tracking-wide">Parent / Guardian Information</h2>
         </div>
-        <ParentVerificationCard verification={initiatorDetail.parentVerification} />
+        <ParentVerificationCard verification={initiatorDetail.parentVerification} documents={initiatorDetail.documents.parent} />
       </div>
 
       <div className="space-y-3">
@@ -504,7 +504,7 @@ export default function CreditManagerLoanDetail({ id }: { id: string }) {
                     <Badge className="border-0 text-[10px] font-semibold mr-1.5 align-middle bg-muted text-muted-foreground">
                       {event.category}
                     </Badge>
-                    <span className="font-semibold">{event.user?.email ?? "System"}</span> — {event.action.replaceAll("_", " ").toLowerCase()}
+                    <span className="font-semibold">{displayName(event.user, "System")}</span> — {event.action.replaceAll("_", " ").toLowerCase()}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(event.createdAt)}</p>
                 </div>

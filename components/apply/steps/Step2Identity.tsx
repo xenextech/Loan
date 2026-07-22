@@ -33,9 +33,13 @@ import {
   MapPin,
   User2,
 } from "lucide-react";
-import { useUploadDocumentMutation } from "@/lib/api/documentsApi";
+import {
+  useUploadDocumentMutation,
+  useGetDocumentsQuery,
+  useDeleteDocumentMutation,
+} from "@/lib/api/documentsApi";
 import { useAppSelector } from "@/lib/hooks";
-import type { DocumentType } from "@/types/api";
+import type { Document, DocumentType } from "@/types/api";
 
 interface Step2Props {
   defaultValues?: Partial<Step2FormData>;
@@ -91,6 +95,14 @@ export default function Step2Identity({
 }: Step2Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
+  const [deleteDocument, { isLoading: isDeleting }] =
+    useDeleteDocumentMutation();
+  const { data: documents } = useGetDocumentsQuery(applicationId ?? "", {
+    skip: !applicationId,
+  });
+
+  const docFor = (documentType: DocumentType): Document | undefined =>
+    documents?.find((d) => d.documentType === documentType);
 
   const uploadFile = async (file: File, documentType: DocumentType) => {
     if (!applicationId) {
@@ -103,6 +115,18 @@ export default function Step2Identity({
       toast.error(
         getUploadErrorMessage(err) ??
           `Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`,
+      );
+    }
+  };
+
+  const removeUploadedFile = async (documentType: DocumentType) => {
+    const doc = docFor(documentType);
+    if (!applicationId || !doc) return;
+    try {
+      await deleteDocument({ applicationId, documentId: doc.id }).unwrap();
+    } catch {
+      toast.error(
+        `Failed to remove ${documentType.replace(/_/g, " ").toLowerCase()}`,
       );
     }
   };
@@ -156,6 +180,21 @@ export default function Step2Identity({
     driving_license: "Driving License",
     document: "Identity Document",
   };
+
+  const toExisting = (doc: Document | undefined) =>
+    doc
+      ? {
+          name: doc.originalFileName,
+          url: doc.publicUrl,
+          mimeType: doc.mimeType,
+          sizeKB: doc.size / 1024,
+        }
+      : null;
+
+  const identityFrontDoc = toExisting(docFor("IDENTITY_FRONT"));
+  const identityBackDoc = toExisting(docFor("IDENTITY_BACK"));
+  const identityDocumentDoc = toExisting(docFor("IDENTITY_DOCUMENT"));
+  const applicantPhotoDoc = toExisting(docFor("APPLICANT_PHOTO"));
 
   return (
     <Form {...form}>
@@ -251,12 +290,18 @@ export default function Step2Identity({
                     hint="Image or PDF of the front side"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     onFileSelect={handleIdentityFront}
+                    existingFile={identityFrontDoc}
+                    onRemoveExisting={() => removeUploadedFile("IDENTITY_FRONT")}
+                    isRemoving={isDeleting}
                   />
                   <FileUploadZone
                     label="Back Side"
                     hint="Image or PDF of the back side"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     onFileSelect={handleIdentityBack}
+                    existingFile={identityBackDoc}
+                    onRemoveExisting={() => removeUploadedFile("IDENTITY_BACK")}
+                    isRemoving={isDeleting}
                   />
                 </div>
 
@@ -268,6 +313,9 @@ export default function Step2Identity({
                   maxSizeMB={5}
                   variant="document"
                   onFileSelect={handleIdentityDocument}
+                  existingFile={identityDocumentDoc}
+                  onRemoveExisting={() => removeUploadedFile("IDENTITY_DOCUMENT")}
+                  isRemoving={isDeleting}
                 />
               </motion.div>
             )}
@@ -289,7 +337,7 @@ export default function Step2Identity({
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Full Name (as on document)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Auto-filled from document" {...field} />
+                    <Input placeholder="Enter Full Name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -494,6 +542,9 @@ export default function Step2Identity({
                 accept="image/jpeg,image/png"
                 variant="photo"
                 onFileSelect={handleApplicantPhoto}
+                existingFile={applicantPhotoDoc}
+                onRemoveExisting={() => removeUploadedFile("APPLICANT_PHOTO")}
+                isRemoving={isDeleting}
               />
             </div>
           </div>

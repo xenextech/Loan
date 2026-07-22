@@ -28,6 +28,7 @@ import { formatNPR } from "@/lib/formatters";
 import { useInitiatorApplications } from "./hooks/useInitiatorApplications";
 import { useDebounce } from "@/lib/useDebounce";
 import { AllApplicationsTable } from "./applications/AllApplicationsTable";
+import type { DashboardApplicationsFilter } from "@/types/dashboard";
 
 type TabKey = "all" | "my-queue" | "pending-approval" | "disbursed" | "rejected" | "sent-back";
 
@@ -46,10 +47,16 @@ function isTabKey(value: string | null): value is TabKey {
   return value !== null && TAB_KEYS.has(value as TabKey);
 }
 
-// "All" is backed by GET /dashboard/applications (every submitted application);
-// "My Queue" is backed by the college-verified review queue scoped to this initiator.
-// The rest need a real approval-stage field the backend doesn't have yet.
-const LIVE_TABS: TabKey[] = ["all", "my-queue"];
+// "My Queue" is backed by a dedicated endpoint (college-verified + Initiator-created
+// applications ready for this Initiator's own review) — every other tab is backed by
+// GET /dashboard/applications, the same stage-based `filter` the Support/Checker/
+// Approver dashboards use, undefined for "All" (every submitted application).
+const TAB_FILTER: Partial<Record<TabKey, DashboardApplicationsFilter>> = {
+  "pending-approval": "pending",
+  disbursed: "disbursed",
+  rejected: "rejected",
+  "sent-back": "sent-back",
+};
 
 function TableSkeleton() {
   return (
@@ -101,7 +108,6 @@ export default function InitiatorApplications() {
     });
   }, [applications, debouncedSearch, collegeFilter]);
 
-  const isLiveTab = LIVE_TABS.includes(tab);
   const rows = tab === "my-queue" ? filtered : [];
 
   return (
@@ -183,17 +189,8 @@ export default function InitiatorApplications() {
           </CardHeader>
 
           <CardContent className="p-0">
-            {tab === "all" ? (
-              <AllApplicationsTable search={search} />
-            ) : !isLiveTab ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-3 text-center px-6">
-                <Inbox className="w-8 h-8 text-muted-foreground" />
-                <p className="text-sm font-medium text-foreground">Not available yet</p>
-                <p className="text-xs text-muted-foreground max-w-sm">
-                  This tab needs a real approval-stage field, which isn&apos;t exposed by the API yet. It will populate
-                  once that field exists.
-                </p>
-              </div>
+            {tab !== "my-queue" ? (
+              <AllApplicationsTable key={tab} search={search} filter={TAB_FILTER[tab]} />
             ) : isLoading ? (
               <TableSkeleton />
             ) : isError ? (

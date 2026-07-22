@@ -1,5 +1,5 @@
 import { baseApi } from "./baseApi";
-import type { LoanApplication, SubmitApplicationResult, ApplicationTracker } from "@/types/api";
+import type { LoanApplication, SubmitApplicationResult, ApplicationTracker, StudentConsentRecord } from "@/types/api";
 import type {
   Step1FormData,
   Step2FormData,
@@ -22,6 +22,7 @@ const buildStep1Body = (data: Step1FormData) => ({
   email: data.email,
   studyType: toStudyType(data.studyType),
   courseName: data.courseName,
+  collegeName: data.collegeName,
   boardUniversity: data.boardUniversity,
   courseDuration: data.courseDuration, // backend stores as String
   loanAmount: data.loanAmount,
@@ -169,6 +170,17 @@ export const applicationApi = baseApi.injectEndpoints({
       query: (id) => `/applications/${id}/tracker`,
       providesTags: (_r, _e, id) => [{ type: "Application", id: `${id}-tracker` }],
     }),
+
+    // Approver-authored terms & conditions, consented to from this same
+    // logged-in session — null if the Approver hasn't sent any yet.
+    getConsent: builder.query<StudentConsentRecord | null, string>({
+      query: (id) => `/applications/${id}/consent`,
+      providesTags: (_r, _e, id) => [{ type: "Application", id: `${id}-consent` }],
+    }),
+    acceptConsent: builder.mutation<StudentConsentRecord, string>({
+      query: (id) => ({ url: `/applications/${id}/consent/accept`, method: "POST" }),
+      invalidatesTags: (_r, _e, id) => [{ type: "Application", id: `${id}-consent` }],
+    }),
   }),
 });
 
@@ -182,4 +194,6 @@ export const {
   useSubmitApplicationMutation,
   useDeleteDraftMutation,
   useGetApplicationTrackerQuery,
+  useGetConsentQuery,
+  useAcceptConsentMutation,
 } = applicationApi;

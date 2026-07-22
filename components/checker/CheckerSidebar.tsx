@@ -12,13 +12,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
+import { displayName } from "@/lib/formatters";
 import {
   LayoutDashboard,
   FileText,
   GitBranch,
   Wallet,
   Calendar,
-  Bell,
   FolderOpen,
   ShieldCheck,
   Percent,
@@ -26,6 +26,7 @@ import {
   LogOut,
   ClipboardCheck,
   Menu,
+  Inbox,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -74,8 +75,8 @@ const NAV_GROUPS = [
       },
       {
         href: "/checker/notification",
-        icon: Bell,
-        label: "Notification",
+        icon: Inbox,
+        label: "Inbox",
         exact: false,
       },
     ],
@@ -192,7 +193,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               Checker Portal
             </p>
             <p className="text-[10px] text-muted-foreground truncate">
-              {user?.email ?? "Unnati Checker"}
+              {displayName(user, "Unnati Checker")}
             </p>
           </div>
         </div>

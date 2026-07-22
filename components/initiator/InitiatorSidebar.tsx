@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { clearCredentials } from "@/lib/store/authSlice";
+import { displayName } from "@/lib/formatters";
 import {
   LayoutDashboard,
   FileText,
@@ -26,6 +27,7 @@ import {
   LogOut,
   ClipboardCheck,
   Menu,
+  Inbox,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -74,8 +76,8 @@ const NAV_GROUPS = [
       },
       {
         href: "/initiator/notification",
-        icon: Bell,
-        label: "Notification",
+        icon: Inbox,
+        label: "Inbox",
         exact: false,
       },
     ],
@@ -192,7 +194,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               Initiator Portal
             </p>
             <p className="text-[10px] text-muted-foreground truncate">
-              {user?.email ?? "Unnati Initiator"}
+              {displayName(user, "Unnati Initiator")}
             </p>
           </div>
         </div>

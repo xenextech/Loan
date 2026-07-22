@@ -3,7 +3,7 @@ import { SectionCard, FormSection } from "../ui/SectionCard";
 import { NumberField } from "../fields/NumberField";
 import { TextField } from "../fields/TextField";
 import { SelectField } from "../fields/SelectField";
-import { PARENTS_BORROWINGS_WITH_BFIS_OPTIONS } from "../schema";
+import { PARENTS_BORROWINGS_WITH_BFIS_OPTIONS, CREDIT_RISK_SCORING_OPTIONS } from "../schema";
 
 export function Step3CreditAssessment() {
   return (
@@ -27,7 +27,11 @@ export function Step3CreditAssessment() {
 
       <SectionCard title="Scoring Outcome" description="Final risk grade and aggregated scorecard result.">
         <FormSection>
-          <TextField name="creditAssessment.creditRiskScoring" label="Credit Risk Scoring" placeholder="e.g. Low Risk Profile" />
+          <SelectField
+            name="creditAssessment.creditRiskScoring"
+            label="Credit Risk Scoring"
+            options={CREDIT_RISK_SCORING_OPTIONS}
+          />
           <TextField name="creditAssessment.riskGrade" label="Risk Grade" placeholder="e.g. Grade A" />
           <NumberField name="creditAssessment.totalScore" label="Total Score" />
           <NumberField name="creditAssessment.totalPercentage" label="Total Percentage" suffix="%" />

@@ -1,7 +1,7 @@
 // Wire shapes for the credit-ops dashboard module (`/dashboard/*`).
 // See edu-loan-backend/src/modules/dashboard/README.md for the authoritative contract.
 
-import type { PaginatedData, UserRole } from "./api";
+import type { PaginatedData, UserRole, StudentConsentRecord } from "./api";
 
 // ─── Shared enums (mirror backend Prisma enums exactly) ───────────────────────
 
@@ -31,6 +31,7 @@ export type ApprovalActionRole = "SUPPORTER" | "CHECKER" | "CREDIT_MANAGER" | "A
 
 export interface AuditUserRef {
   id: string;
+  fullName?: string | null;
   email: string;
   role: string;
 }
@@ -167,6 +168,10 @@ export interface ApprovalSummary {
 
 export interface RejectApplicationBody {
   reason: string;
+}
+
+export interface SendStudentConsentResult extends StudentConsentRecord {
+  consentLink: string;
 }
 
 export interface SendBackApplicationBody {
