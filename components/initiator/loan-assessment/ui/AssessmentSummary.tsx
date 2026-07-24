@@ -71,12 +71,15 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
         <SummaryItem label="Credit Limit" value={c?.creditLimit !== undefined ? `NPR ${c.creditLimit}` : undefined} />
         <SummaryItem label="Loan to Value Ratio (%)" value={c?.loanToValueRatio !== undefined ? `${c.loanToValueRatio}%` : undefined} />
         <SummaryItem label="DSGIR (%)" value={c?.dsgir !== undefined ? `${c.dsgir}%` : undefined} />
-        <SummaryItem label="Performance Years" value={c?.performanceYears} />
-        <SummaryItem label="Banking Relationship Score" value={c?.bankingRelationshipScore} />
+        <SummaryItem label="Operation of Institution (Years)" value={c?.operationOfInstitution} />
+        <SummaryItem label="Satisfactory Performance (Years)" value={c?.satisfactoryPerformance} />
         <SummaryItem label="Parents Borrowings with BFIs" value={c?.parentsBorrowingsWithBFIs} />
-        <SummaryItem label="Source of Income Score" value={c?.sourceOfIncomeScore} />
+        <SummaryItem label="Source of Income" value={c?.sourceOfIncome} />
+        <SummaryItem label="Banking Relationship Score" value={c?.bankingRelationshipScore} />
         <SummaryItem label="Risk Grade" value={c?.riskGrade} />
         <SummaryItem label="Total Score" value={c?.totalScore} />
+        <SummaryItem label="Total Percentage" value={c?.totalPercentage !== undefined ? `${c.totalPercentage}%` : undefined} />
+        <SummaryItem label="Credit Risk Scoring" value={c?.creditRiskScoring} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[3].title} stepId={4} onEdit={onEdit}>

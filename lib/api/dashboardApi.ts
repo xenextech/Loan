@@ -92,6 +92,7 @@ const mapApplicationDetail = (record: InitiatorApplicationRecord): InitiatorAppl
   loanToValueRatio: toOptionalNumber(record.loanToValueRatio),
   dsgir: toOptionalNumber(record.dsgir),
   performanceYears: toOptionalNumber(record.performanceYears),
+  satisfactoryPerformance: toOptionalNumber(record.satisfactoryPerformance),
   bankingRelationshipScore: toOptionalNumber(record.bankingRelationshipScore),
   sourceOfIncomeScore: toOptionalNumber(record.sourceOfIncomeScore),
   operationOfInstitution: toOptionalNumber(record.operationOfInstitution),
@@ -296,6 +297,15 @@ export const dashboardApi = baseApi.injectEndpoints({
     // the backend still enforces the real permission from the JWT.
     supportApplication: builder.mutation<InitiatorApplicationRecord, string>({
       query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/support`, method: "POST" }),
+      transformResponse: mapApplicationDetail,
+      invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
+    }),
+    // Initiator-only — resumes an application sent back to them (the Initiator
+    // has no formal approval-chain stage otherwise). Lands on CHECKING
+    // (Approver-actionable) if the Approver themself sent it back, otherwise
+    // on SUPPORTED, same as a normal support().
+    resubmitApplication: builder.mutation<InitiatorApplicationRecord, string>({
+      query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/resubmit`, method: "POST" }),
       transformResponse: mapApplicationDetail,
       invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
     }),
@@ -683,6 +693,7 @@ export const {
   useGetStudentConsentQuery,
   useSendStudentConsentMutation,
   useSupportApplicationMutation,
+  useResubmitApplicationMutation,
   useCheckApplicationMutation,
   useApproveApplicationMutation,
   useRejectApplicationMutation,

@@ -96,14 +96,30 @@ export const CREDIT_RISK_SCORING_OPTIONS = [
   { value: "UNGRADED", label: "Ungraded" },
 ] as const;
 
+// Matches backend SourceOfIncome exactly (credit-score.enum.ts) — one of the
+// six scoring parameters CREDIT_PARAMETERS actually weighs (weight 1); do not
+// confuse with sourceOfIncomeScore below, which the scoring engine ignores.
+export const SOURCE_OF_INCOME_OPTIONS = [
+  { value: "FIXED", label: "Fixed Income" },
+  { value: "SALARY_RENT_BUSINESS", label: "Salary / Rent / Business" },
+  { value: "MIXED", label: "Mixed Income" },
+] as const;
+
 export const creditAssessmentSchema = z.object({
   creditLimit: optionalNumber,
   loanToValueRatio: optionalNumber,
   dsgir: optionalNumber,
   performanceYears: optionalNumber,
+  // Years of satisfactory performance with the institution — the actual
+  // CREDIT_PARAMETERS.satisfactoryPerformance scoring input (weight 1).
+  // Distinct from performanceYears above, which the scoring engine ignores.
+  satisfactoryPerformance: optionalNumber,
   bankingRelationshipScore: optionalNumber,
   parentsBorrowingsWithBFIs: z.enum(["US", "OTHER_BFI", "OTHER_BFIS"]).optional().or(z.literal("")),
   sourceOfIncomeScore: optionalNumber,
+  // The categorical CREDIT_PARAMETERS.sourceOfIncome scoring input (weight 1).
+  // Distinct from sourceOfIncomeScore above, which the scoring engine ignores.
+  sourceOfIncome: z.enum(["FIXED", "SALARY_RENT_BUSINESS", "MIXED"]).optional().or(z.literal("")),
   operationOfInstitution: optionalNumber,
   creditRiskScoring: z.enum(["LOW_RISK", "MODERATE_RISK", "MEDIUM_RISK", "MEDIUM_HIGH_RISK", "UNGRADED"]).optional().or(z.literal("")),
   riskGrade: optionalText(60),

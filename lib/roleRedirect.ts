@@ -9,6 +9,14 @@ export function getDashboardPath(role: UserRole): string {
       return "/college";
     case "INITIATOR":
       return "/initiator";
+    case "SUPPORTER":
+      return "/supporter";
+    case "CHECKER":
+      return "/checker";
+    case "APPROVER":
+      return "/approver";
+    case "CREDIT_MANAGER":
+      return "/credit-manager";
     default:
       return "/dashboard";
   }

@@ -224,6 +224,9 @@ export interface DisbursementPendingRow {
   /** Whether the parent's bank account is on file — `confirm()` rejects the
    *  disbursement server-side if this is false, regardless of conditions. */
   bankAccountReady: boolean;
+  /** Whether a SIGNED/ACTIVE Loan Agreement legal document exists —
+   *  `confirm()` rejects the disbursement server-side if this is false. */
+  legalDocumentReady: boolean;
 }
 
 export interface DisbursementConditionRecord {
@@ -453,11 +456,17 @@ export interface DocumentVaultRow {
 export interface GeneratedAgreementRecord {
   id: string;
   applicationId: string;
+  /** Human-readable reference shown on the document and in the Legal
+   *  Documents list, e.g. "LGL-2026-00042". Null for documents generated
+   *  before this field existed. */
+  documentNumber: string | null;
   agreementType: GeneratedAgreementType;
   status: GeneratedAgreementStatus;
-  templateSnapshot: Record<string, unknown> | null;
+  templateSnapshot: LegalDocumentTemplateSnapshot | null;
   documentUrl: string | null;
   generatedByUserId: string;
+  /** Denormalized display name of the generating staff member. */
+  generatedByName: string | null;
   sentToSignAt: string | null;
   signedAt: string | null;
   createdAt: string;
@@ -465,9 +474,120 @@ export interface GeneratedAgreementRecord {
   application: ApplicationRef;
 }
 
+/** Shape of GeneratedAgreementRecord.templateSnapshot for LOAN_AGREEMENT /
+ *  legal documents — everything auto-populated server-side at generation
+ *  time (see DashboardDocumentsService.createAgreement). */
+export interface LegalDocumentTemplateSnapshot {
+  studentName: string | null;
+  applicationNumber: string | null;
+  collegeName: string | null;
+  courseName: string | null;
+  loanProduct: string | null;
+  finalDisbursementAmount: number | null;
+  interestRate: number | null;
+  tenureMonths: number | null;
+  gracePeriodMonths: number | null;
+  repaymentFrequency: RepaymentFrequency | null;
+  emiAmount: number | null;
+  totalRepayment: number | null;
+  guarantor: {
+    name: string | null;
+    relationship: string | null;
+    netWorth: string | null;
+    citizenshipNo?: string | null;
+    citizenshipIssueDate?: string | null;
+    citizenshipOffice?: string | null;
+    address?: string | null;
+    fatherOrHusbandName?: string | null;
+    grandfatherName?: string | null;
+    permanentDistrict?: string | null;
+    permanentMunicipality?: string | null;
+    permanentWardNo?: string | null;
+    age?: string | null;
+  } | null;
+  remarks: string | null;
+  generatedByName: string | null;
+  generatedAt: string;
+  /** Display name of the lending financial institution (bank / finance
+   *  company) this document was issued on behalf of. Editable per document
+   *  since the platform can generate documents for different partner banks,
+   *  not just Unnati. Null/absent on documents generated before this field
+   *  existed — templates fall back to "Unnati". */
+  institutionName?: string | null;
+  /** Manually-typed blanks on the paper Loan Agreement with no source
+   *  elsewhere in the application (borrower address/citizenship, branch
+   *  manager name). Optional — left as dotted blanks in the document when
+   *  not provided. */
+  studentAddress?: string | null;
+  studentCitizenshipNo?: string | null;
+  studentCitizenshipOffice?: string | null;
+  branchManagerName?: string | null;
+  /** GUARANTEE_DEED / PROMISSORY_NOTE only — traditional citizenship
+   *  parentage/permanent-address fields those templates use in place of
+   *  the simpler address block LOAN_AGREEMENT uses. */
+  studentCitizenshipIssueDate?: string | null;
+  studentFatherOrHusbandName?: string | null;
+  studentGrandfatherName?: string | null;
+  studentPermanentDistrict?: string | null;
+  studentPermanentMunicipality?: string | null;
+  studentPermanentWardNo?: string | null;
+  /** PROMISSORY_NOTE only — collateral/mortgage security details. */
+  collateralOwnerName?: string | null;
+  collateralAddress?: string | null;
+  collateralPlotNo?: string | null;
+  collateralArea?: string | null;
+  collateralRemarks?: string | null;
+  /** HYPOTHECATION only — कर्जा रकम निकासा अनुरोध पत्र specific fields. */
+  approvalLetterDate?: string | null;
+  loanExpiryDate?: string | null;
+  borrowerPosition?: string | null;
+  bankAccountName?: string | null;
+  bankAccountNumber?: string | null;
+}
+
 export interface CreateGeneratedAgreementBody {
   applicationId: string;
   agreementType: GeneratedAgreementType;
+  /** Additional clauses/conditions/remarks — the only field the Credit
+   *  Manager actually types; everything else is auto-populated server-side. */
+  remarks?: string;
+  /** Name of the financial institution (bank/NBFC) the document is issued
+   *  on behalf of. Optional — defaults to "Unnati" server-side if omitted. */
+  institutionName?: string;
+  /** Manually-typed blanks on the paper Loan Agreement — see
+   *  LegalDocumentTemplateSnapshot for details. All optional. */
+  studentAddress?: string;
+  studentCitizenshipNo?: string;
+  studentCitizenshipOffice?: string;
+  branchManagerName?: string;
+  guarantorName?: string;
+  guarantorRelationship?: string;
+  guarantorCitizenshipNo?: string;
+  guarantorCitizenshipIssueDate?: string;
+  guarantorCitizenshipOffice?: string;
+  guarantorAddress?: string;
+  studentCitizenshipIssueDate?: string;
+  studentFatherOrHusbandName?: string;
+  studentGrandfatherName?: string;
+  studentPermanentDistrict?: string;
+  studentPermanentMunicipality?: string;
+  studentPermanentWardNo?: string;
+  guarantorFatherOrHusbandName?: string;
+  guarantorGrandfatherName?: string;
+  guarantorPermanentDistrict?: string;
+  guarantorPermanentMunicipality?: string;
+  guarantorPermanentWardNo?: string;
+  guarantorAge?: string;
+  collateralOwnerName?: string;
+  collateralAddress?: string;
+  collateralPlotNo?: string;
+  collateralArea?: string;
+  collateralRemarks?: string;
+  approvalLetterDate?: string;
+  loanExpiryDate?: string;
+  borrowerPosition?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
 }
 
 // ─── 8. Insurance tracker ───────────────────────────────────────────────────

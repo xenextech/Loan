@@ -279,6 +279,13 @@ export interface LoanApplication {
   feeManualAmount?: number;
   submittedAt?: string;
   reviewComment?: string;
+  // Present on the raw Prisma response (e.g. PATCH .../initiator) even
+  // though this type otherwise mirrors the student-facing apply flow — the
+  // Initiator's "Update"/"Submit" actions need to know whether a send-back
+  // targeted them, to auto-resubmit instead of leaving the application stuck.
+  stage?: import("./dashboard").ApplicationStage | null;
+  sentBackToStage?: import("./dashboard").ApplicationStage | null;
+  sentBackByApprover?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -497,14 +504,17 @@ export interface InitiatorApplicationRecord {
   loanToValueRatio?: number;
   dsgir?: number;
   performanceYears?: number;
+  satisfactoryPerformance?: number;
   bankingRelationshipScore?: number;
   parentsBorrowingsWithBFIs?: string;
   sourceOfIncomeScore?: number;
+  sourceOfIncome?: string;
   operationOfInstitution?: number;
   creditRiskScoring?: string;
   riskGrade?: string;
   totalScore?: number;
   totalPercentage?: number;
+  collegeName?: string;
   // Applicant Background / This Facility
   facility?: string;
   purpose?: string;

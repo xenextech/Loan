@@ -28,6 +28,7 @@ import type {
 } from "@/components/initiator/types/initiator";
 import {
   PARENTS_BORROWINGS_WITH_BFIS_OPTIONS,
+  SOURCE_OF_INCOME_OPTIONS,
   CREDIT_RISK_SCORING_OPTIONS,
   FACILITY_STATUS_OPTIONS,
   type LoanAssessmentFormValues,
@@ -256,6 +257,10 @@ const PARENTS_BORROWINGS_WITH_BFIS_VALUES = new Set<string>(PARENTS_BORROWINGS_W
 const toParentsBorrowingsWithBFIs = (value?: string | null): LoanAssessmentFormValues["creditAssessment"]["parentsBorrowingsWithBFIs"] =>
   value && PARENTS_BORROWINGS_WITH_BFIS_VALUES.has(value) ? (value as "US" | "OTHER_BFI" | "OTHER_BFIS") : "";
 
+const SOURCE_OF_INCOME_VALUES = new Set<string>(SOURCE_OF_INCOME_OPTIONS.map((o) => o.value));
+const toSourceOfIncome = (value?: string | null): LoanAssessmentFormValues["creditAssessment"]["sourceOfIncome"] =>
+  value && SOURCE_OF_INCOME_VALUES.has(value) ? (value as "FIXED" | "SALARY_RENT_BUSINESS" | "MIXED") : "";
+
 // Backend enforces this as a closed enum too (@IsEnum(RiskCategory)) — same
 // narrowing as above. Also written by the credit-scoring engine itself
 // (CreditScoreService), not just the Initiator's manual selection.
@@ -335,9 +340,11 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
       loanToValueRatio: toOptionalNumber(record.loanToValueRatio),
       dsgir: toOptionalNumber(record.dsgir),
       performanceYears: toOptionalNumber(record.performanceYears),
+      satisfactoryPerformance: toOptionalNumber(record.satisfactoryPerformance),
       bankingRelationshipScore: toOptionalNumber(record.bankingRelationshipScore),
       parentsBorrowingsWithBFIs: toParentsBorrowingsWithBFIs(record.parentsBorrowingsWithBFIs),
       sourceOfIncomeScore: toOptionalNumber(record.sourceOfIncomeScore),
+      sourceOfIncome: toSourceOfIncome(record.sourceOfIncome),
       operationOfInstitution: toOptionalNumber(record.operationOfInstitution),
       creditRiskScoring: toCreditRiskScoring(record.creditRiskScoring),
       riskGrade: record.riskGrade ?? "",

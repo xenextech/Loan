@@ -22,7 +22,7 @@ import {
   Megaphone,
 } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/lib/hooks";
-import { clearCredentials } from "@/lib/store/authSlice";
+import { performLogout } from "@/lib/auth/authActions";
 import { getDashboardPath } from "@/lib/roleRedirect";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -81,9 +81,7 @@ export default function LandingNav() {
   }, []);
 
   const handleSignOut = () => {
-    dispatch(clearCredentials());
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
+    performLogout(dispatch);
     router.push("/");
   };
 

@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { GraduationCap, Loader2, ShieldX } from "lucide-react";
+import { GraduationCap, Loader2, ShieldX, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import AdminSidebar from "@/components/admin/AdminSidebar";
+import { DynamicSidebar } from "@/components/permissions/DynamicSidebar";
+import { PermissionProvider } from "@/components/permissions/PermissionProvider";
 
 type Gate = "checking" | "denied" | "ok";
 
@@ -91,11 +92,18 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex bg-muted/30 min-h-screen lg:h-screen lg:overflow-hidden">
-      <AdminSidebar />
-      <main className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">
-        {children}
-      </main>
-    </div>
+    <PermissionProvider>
+      <div className="flex bg-muted/30 min-h-screen lg:h-screen lg:overflow-hidden">
+        <DynamicSidebar
+          portalBadge="ADMIN"
+          portalTitle="Admin Portal"
+          fallbackName="Unnati Admin Portal"
+          footerIcon={ShieldCheck}
+        />
+        <main className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">
+          {children}
+        </main>
+      </div>
+    </PermissionProvider>
   );
 }

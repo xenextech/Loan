@@ -13,6 +13,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AdDatePicker } from "@/components/ui/ad-date-picker";
+import { BsDatePicker } from "@/components/ui/bs-date-picker";
+import { convertBsToAdString } from "@/lib/bsDate";
 import {
   Select,
   SelectContent,
@@ -137,6 +140,7 @@ export default function Step2Identity({
       identityType: undefined,
       identityNumber: "",
       identityName: "",
+      dobBs: "",
       dob: "",
       issuedDistrict: "",
       issuedDate: "",
@@ -151,12 +155,23 @@ export default function Step2Identity({
   });
 
   const identityType = form.watch("identityType");
+  const dobBs = form.watch("dobBs");
   const watchedValues = form.watch();
 
   useEffect(() => {
     onDataChange?.(watchedValues);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(watchedValues)]);
+
+  // BS is the primary input; AD is derived and never hand-entered — mirrors
+  // NewApplicationDetailsForm's dobBs -> dobAd handling exactly, so the two
+  // can never disagree and trip the backend's "dobAd and dobBs do not refer
+  // to the same calendar date" check.
+  useEffect(() => {
+    const derived = typeof dobBs === "string" ? convertBsToAdString(dobBs) : undefined;
+    form.setValue("dob", derived ?? "", { shouldValidate: false, shouldDirty: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dobBs]);
 
   const handleIdentityFront = (file: File | null) => {
     if (file) uploadFile(file, "IDENTITY_FRONT");
@@ -345,12 +360,30 @@ export default function Step2Identity({
             />
             <FormField
               control={form.control}
+              name="dobBs"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date of Birth (BS)</FormLabel>
+                  <FormControl>
+                    <BsDatePicker value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="dob"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date of Birth</FormLabel>
+                  <FormLabel>Date of Birth (AD)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input
+                      placeholder="Auto-filled from BS date"
+                      readOnly
+                      className="bg-muted text-muted-foreground"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -389,7 +422,7 @@ export default function Step2Identity({
                 <FormItem>
                   <FormLabel>Issued Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <AdDatePicker value={field.value} onChange={field.onChange} placeholder="YYYY-MM-DD" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

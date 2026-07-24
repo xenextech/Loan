@@ -38,7 +38,8 @@ const buildStep2Body = (data: Step2FormData) => ({
       : toIdentityType(data.identityType),
   identityNumber: data.identityNumber,
   identityName: data.identityName, // now accepted by backend
-  dateOfBirth: data.dob || undefined, // omit empty string — @IsDateString fails on ""
+  dobAd: data.dob || undefined, // omit empty string — @IsDateString fails on ""
+  dobBs: data.dobBs || undefined,
   issuedDistrict: data.issuedDistrict,
   issuedDate: data.issuedDate || undefined, // same
   gender: toGender(data.gender),

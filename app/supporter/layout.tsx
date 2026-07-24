@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { GraduationCap, Loader2, ShieldX } from "lucide-react";
+import { GraduationCap, Loader2, ShieldX, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import SupporterSidebar from "@/components/supporter/SupporterSidebar";
+import { DynamicSidebar } from "@/components/permissions/DynamicSidebar";
+import { PermissionProvider } from "@/components/permissions/PermissionProvider";
 
 type Gate = "checking" | "denied" | "ok";
 
@@ -88,11 +89,18 @@ export default function SupporterLayout({
   }
 
   return (
-    <div className="flex bg-muted/30 min-h-screen lg:h-screen lg:overflow-hidden">
-      <SupporterSidebar />
-      <main className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">
-        {children}
-      </main>
-    </div>
+    <PermissionProvider>
+      <div className="flex bg-muted/30 min-h-screen lg:h-screen lg:overflow-hidden">
+        <DynamicSidebar
+          portalBadge="SUPPORTER"
+          portalTitle="Supporter Portal"
+          fallbackName="Unnati Supporter"
+          footerIcon={ClipboardCheck}
+        />
+        <main className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">
+          {children}
+        </main>
+      </div>
+    </PermissionProvider>
   );
 }

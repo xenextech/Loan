@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useCreateInitiatorApplicationMutation, useUpdateInitiatorApplicationMutation } from "@/lib/api/initiatorApi";
+import { useResubmitApplicationMutation } from "@/lib/api/dashboardApi";
 import { loanAssessmentSchema, type LoanAssessmentFormValues, type LoanAssessmentSubmitValues } from "./schema";
 import { DEFAULT_LOAN_ASSESSMENT_VALUES, DRAFT_STORAGE_PREFIX, STEP_FIELD_PATHS, TOTAL_STEPS } from "./constants";
 
@@ -68,6 +69,7 @@ export function useLoanAssessmentForm(
 
   const [createInitiatorApplication, { isLoading: isCreatingStep }] = useCreateInitiatorApplicationMutation();
   const [updateInitiatorApplication, { isLoading: isUpdatingStep }] = useUpdateInitiatorApplicationMutation();
+  const [resubmitApplication] = useResubmitApplicationMutation();
   const isSyncingStep = isCreatingStep || isUpdatingStep;
 
   // Load a locally-saved draft on mount, if one exists (API integration point #1).
@@ -215,11 +217,33 @@ export function useLoanAssessmentForm(
       // Final consolidated PATCH — guarantees the backend has every step's latest
       // values even if the user jumped between steps via the Stepper instead of
       // clicking "Update" on each one.
+      let updatedApplication;
       try {
-        await updateInitiatorApplication({ applicationId, data: form.getValues() }).unwrap();
+        updatedApplication = await updateInitiatorApplication({ applicationId, data: form.getValues() }).unwrap();
       } catch (err) {
         toast.error("Failed to save the assessment", { description: getApiErrorMessage(err) ?? "Please try again." });
         return false;
+      }
+
+      // A send-back that targeted the Initiator leaves the application
+      // stuck at SENT_BACK forever otherwise — no other role's action can
+      // resume it. Submitting the assessment IS the Initiator's "I've made
+      // my corrections" signal, so it doubles as the resubmit trigger
+      // instead of requiring a separate button on a different screen.
+      if (updatedApplication.stage === "SENT_BACK" && updatedApplication.sentBackToStage === "INITIATED") {
+        try {
+          const result = await resubmitApplication(applicationId).unwrap();
+          toast.success("Resubmitted for review", {
+            description:
+              result.stage === "CHECKING"
+                ? "Sent back by the Approver — returned directly to them, skipping the Supporter and Checker."
+                : "Moved to the Supporter queue.",
+          });
+        } catch (err) {
+          toast.error("Saved, but failed to resubmit for review", {
+            description: getApiErrorMessage(err) ?? "Use \"Resubmit for Review\" on the Approval Workflow screen instead.",
+          });
+        }
       }
 
       // Full form already validated above — parse to get the clean, coerced payload.
@@ -231,7 +255,7 @@ export function useLoanAssessmentForm(
       }
       return true;
     },
-    [form, goToStep, storageKey, isSyncingStep, applicationId, updateInitiatorApplication],
+    [form, goToStep, storageKey, isSyncingStep, applicationId, updateInitiatorApplication, resubmitApplication],
   );
 
   return useMemo(

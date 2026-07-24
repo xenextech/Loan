@@ -69,8 +69,16 @@ export function SupporterApprovalActions({ applicationId, stage }: { application
 
   const handleSupport = async () => {
     try {
-      await supportApplication(applicationId).unwrap();
-      toast.success("Application supported", { description: "Moved to the Checker/Credit Manager queue." });
+      const result = await supportApplication(applicationId).unwrap();
+      // Approver-originated send-backs skip straight back to CHECKING
+      // (Approver-actionable) instead of the normal SUPPORTED stage — see
+      // DashboardApprovalService.support()'s sentBackByApprover shortcut.
+      toast.success("Application supported", {
+        description:
+          result.stage === "CHECKING"
+            ? "Sent back by the Approver — returned directly to them, skipping the Checker."
+            : "Moved to the Checker/Credit Manager queue.",
+      });
       setSupportOpen(false);
       router.push("/supporter");
     } catch (err) {

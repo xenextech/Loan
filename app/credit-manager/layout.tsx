@@ -2,10 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { GraduationCap, Loader2, ShieldX } from "lucide-react";
+import { GraduationCap, Loader2, ShieldX, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import CreditManagerSidebar from "@/components/credit-manager/CreditManagerSidebar";
+import { DynamicSidebar } from "@/components/permissions/DynamicSidebar";
+import { PermissionProvider } from "@/components/permissions/PermissionProvider";
 
 type Gate = "checking" | "denied" | "ok";
 
@@ -88,11 +89,18 @@ export default function CreditManagerLayout({
   }
 
   return (
-    <div className="flex bg-muted/30 min-h-screen lg:h-screen lg:overflow-hidden">
-      <CreditManagerSidebar />
-      <main className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">
-        {children}
-      </main>
-    </div>
+    <PermissionProvider>
+      <div className="flex bg-muted/30 min-h-screen lg:h-screen lg:overflow-hidden">
+        <DynamicSidebar
+          portalBadge="CREDIT MANAGER"
+          portalTitle="Credit Manager Portal"
+          fallbackName="Unnati Credit Manager"
+          footerIcon={Landmark}
+        />
+        <main className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">
+          {children}
+        </main>
+      </div>
+    </PermissionProvider>
   );
 }
