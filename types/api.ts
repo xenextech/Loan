@@ -41,6 +41,8 @@ export interface AuthUser {
   id: string;
   email: string;
   fullName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   role: UserRole;
   isEmailVerified: boolean;
   createdAt: string;
@@ -48,7 +50,14 @@ export interface AuthUser {
 
 export interface LoginResponse {
   accessToken: string;
-  user: { id: string; email: string; fullName?: string | null; role: UserRole };
+  user: {
+    id: string;
+    email: string;
+    fullName?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    role: UserRole;
+  };
 }
 
 // ─── Enums (match backend Prisma enums exactly) ───────────────────────────────
@@ -60,6 +69,14 @@ export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 export type MaritalStatus = 'SINGLE' | 'MARRIED' | 'DIVORCED' | 'WIDOWED';
 export type Occupation = 'STUDENT' | 'EMPLOYED' | 'SELF_EMPLOYED' | 'UNEMPLOYED';
 export type FeeStructureMethod = 'DOCUMENT' | 'LINK' | 'MANUAL';
+export type ApprovalEntryStatus =
+  | 'PENDING'
+  | 'WAITING'
+  | 'UNDER_REVIEW'
+  | 'FIELD_VERIFIED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'SENT_BACK';
 export type DocumentType =
   | 'APPLICANT_PHOTO'
   | 'IDENTITY_FRONT'
@@ -95,6 +112,8 @@ export interface ParentVerification {
   bankAccountNumber?: string;
   salarySheetPublicUrl?: string;
   submittedAt?: string;
+  /** NID/PAN/salary-sheet uploads — only present on the Initiator's GET .../initiator response. */
+  documents?: ParentDocument[];
 }
 
 export type ParentDocumentType = 'NID' | 'PAN_ID' | 'SALARY_SHEET';
@@ -129,6 +148,23 @@ export interface ParentApplicationView {
   submittedAt?: string;
   verification?: ParentVerification;
   documents: ParentDocument[];
+}
+
+// ─── Student consent ──────────────────────────────────────────────────────────
+// Approver-authored terms & conditions, consented to from the student's own
+// logged-in dashboard (GET/POST /applications/:id/consent[/accept]) — no
+// anonymous link involved, so consent is backed by the same login every other
+// authenticated action in this app relies on.
+
+export interface StudentConsentRecord {
+  id: string;
+  applicationId: string;
+  termsText: string;
+  createdByUserId: string | null;
+  consentedAt: string | null;
+  consentedIp: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ─── College verification ────────────────────────────────────────────────────
@@ -210,6 +246,7 @@ export interface LoanApplication {
   email?: string;
   studyType?: StudyType;
   courseName?: string;
+  collegeName?: string;
   boardUniversity?: string;
   courseDuration?: number;
   loanAmount?: number;
@@ -242,6 +279,13 @@ export interface LoanApplication {
   feeManualAmount?: number;
   submittedAt?: string;
   reviewComment?: string;
+  // Present on the raw Prisma response (e.g. PATCH .../initiator) even
+  // though this type otherwise mirrors the student-facing apply flow — the
+  // Initiator's "Update"/"Submit" actions need to know whether a send-back
+  // targeted them, to auto-resubmit instead of leaving the application stuck.
+  stage?: import("./dashboard").ApplicationStage | null;
+  sentBackToStage?: import("./dashboard").ApplicationStage | null;
+  sentBackByApprover?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -285,6 +329,17 @@ export interface InitiatorFamilyMemberRecord {
   qualification?: string;
   relationshipWithBorrower?: string;
   occupationSocialInvolvement?: string;
+}
+
+export type FacilityStatus = 'PERFORMING' | 'OVERDUE' | 'NPA' | 'CLOSED';
+
+export interface InitiatorExistingFacilityRecord {
+  id: string;
+  facilityType?: string;
+  bank?: string;
+  sanctionedLimit?: number;
+  outstanding?: number;
+  status?: FacilityStatus;
 }
 
 export interface InitiatorPersonalGuaranteeRecord {
@@ -375,21 +430,29 @@ export interface InitiatorApplicationRecord {
   initiatorPost?: string | null;
   initiatorDate?: string | null;
   initiatorSignature?: string | null;
+  initiatorRemarks?: string | null;
+  initiatorStatus?: ApprovalEntryStatus | null;
   supporterUserId?: string | null;
   supporterName?: string | null;
   supporterPost?: string | null;
   supporterDate?: string | null;
   supporterSignature?: string | null;
+  supporterRemarks?: string | null;
+  supporterStatus?: ApprovalEntryStatus | null;
   checkerUserId?: string | null;
   checkerName?: string | null;
   checkerPost?: string | null;
   checkerDate?: string | null;
   checkerSignature?: string | null;
+  checkerRemarks?: string | null;
+  checkerStatus?: ApprovalEntryStatus | null;
   approverUserId?: string | null;
   approverName?: string | null;
   approverPost?: string | null;
   approverDate?: string | null;
   approverSignature?: string | null;
+  approverRemarks?: string | null;
+  approverStatus?: ApprovalEntryStatus | null;
 
   // ─── Compliance / risk flags ────────────────────────────────────────────────
   existingBankingRelationship?: string | null;
@@ -441,14 +504,17 @@ export interface InitiatorApplicationRecord {
   loanToValueRatio?: number;
   dsgir?: number;
   performanceYears?: number;
+  satisfactoryPerformance?: number;
   bankingRelationshipScore?: number;
   parentsBorrowingsWithBFIs?: string;
   sourceOfIncomeScore?: number;
+  sourceOfIncome?: string;
   operationOfInstitution?: number;
   creditRiskScoring?: string;
   riskGrade?: string;
   totalScore?: number;
   totalPercentage?: number;
+  collegeName?: string;
   // Applicant Background / This Facility
   facility?: string;
   purpose?: string;
@@ -459,6 +525,7 @@ export interface InitiatorApplicationRecord {
   fee?: number;
   remarks?: string;
   familyMember?: InitiatorFamilyMemberRecord[];
+  existingFacility?: InitiatorExistingFacilityRecord[];
   // Security
   securityDetails?: string;
   fmv?: number;

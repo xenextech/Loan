@@ -8,6 +8,7 @@ export const step1Schema = z.object({
   email: z.string().email("Enter a valid email address"),
   studyType: z.enum(["program", "course", "diploma", "certification"]),
   courseName: z.string().min(2, "Course name is required"),
+  collegeName: z.string().min(2, "College name is required"),
   boardUniversity: z.string().min(2, "Board or university name is required"),
   courseDuration: z.string().min(1, "Course duration is required"),
   loanAmount: z
@@ -20,6 +21,10 @@ export const step2Schema = z.object({
   identityType: z.enum(["citizenship", "passport", "driving_license", "document"]),
   identityNumber: z.string().min(3, "Identity number is required"),
   identityName: z.string().min(2, "Name as on document is required"),
+  // BS is the primary input (Nepal-only product) — dob (AD) is derived from
+  // it and never hand-entered, mirroring the Initiator's "New Application"
+  // form. Kept required since it's always auto-filled once dobBs is valid.
+  dobBs: z.string().min(1, "Date of birth (BS) is required"),
   dob: z.string().min(1, "Date of birth is required"),
   issuedDistrict: z.string().min(1, "Issued district is required"),
   issuedDate: z.string().min(1, "Issued date is required"),

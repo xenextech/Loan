@@ -1,6 +1,6 @@
 import { baseApi } from "./baseApi";
 import { toNumber, toOptionalNumber } from "@/lib/formatters";
-import type { PaginatedData } from "@/types/api";
+import type { PaginatedData, StudentConsentRecord } from "@/types/api";
 import type { InitiatorApplicationRecord } from "@/types/api";
 import type {
   DashboardOverview,
@@ -12,6 +12,7 @@ import type {
   CreditScoreResult,
   NrbChecklist,
   AuditLogRow,
+  SendStudentConsentResult,
   DisbursementPendingRow,
   DisbursementConditionRecord,
   ConfirmDisbursementBody,
@@ -91,6 +92,7 @@ const mapApplicationDetail = (record: InitiatorApplicationRecord): InitiatorAppl
   loanToValueRatio: toOptionalNumber(record.loanToValueRatio),
   dsgir: toOptionalNumber(record.dsgir),
   performanceYears: toOptionalNumber(record.performanceYears),
+  satisfactoryPerformance: toOptionalNumber(record.satisfactoryPerformance),
   bankingRelationshipScore: toOptionalNumber(record.bankingRelationshipScore),
   sourceOfIncomeScore: toOptionalNumber(record.sourceOfIncomeScore),
   operationOfInstitution: toOptionalNumber(record.operationOfInstitution),
@@ -131,12 +133,19 @@ const mapApplicationDetail = (record: InitiatorApplicationRecord): InitiatorAppl
 
 // A stage transition changes the application's own detail/summary/activity,
 // and can shift it in/out of the checker queue and the applications list.
+// Also invalidates "Application" — support()/check()/approve()/reject()/
+// sendBack() all stamp the approval chain's *Name/*Date/*Status columns onto
+// the same LoanApplication row that GET /applications/:id/initiator reads
+// (see useGetInitiatorApplicationDetailQuery, which feeds AssessmentSummary's
+// per-role status badges) — without this, that query stays cached with the
+// pre-action state and the badge never advances past Pending/Waiting.
 const approvalTransitionTags = (applicationId: string) => [
   { type: "Dashboard" as const, id: applicationId },
   { type: "Dashboard" as const, id: `approval-summary-${applicationId}` },
   { type: "Dashboard" as const, id: `approval-activity-${applicationId}` },
   { type: "Dashboard" as const, id: "applications-list" },
   { type: "Dashboard" as const, id: "overview" },
+  { type: "Application" as const, id: applicationId },
 ];
 
 const mapEmiEntry = (e: EmiScheduleEntryRecord): EmiScheduleEntryRecord => ({
@@ -267,12 +276,36 @@ export const dashboardApi = baseApi.injectEndpoints({
       providesTags: (_r, _e, { applicationId }) => [{ type: "Dashboard", id: `approval-activity-${applicationId}` }],
     }),
 
+    // Approver-authored terms & conditions sent to the student via magic link
+    // for their consent (see StudentConsentPanel).
+    getStudentConsent: builder.query<StudentConsentRecord | null, string>({
+      query: (applicationId) => `/dashboard/approval/${applicationId}/student-consent`,
+      providesTags: (_r, _e, applicationId) => [{ type: "Dashboard", id: `student-consent-${applicationId}` }],
+    }),
+    sendStudentConsent: builder.mutation<SendStudentConsentResult, { applicationId: string; termsText: string }>({
+      query: ({ applicationId, termsText }) => ({
+        url: `/dashboard/approval/${applicationId}/student-consent`,
+        method: "POST",
+        body: { termsText },
+      }),
+      invalidatesTags: (_r, _e, { applicationId }) => [{ type: "Dashboard", id: `student-consent-${applicationId}` }],
+    }),
+
     // Stage transitions — each is guarded server-side by role (support: SUPPORTER;
     // check: CREDIT_MANAGER/CHECKER; approve: APPROVER; reject/send-back: multiple
     // roles). The frontend role picker only decides which buttons are shown —
     // the backend still enforces the real permission from the JWT.
     supportApplication: builder.mutation<InitiatorApplicationRecord, string>({
       query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/support`, method: "POST" }),
+      transformResponse: mapApplicationDetail,
+      invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
+    }),
+    // Initiator-only — resumes an application sent back to them (the Initiator
+    // has no formal approval-chain stage otherwise). Lands on CHECKING
+    // (Approver-actionable) if the Approver themself sent it back, otherwise
+    // on SUPPORTED, same as a normal support().
+    resubmitApplication: builder.mutation<InitiatorApplicationRecord, string>({
+      query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/resubmit`, method: "POST" }),
       transformResponse: mapApplicationDetail,
       invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
     }),
@@ -657,7 +690,10 @@ export const {
   useGetApprovalCreditScoreQuery,
   useGetApprovalNrbChecklistQuery,
   useGetApprovalActivityQuery,
+  useGetStudentConsentQuery,
+  useSendStudentConsentMutation,
   useSupportApplicationMutation,
+  useResubmitApplicationMutation,
   useCheckApplicationMutation,
   useApproveApplicationMutation,
   useRejectApplicationMutation,

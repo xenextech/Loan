@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { clearCredentials } from "@/lib/store/authSlice";
+import { performLogout } from "@/lib/auth/authActions";
 import {
   GraduationCap,
   LayoutDashboard,
@@ -100,9 +100,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAppSelector((s) => s.auth.user);
 
   const handleSignOut = () => {
-    dispatch(clearCredentials());
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
+    performLogout(dispatch);
     router.push("/login");
   };
 

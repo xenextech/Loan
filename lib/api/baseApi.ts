@@ -29,6 +29,12 @@ const baseQueryWithUnwrap: BaseQueryFn<
   if (result.error) {
     if (result.error.status === 401) {
       api.dispatch(clearCredentials());
+      // Also wipe every cached query response (permissions/menu, dashboard
+      // data, …) — not just the auth slice — so a different role logging in
+      // right after never sees a stale cached result from this session.
+      // Dispatched as a raw action (not `baseApi.util.resetApiState()`) to
+      // avoid a circular import: this file IS baseApi, still being defined.
+      api.dispatch({ type: "api/resetApiState" });
       // clearCredentials only resets Redux state — the route gates (e.g.
       // app/initiator/layout.tsx) read localStorage directly and only on mount,
       // so a stale token there would otherwise keep the app "logged in" while
@@ -70,6 +76,11 @@ export const baseApi = createApi({
     "GeneratedAgreement",
     "CollectionActivity",
     "DocumentVault",
+    "Permission",
+    "Role",
+    "RolePermission",
+    "RoleMenu",
+    "RoleWidget",
   ],
   endpoints: () => ({}),
 });

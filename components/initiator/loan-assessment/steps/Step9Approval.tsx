@@ -16,6 +16,15 @@ const ROLE_LABELS: Record<ApprovalRole, string> = {
   APPROVER: "Approver",
 };
 
+// Label for each card's name field — kept distinct from ROLE_LABELS (the card
+// header) so each role reads its own name back, not a generic "Approver Name".
+const NAME_FIELD_LABELS: Record<ApprovalRole, string> = {
+  INITIATOR: "Initiator Name",
+  SUPPORT: "Support Name",
+  CHECKER: "Checker Name",
+  APPROVER: "Approver Name",
+};
+
 const ROLE_KEY: Record<ApprovalRole, "initiator" | "support" | "checker" | "approver"> = {
   INITIATOR: "initiator",
   SUPPORT: "support",
@@ -139,11 +148,20 @@ export function Step9Approval({ currentUserRole, currentUserName }: Step9Approva
                 key={role}
                 role={role}
                 roleLabel={ROLE_LABELS[role]}
+                nameLabel={NAME_FIELD_LABELS[role]}
                 status={entry.status}
                 approverName={entry.approverName}
                 approvedDate={entry.approvedDate}
                 remarks={entry.remarks}
                 signature={entry.signature}
+                {...(role === "INITIATOR" && {
+                  branchName: approval?.initiator?.branchName,
+                  designation: approval?.initiator?.designation,
+                  onBranchNameChange: (value: string) =>
+                    setValue("approval.initiator.branchName", value, { shouldDirty: true }),
+                  onDesignationChange: (value: string) =>
+                    setValue("approval.initiator.designation", value, { shouldDirty: true }),
+                })}
                 isCurrentUserRole={role === resolvedRole}
                 isUnlocked={isUnlocked(role)}
                 waitingMessage={waitingMessage(role)}

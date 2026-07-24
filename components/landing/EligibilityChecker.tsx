@@ -15,6 +15,8 @@ import { Input }    from "@/components/ui/input";
 import { Label }    from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button }   from "@/components/ui/button";
+import { BsDatePicker } from "@/components/ui/bs-date-picker";
+import { convertBsToAdString } from "@/lib/bsDate";
 import Image from "next/image";
 
 /* ─── Form types & constants ─────────────────────────────────────────────── */
@@ -113,8 +115,16 @@ export function EligibilityForm({ onDone }: { onDone: () => void }) {
   const [confirmed, setConfirmed] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // BS is the primary input; AD is derived and never hand-entered — mirrors
+  // the apply flow's Step2Identity dobBs -> dob handling, so the two dates
+  // can never disagree. Derived directly in the same state update rather
+  // than a separate effect, since it's a pure function of the new value.
   const update = (key: FormKey, value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) =>
+      key === "dobBS"
+        ? { ...prev, dobBS: value, dobAD: convertBsToAdString(value) ?? "" }
+        : { ...prev, [key]: value },
+    );
 
   const handleLoanType = (value: string) =>
     setForm((prev) => ({ ...prev, loanType: value, interestRate: RATES[value] ?? "" }));
@@ -328,14 +338,21 @@ export function EligibilityForm({ onDone }: { onDone: () => void }) {
 
           {/* Row 2 */}
           {field("lastName", "Last Name",   true, textInput("lastName", "Last Name"))}
-          {field("dobAD",    "DOB (AD)",    true, textInput("dobAD",    "mm/dd/yyyy", "date"))}
           {field("dobBS",    "DOB (BS)",    true,
-            <Input
+            <BsDatePicker
               id="dobBS"
               value={form.dobBS}
-              onChange={(e) => update("dobBS", e.target.value)}
-              placeholder="YYYY-MM-DD (BS)"
-              className="h-10 border-zinc-200 rounded-lg text-sm placeholder:text-zinc-400"
+              onChange={(v) => update("dobBS", v)}
+              className="h-10 border-zinc-200 rounded-lg text-sm"
+            />
+          )}
+          {field("dobAD",    "DOB (AD)",    true,
+            <Input
+              id="dobAD"
+              value={form.dobAD}
+              readOnly
+              placeholder="Auto-filled from BS date"
+              className="h-10 border-zinc-200 rounded-lg text-sm bg-zinc-50 text-zinc-500 placeholder:text-zinc-400"
             />
           )}
 

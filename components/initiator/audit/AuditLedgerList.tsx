@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/table";
 import { Inbox, Download, Plus, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, displayName } from "@/lib/formatters";
 import { useGetAuditLogQuery, useLazyExportAuditCsvQuery } from "@/lib/api/dashboardApi";
 import type { AuditCategory } from "@/types/dashboard";
 
@@ -134,7 +134,7 @@ export function AuditLedgerList() {
                       <TableRow key={entry.id} className="border-border">
                         <TableCell className="pl-5 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDate(entry.createdAt)}</TableCell>
                         <TableCell className="py-3">
-                          <p className="text-sm font-medium text-foreground leading-tight">{entry.user?.email ?? "System"}</p>
+                          <p className="text-sm font-medium text-foreground leading-tight">{displayName(entry.user, "System")}</p>
                           <p className="text-[11px] text-muted-foreground">{entry.user?.role ?? "—"}</p>
                         </TableCell>
                         <TableCell className="py-3 hidden sm:table-cell">

@@ -85,16 +85,43 @@ export const PARENTS_BORROWINGS_WITH_BFIS_OPTIONS = [
   { value: "OTHER_BFIS", label: "Borrowing from Multiple Other BFIs" },
 ] as const;
 
+// Matches backend RiskCategory exactly (creditScore/constant/credit-parameters.constant.ts) —
+// the same categories the credit-scoring engine itself writes into this field
+// after a score calculation; picking one here overrides that computed value.
+export const CREDIT_RISK_SCORING_OPTIONS = [
+  { value: "LOW_RISK", label: "Low" },
+  { value: "MODERATE_RISK", label: "Moderate" },
+  { value: "MEDIUM_RISK", label: "Medium" },
+  { value: "MEDIUM_HIGH_RISK", label: "Medium-High" },
+  { value: "UNGRADED", label: "Ungraded" },
+] as const;
+
+// Matches backend SourceOfIncome exactly (credit-score.enum.ts) — one of the
+// six scoring parameters CREDIT_PARAMETERS actually weighs (weight 1); do not
+// confuse with sourceOfIncomeScore below, which the scoring engine ignores.
+export const SOURCE_OF_INCOME_OPTIONS = [
+  { value: "FIXED", label: "Fixed Income" },
+  { value: "SALARY_RENT_BUSINESS", label: "Salary / Rent / Business" },
+  { value: "MIXED", label: "Mixed Income" },
+] as const;
+
 export const creditAssessmentSchema = z.object({
   creditLimit: optionalNumber,
   loanToValueRatio: optionalNumber,
   dsgir: optionalNumber,
   performanceYears: optionalNumber,
+  // Years of satisfactory performance with the institution — the actual
+  // CREDIT_PARAMETERS.satisfactoryPerformance scoring input (weight 1).
+  // Distinct from performanceYears above, which the scoring engine ignores.
+  satisfactoryPerformance: optionalNumber,
   bankingRelationshipScore: optionalNumber,
   parentsBorrowingsWithBFIs: z.enum(["US", "OTHER_BFI", "OTHER_BFIS"]).optional().or(z.literal("")),
   sourceOfIncomeScore: optionalNumber,
+  // The categorical CREDIT_PARAMETERS.sourceOfIncome scoring input (weight 1).
+  // Distinct from sourceOfIncomeScore above, which the scoring engine ignores.
+  sourceOfIncome: z.enum(["FIXED", "SALARY_RENT_BUSINESS", "MIXED"]).optional().or(z.literal("")),
   operationOfInstitution: optionalNumber,
-  creditRiskScoring: optionalText(120),
+  creditRiskScoring: z.enum(["LOW_RISK", "MODERATE_RISK", "MEDIUM_RISK", "MEDIUM_HIGH_RISK", "UNGRADED"]).optional().or(z.literal("")),
   riskGrade: optionalText(60),
   totalScore: optionalNumber,
   totalPercentage: optionalNumber,
@@ -110,13 +137,20 @@ export const familyMemberSchema = z.object({
   occupationSocialInvolvement: optionalText(120),
 });
 
-/** No backend field exists for tracking facilities held at other banks — local-draft only. */
+// Matches backend FacilityStatus exactly (see schema.prisma's ExistingFacility model).
+export const FACILITY_STATUS_OPTIONS = [
+  { value: "PERFORMING", label: "Performing" },
+  { value: "OVERDUE", label: "Overdue" },
+  { value: "NPA", label: "NPA" },
+  { value: "CLOSED", label: "Closed" },
+] as const;
+
 export const existingFacilitySchema = z.object({
   facilityType: optionalText(120),
   bank: optionalText(120),
   sanctionedLimit: optionalNumber,
   outstanding: optionalNumber,
-  status: optionalText(60),
+  status: z.enum(["PERFORMING", "OVERDUE", "NPA", "CLOSED"]).optional().or(z.literal("")),
 });
 
 export const applicantBackgroundSchema = z.object({
@@ -202,8 +236,17 @@ export const recommendationSchema = z.object({
 });
 
 // ─── Step 9 — Approval ──────────────────────────────────────────────────────
-// No backend field exists yet for the approval chain (name/date/signature per
-// role) — this section stays local-draft only until the API supports it.
+// Persisted via PATCH .../initiator's `approval` field — see
+// ApplicationInitiatorService.buildApprovalUpdate() on the backend.
+
+export const DESIGNATION_OPTIONS = [
+  "Branch Manager",
+  "Assistant Branch Manager",
+  "Credit Officer",
+  "Relationship Manager",
+  "Loan Officer",
+  "Operations Manager",
+] as const;
 
 export const approvalStatusSchema = z.enum([
   "PENDING",
@@ -224,8 +267,15 @@ export const approvalEntrySchema = z.object({
   signature: optionalText(120),
 });
 
+// Only the Initiator's card collects Branch Name / Designation — the other
+// three roles use the plain approvalEntrySchema.
+export const initiatorApprovalEntrySchema = approvalEntrySchema.extend({
+  branchName: optionalText(120),
+  designation: optionalText(60),
+});
+
 export const approvalSchema = z.object({
-  initiator: approvalEntrySchema,
+  initiator: initiatorApprovalEntrySchema,
   support: approvalEntrySchema,
   checker: approvalEntrySchema,
   approver: approvalEntrySchema,

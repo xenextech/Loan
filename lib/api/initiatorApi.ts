@@ -70,6 +70,31 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
   const rc = ir.repaymentCapacity;
   const r = values.riskAssessment;
   const rec = values.recommendation;
+  const ap = values.approval;
+
+  const buildApprovalEntry = (entry: LoanAssessmentFormValues["approval"]["support"]) => ({
+    approverName: entry.approverName || undefined,
+    status: entry.status || undefined,
+    approvedDate: toISODateTime(entry.approvedDate),
+    remarks: entry.remarks || undefined,
+    signature: entry.signature || undefined,
+  });
+
+  const initiatorEntry = {
+    ...buildApprovalEntry(ap.initiator),
+    branchName: ap.initiator.branchName || undefined,
+    designation: ap.initiator.designation || undefined,
+  };
+  const supportEntry = buildApprovalEntry(ap.support);
+  const checkerEntry = buildApprovalEntry(ap.checker);
+  const approverEntry = buildApprovalEntry(ap.approver);
+
+  const approval = {
+    ...(hasAnyValue(initiatorEntry) && { initiator: initiatorEntry }),
+    ...(hasAnyValue(supportEntry) && { support: supportEntry }),
+    ...(hasAnyValue(checkerEntry) && { checker: checkerEntry }),
+    ...(hasAnyValue(approverEntry) && { approver: approverEntry }),
+  };
 
   const familyMembers = (bg.familyMembers ?? [])
     .filter((m) => hasAnyValue(m))
@@ -79,6 +104,16 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
       qualification: m.qualification || undefined,
       relationshipWithBorrower: m.relationshipWithBorrower || undefined,
       occupationSocialInvolvement: m.occupationSocialInvolvement || undefined,
+    }));
+
+  const existingFacilities = (bg.existingFacilities ?? [])
+    .filter((f) => hasAnyValue(f))
+    .map((f) => ({
+      facilityType: f.facilityType || undefined,
+      bank: f.bank || undefined,
+      sanctionedLimit: toNumber(f.sanctionedLimit),
+      outstanding: toNumber(f.outstanding),
+      status: f.status || undefined,
     }));
 
   const personalGuarantee = {
@@ -142,9 +177,11 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
     loanToValueRatio: toNumber(c.loanToValueRatio),
     dsgir: toNumber(c.dsgir),
     performanceYears: toNumber(c.performanceYears),
+    satisfactoryPerformance: toNumber(c.satisfactoryPerformance),
     bankingRelationshipScore: toNumber(c.bankingRelationshipScore),
     parentsBorrowingsWithBFIs: c.parentsBorrowingsWithBFIs || undefined,
     sourceOfIncomeScore: toNumber(c.sourceOfIncomeScore),
+    sourceOfIncome: c.sourceOfIncome || undefined,
     operationOfInstitution: toNumber(c.operationOfInstitution),
     creditRiskScoring: c.creditRiskScoring || undefined,
     riskGrade: c.riskGrade || undefined,
@@ -160,6 +197,7 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
     fee: toNumber(bg.fee),
     remarks: bg.remarks || undefined,
     ...(familyMembers.length > 0 && { familyMembers }),
+    ...(existingFacilities.length > 0 && { existingFacilities }),
 
     // 5. Security
     securityDetails: s.securityDetails || undefined,
@@ -191,6 +229,9 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
     disbursementSection: rec.disbursementSection || undefined,
     utilizationOfFund: rec.utilizationOfFund || undefined,
     conclusionAndRecommendation: rec.conclusionAndRecommendation || undefined,
+
+    // 18. Approval Chain
+    ...(Object.keys(approval).length > 0 && { approval }),
   };
 };
 

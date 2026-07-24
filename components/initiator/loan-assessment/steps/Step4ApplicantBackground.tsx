@@ -6,7 +6,9 @@ import { SectionCard, FormSection } from "../ui/SectionCard";
 import { RepeatableTable, type RepeatableTableColumn } from "../ui/RepeatableTable";
 import { TextField } from "../fields/TextField";
 import { NumberField } from "../fields/NumberField";
+import { SelectField } from "../fields/SelectField";
 import { TextareaField } from "../fields/TextareaField";
+import { FACILITY_STATUS_OPTIONS } from "../schema";
 import type { LoanAssessmentFormValues } from "../schema";
 
 export function Step4ApplicantBackground() {
@@ -28,7 +30,13 @@ export function Step4ApplicantBackground() {
     { key: "bank", header: "Bank / BFI", render: (i) => <TextField name={`applicantBackground.existingFacilities.${i}.bank`} label="" placeholder="Institution" /> },
     { key: "sanctionedLimit", header: "Sanctioned Limit", render: (i) => <NumberField name={`applicantBackground.existingFacilities.${i}.sanctionedLimit`} label="" /> },
     { key: "outstanding", header: "Outstanding", render: (i) => <NumberField name={`applicantBackground.existingFacilities.${i}.outstanding`} label="" /> },
-    { key: "status", header: "Status", render: (i) => <TextField name={`applicantBackground.existingFacilities.${i}.status`} label="" placeholder="e.g. Performing" /> },
+    {
+      key: "status",
+      header: "Status",
+      render: (i) => (
+        <SelectField name={`applicantBackground.existingFacilities.${i}.status`} label="" options={FACILITY_STATUS_OPTIONS} />
+      ),
+    },
   ];
 
   return (
@@ -68,12 +76,20 @@ export function Step4ApplicantBackground() {
 
       <SectionCard
         title="Existing Facilities"
-        description="Other credit facilities currently held by the applicant or household at other banks/BFIs. Not saved to the backend yet — kept as a local reference only."
+        description="Other credit facilities currently held by the applicant or household at other banks/BFIs."
       >
         <RepeatableTable
           columns={facilityColumns}
           rowCount={existingFacilities.fields.length}
-          onAdd={() => existingFacilities.append({ facilityType: "", bank: "", sanctionedLimit: undefined, outstanding: undefined, status: "" })}
+          onAdd={() =>
+            existingFacilities.append({
+              facilityType: "",
+              bank: "",
+              sanctionedLimit: undefined,
+              outstanding: undefined,
+              status: "PERFORMING",
+            })
+          }
           onRemove={existingFacilities.remove}
           addLabel="Add Facility"
           emptyLabel="No existing facilities recorded."

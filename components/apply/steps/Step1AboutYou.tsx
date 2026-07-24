@@ -61,6 +61,7 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
       email: "",
       studyType: undefined,
       courseName: "",
+      collegeName: "",
       boardUniversity: "",
       courseDuration: "",
       loanAmount: 100000,
@@ -190,6 +191,19 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
                   <FormLabel>Course / Program Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Bachelor of Computer Engineering" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="collegeName"
+              render={({ field }) => (
+                <FormItem className="sm:col-span-2">
+                  <FormLabel>College Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Kathmandu College of Management" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

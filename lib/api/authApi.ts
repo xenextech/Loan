@@ -4,7 +4,10 @@ import type { LoginResponse, AuthUser } from "@/types/api";
 export const authApi = baseApi.injectEndpoints({
   overrideExisting: process.env.NODE_ENV === 'development',
   endpoints: (builder) => ({
-    register: builder.mutation<{ message: string }, { email: string; password: string }>({
+    register: builder.mutation<
+      { message: string },
+      { firstName: string; lastName: string; email: string; password: string }
+    >({
       query: (body) => ({ url: "/auth/register", method: "POST", body }),
     }),
 

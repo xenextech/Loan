@@ -13,6 +13,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { AdDatePicker } from "@/components/ui/ad-date-picker";
+import { BsDatePicker } from "@/components/ui/bs-date-picker";
+import { convertBsToAdString } from "@/lib/bsDate";
 import {
   Select,
   SelectContent,
@@ -33,9 +36,13 @@ import {
   MapPin,
   User2,
 } from "lucide-react";
-import { useUploadDocumentMutation } from "@/lib/api/documentsApi";
+import {
+  useUploadDocumentMutation,
+  useGetDocumentsQuery,
+  useDeleteDocumentMutation,
+} from "@/lib/api/documentsApi";
 import { useAppSelector } from "@/lib/hooks";
-import type { DocumentType } from "@/types/api";
+import type { Document, DocumentType } from "@/types/api";
 
 interface Step2Props {
   defaultValues?: Partial<Step2FormData>;
@@ -91,6 +98,14 @@ export default function Step2Identity({
 }: Step2Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
+  const [deleteDocument, { isLoading: isDeleting }] =
+    useDeleteDocumentMutation();
+  const { data: documents } = useGetDocumentsQuery(applicationId ?? "", {
+    skip: !applicationId,
+  });
+
+  const docFor = (documentType: DocumentType): Document | undefined =>
+    documents?.find((d) => d.documentType === documentType);
 
   const uploadFile = async (file: File, documentType: DocumentType) => {
     if (!applicationId) {
@@ -107,12 +122,25 @@ export default function Step2Identity({
     }
   };
 
+  const removeUploadedFile = async (documentType: DocumentType) => {
+    const doc = docFor(documentType);
+    if (!applicationId || !doc) return;
+    try {
+      await deleteDocument({ applicationId, documentId: doc.id }).unwrap();
+    } catch {
+      toast.error(
+        `Failed to remove ${documentType.replace(/_/g, " ").toLowerCase()}`,
+      );
+    }
+  };
+
   const form = useForm<Step2FormData>({
     resolver: zodResolver(step2Schema),
     defaultValues: {
       identityType: undefined,
       identityNumber: "",
       identityName: "",
+      dobBs: "",
       dob: "",
       issuedDistrict: "",
       issuedDate: "",
@@ -127,12 +155,23 @@ export default function Step2Identity({
   });
 
   const identityType = form.watch("identityType");
+  const dobBs = form.watch("dobBs");
   const watchedValues = form.watch();
 
   useEffect(() => {
     onDataChange?.(watchedValues);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(watchedValues)]);
+
+  // BS is the primary input; AD is derived and never hand-entered — mirrors
+  // NewApplicationDetailsForm's dobBs -> dobAd handling exactly, so the two
+  // can never disagree and trip the backend's "dobAd and dobBs do not refer
+  // to the same calendar date" check.
+  useEffect(() => {
+    const derived = typeof dobBs === "string" ? convertBsToAdString(dobBs) : undefined;
+    form.setValue("dob", derived ?? "", { shouldValidate: false, shouldDirty: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dobBs]);
 
   const handleIdentityFront = (file: File | null) => {
     if (file) uploadFile(file, "IDENTITY_FRONT");
@@ -156,6 +195,21 @@ export default function Step2Identity({
     driving_license: "Driving License",
     document: "Identity Document",
   };
+
+  const toExisting = (doc: Document | undefined) =>
+    doc
+      ? {
+          name: doc.originalFileName,
+          url: doc.publicUrl,
+          mimeType: doc.mimeType,
+          sizeKB: doc.size / 1024,
+        }
+      : null;
+
+  const identityFrontDoc = toExisting(docFor("IDENTITY_FRONT"));
+  const identityBackDoc = toExisting(docFor("IDENTITY_BACK"));
+  const identityDocumentDoc = toExisting(docFor("IDENTITY_DOCUMENT"));
+  const applicantPhotoDoc = toExisting(docFor("APPLICANT_PHOTO"));
 
   return (
     <Form {...form}>
@@ -251,12 +305,18 @@ export default function Step2Identity({
                     hint="Image or PDF of the front side"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     onFileSelect={handleIdentityFront}
+                    existingFile={identityFrontDoc}
+                    onRemoveExisting={() => removeUploadedFile("IDENTITY_FRONT")}
+                    isRemoving={isDeleting}
                   />
                   <FileUploadZone
                     label="Back Side"
                     hint="Image or PDF of the back side"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
                     onFileSelect={handleIdentityBack}
+                    existingFile={identityBackDoc}
+                    onRemoveExisting={() => removeUploadedFile("IDENTITY_BACK")}
+                    isRemoving={isDeleting}
                   />
                 </div>
 
@@ -268,6 +328,9 @@ export default function Step2Identity({
                   maxSizeMB={5}
                   variant="document"
                   onFileSelect={handleIdentityDocument}
+                  existingFile={identityDocumentDoc}
+                  onRemoveExisting={() => removeUploadedFile("IDENTITY_DOCUMENT")}
+                  isRemoving={isDeleting}
                 />
               </motion.div>
             )}
@@ -289,7 +352,20 @@ export default function Step2Identity({
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Full Name (as on document)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Auto-filled from document" {...field} />
+                    <Input placeholder="Enter Full Name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="dobBs"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date of Birth (BS)</FormLabel>
+                  <FormControl>
+                    <BsDatePicker value={field.value} onChange={field.onChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -300,9 +376,14 @@ export default function Step2Identity({
               name="dob"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date of Birth</FormLabel>
+                  <FormLabel>Date of Birth (AD)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input
+                      placeholder="Auto-filled from BS date"
+                      readOnly
+                      className="bg-muted text-muted-foreground"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -341,7 +422,7 @@ export default function Step2Identity({
                 <FormItem>
                   <FormLabel>Issued Date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <AdDatePicker value={field.value} onChange={field.onChange} placeholder="YYYY-MM-DD" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -494,6 +575,9 @@ export default function Step2Identity({
                 accept="image/jpeg,image/png"
                 variant="photo"
                 onFileSelect={handleApplicantPhoto}
+                existingFile={applicantPhotoDoc}
+                onRemoveExisting={() => removeUploadedFile("APPLICANT_PHOTO")}
+                isRemoving={isDeleting}
               />
             </div>
           </div>

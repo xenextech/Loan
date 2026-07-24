@@ -3,10 +3,11 @@ import { useEffect, useRef } from "react";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import { store } from "@/lib/store/index";
-import type { RootState } from "@/lib/store/index";
-import { rehydrateAuth, clearCredentials } from "@/lib/store/authSlice";
+import type { RootState, AppDispatch } from "@/lib/store/index";
+import { rehydrateAuth } from "@/lib/store/authSlice";
 import type { AuthUser } from "@/lib/store/authSlice";
 import { getTokenExpiryMs } from "@/lib/auth/tokenExpiry";
+import { performLogout } from "@/lib/auth/authActions";
 
 function AuthRehydrator() {
   useEffect(() => {
@@ -53,7 +54,7 @@ function scheduleAt(timestampMs: number, callback: () => void): () => void {
 // waiting for them to hit an API call that 401s (baseApi.ts handles that case).
 function SessionWatcher() {
   const token = useSelector((s: RootState) => s.auth.token);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
     if (!token) return;
@@ -62,9 +63,7 @@ function SessionWatcher() {
     if (expiryMs === null) return;
 
     const logout = () => {
-      dispatch(clearCredentials());
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("auth_user");
+      performLogout(dispatch);
       if (window.location.pathname !== "/login") {
         toast.error("Session expired", {
           description: "Please log in again to continue.",

@@ -3,18 +3,20 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, FileText, XCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, FileText, XCircle, CheckCircle2, Undo2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/formatters";
+import { formatDate, displayName } from "@/lib/formatters";
 import {
   useGetDashboardApplicationDetailQuery,
   useGetApprovalSummaryQuery,
   useGetApprovalCreditScoreQuery,
   useGetApprovalNrbChecklistQuery,
   useGetApprovalActivityQuery,
+  useResubmitApplicationMutation,
 } from "@/lib/api/dashboardApi";
 import { useGetInitiatorApplicationDetailQuery } from "@/lib/api/initiatorApi";
 import { useDashboardBasePath } from "@/lib/useDashboardBasePath";
@@ -45,10 +47,14 @@ function SummaryRow({ label, value, success }: { label: string; value: React.Rea
 }
 
 /**
- * Read-only by design — the Initiator's own role has no stage-transition
- * permission on the backend (support/check/approve/reject/send-back are all
- * gated to Supporter/Checker/Credit Manager/Approver only). This screen shows
- * everything the Initiator needs to review, with no action buttons.
+ * Read-only for the Initiator's own role — support/check/approve/reject/
+ * send-back are all gated to Supporter/Checker/Credit Manager/Approver only.
+ * The one exception is `resubmit`: when a send-back targets the Initiator
+ * specifically (`sentBackToStage === "INITIATED"`), nothing else advances
+ * the stage — the Initiator has no *Status column in the approval chain —
+ * so a "Resubmit for Review" action is shown in that case only, and it
+ * routes straight back to the Approver (skipping Supporter/Checker) if the
+ * Approver was the one who sent it back.
  */
 export function ApprovalWorkflowDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -60,8 +66,27 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
   const { data: checklist, isLoading: checklistLoading } = useGetApprovalNrbChecklistQuery(id);
   const { data: activity, isLoading: activityLoading } = useGetApprovalActivityQuery({ applicationId: id, page: 1, limit: 15 });
   const { data: initiatorDetail } = useGetInitiatorApplicationDetailQuery(id, { skip: !id });
+  const [resubmitApplication, { isLoading: resubmitting }] = useResubmitApplicationMutation();
 
   const isLoading = appLoading || summaryLoading || scoreLoading || checklistLoading;
+
+  const handleResubmit = async () => {
+    try {
+      const result = await resubmitApplication(id).unwrap();
+      toast.success("Resubmitted", {
+        description:
+          result.stage === "CHECKING"
+            ? "Sent back by the Approver — returned directly to them, skipping the Supporter and Checker."
+            : "Moved to the Supporter queue.",
+      });
+    } catch (err) {
+      const message =
+        err && typeof err === "object" && "data" in err && err.data && typeof err.data === "object" && "message" in err.data
+          ? String((err.data as { message?: unknown }).message)
+          : "Please try again.";
+      toast.error("Failed to resubmit", { description: message });
+    }
+  };
 
   const currentStage = application?.stage ?? null;
   const displayStage = useMemo(() => resolveDisplayStage(currentStage, application?.sentBackToStage), [currentStage, application?.sentBackToStage]);
@@ -141,6 +166,17 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
           </p>
           <p className="text-sm text-foreground">{application.sentBackReason ?? "No reason recorded."}</p>
           {application.sentBackAt && <p className="text-[11px] text-muted-foreground mt-1">{formatDate(application.sentBackAt)}</p>}
+          {application.sentBackToStage === "INITIATED" && (
+            <div className="mt-3 pt-3 border-t border-[var(--warning)]/20">
+              <p className="text-xs text-muted-foreground mb-2">
+                Once you&apos;ve made the necessary corrections, resubmit to continue the approval chain.
+              </p>
+              <Button size="sm" className="gap-1.5" disabled={resubmitting} onClick={handleResubmit}>
+                {resubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Undo2 className="w-3.5 h-3.5" />}
+                Resubmit for Review
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -215,7 +251,7 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
                     <Badge className="border-0 text-[10px] font-semibold mr-1.5 align-middle bg-muted text-muted-foreground">
                       {event.category}
                     </Badge>
-                    <span className="font-semibold">{event.user?.email ?? "System"}</span> — {event.action.replaceAll("_", " ").toLowerCase()}
+                    <span className="font-semibold">{displayName(event.user, "System")}</span> — {event.action.replaceAll("_", " ").toLowerCase()}
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{formatDate(event.createdAt)}</p>
                 </div>

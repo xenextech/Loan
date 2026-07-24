@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Undo2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { displayName } from "@/lib/formatters";
 import { useAppSelector } from "@/lib/hooks";
 import { useSupportApplicationMutation, useSendBackApplicationMutation, useGetApprovalSummaryQuery } from "@/lib/api/dashboardApi";
 import { RoleApprovalCard } from "@/components/initiator/approval/RoleApprovalCard";
@@ -49,7 +50,8 @@ function getApiErrorMessage(err: unknown): string | undefined {
  */
 export function SupporterApprovalActions({ applicationId, stage }: { applicationId: string; stage: ApplicationStage | null }) {
   const router = useRouter();
-  const userEmail = useAppSelector((s) => s.auth.user?.email);
+  const currentUser = useAppSelector((s) => s.auth.user);
+  const userDisplayName = displayName(currentUser, "your account");
   const [attestationName, setAttestationName] = useState("");
   const [sendBackOpen, setSendBackOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -67,8 +69,16 @@ export function SupporterApprovalActions({ applicationId, stage }: { application
 
   const handleSupport = async () => {
     try {
-      await supportApplication(applicationId).unwrap();
-      toast.success("Application supported", { description: "Moved to the Checker/Credit Manager queue." });
+      const result = await supportApplication(applicationId).unwrap();
+      // Approver-originated send-backs skip straight back to CHECKING
+      // (Approver-actionable) instead of the normal SUPPORTED stage — see
+      // DashboardApprovalService.support()'s sentBackByApprover shortcut.
+      toast.success("Application supported", {
+        description:
+          result.stage === "CHECKING"
+            ? "Sent back by the Approver — returned directly to them, skipping the Checker."
+            : "Moved to the Checker/Credit Manager queue.",
+      });
       setSupportOpen(false);
       router.push("/supporter");
     } catch (err) {
@@ -120,7 +130,7 @@ export function SupporterApprovalActions({ applicationId, stage }: { application
           </Button>
         </div>
         {!isSigned && (
-          <p className="text-[11px] text-muted-foreground/70">Type your name above ({userEmail ?? "your account"}) to enable these actions.</p>
+          <p className="text-[11px] text-muted-foreground/70">Type your name above ({userDisplayName}) to enable these actions.</p>
         )}
       </RoleApprovalCard>
 

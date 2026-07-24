@@ -1,14 +1,22 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Lock, ShieldCheck, User2 } from "lucide-react";
+import { Building2, Lock, ShieldCheck, User2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { ApprovalRole, ApprovalStatus } from "../types";
 import { TERMINAL_APPROVAL_STATUSES } from "../types";
+import { DESIGNATION_OPTIONS } from "../schema";
 import { ApprovalStatusBadge, APPROVAL_STATUS_CONFIG } from "./StatusBadge";
 import { SignaturePlaceholder } from "./SignaturePlaceholder";
 
@@ -23,11 +31,18 @@ export interface ApprovalAction {
 interface ApprovalCardProps {
   role: ApprovalRole;
   roleLabel: string;
+  /** Label for the name field — role-specific ("Initiator Name", "Approver Name", etc). */
+  nameLabel: string;
   status: ApprovalStatus;
   approverName?: string;
   approvedDate?: string;
   remarks?: string;
   signature?: string;
+  /** Only the Initiator's card collects these — undefined/no handlers on the other three roles. */
+  branchName?: string;
+  designation?: string;
+  onBranchNameChange?: (value: string) => void;
+  onDesignationChange?: (value: string) => void;
   /** This is the approval card belonging to the logged-in user. */
   isCurrentUserRole: boolean;
   /** Sequential gate: true once every prior role in the chain has approved. */
@@ -43,11 +58,16 @@ interface ApprovalCardProps {
 export function ApprovalCard({
   role,
   roleLabel,
+  nameLabel,
   status,
   approverName,
   approvedDate,
   remarks,
   signature,
+  branchName,
+  designation,
+  onBranchNameChange,
+  onDesignationChange,
   isCurrentUserRole,
   isUnlocked,
   waitingMessage,
@@ -56,6 +76,7 @@ export function ApprovalCard({
   onSignatureChange,
   onAction,
 }: ApprovalCardProps) {
+  const showBranchDesignation = onBranchNameChange !== undefined || onDesignationChange !== undefined;
   const isDecided = TERMINAL_APPROVAL_STATUSES.includes(status);
   const isEditable = isCurrentUserRole && isUnlocked && !isDecided;
   const isDisabledCard = !isCurrentUserRole || !isUnlocked;
@@ -102,7 +123,7 @@ export function ApprovalCard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <User2 className="w-3 h-3" /> Approver Name
+              <User2 className="w-3 h-3" /> {nameLabel}
             </Label>
             <Input value={approverName ?? ""} disabled className="h-8 bg-muted/40" readOnly />
           </div>
@@ -111,6 +132,42 @@ export function ApprovalCard({
             <Input value={approvedDate ?? ""} disabled className="h-8 bg-muted/40" readOnly placeholder="Not yet approved" />
           </div>
         </div>
+
+        {showBranchDesignation && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <Building2 className="w-3 h-3" /> Branch Name
+              </Label>
+              <Input
+                value={branchName ?? ""}
+                onChange={(e) => onBranchNameChange?.(e.target.value)}
+                disabled={!isEditable}
+                placeholder={isEditable ? "e.g. Kathmandu Branch" : "Not set"}
+                className="h-8"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Designation</Label>
+              <Select
+                value={designation || undefined}
+                onValueChange={(value) => onDesignationChange?.(value)}
+                disabled={!isEditable}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select designation" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DESIGNATION_OPTIONS.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Remarks</Label>

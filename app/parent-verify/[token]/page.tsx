@@ -414,8 +414,19 @@ export default function ParentVerifyPage({
   }
 
   const onSubmitProfile = async (values: ParentFormValues) => {
+    // Optional fields must be omitted (not sent as "") — the backend's
+    // @IsOptional() only skips validation for null/undefined, so an empty
+    // string still fails the phone-format check and effectively becomes required.
+    const payload = {
+      ...values,
+      phone: values.phone || undefined,
+      contact: values.contact || undefined,
+      citizenshipNumber: values.citizenshipNumber || undefined,
+      salaryBankName: values.salaryBankName || undefined,
+      bankAccountNumber: values.bankAccountNumber || undefined,
+    };
     try {
-      await submitProfile({ token, ...values }).unwrap();
+      await submitProfile({ token, ...payload }).unwrap();
       toast.success("Profile saved", {
         description: "Your information has been submitted successfully.",
       });
@@ -676,7 +687,12 @@ export default function ParentVerifyPage({
                         name="contact"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Alternate Contact</FormLabel>
+                            <FormLabel>
+                              Alternate Contact{" "}
+                              <span className="text-muted-foreground font-normal">
+                                (Optional)
+                              </span>
+                            </FormLabel>
                             <FormControl>
                               <Input placeholder="+9779809876543" {...field} />
                             </FormControl>

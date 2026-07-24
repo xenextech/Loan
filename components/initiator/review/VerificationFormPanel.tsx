@@ -1,5 +1,9 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { ClipboardCheck } from "lucide-react";
 import { LoanAssessmentForm } from "../loan-assessment";
+import { toDateInputValue } from "@/lib/api/transforms";
 import type { InitiatorApplicationDetail } from "../types/initiator";
 
 /**
@@ -9,6 +13,8 @@ import type { InitiatorApplicationDetail } from "../types/initiator";
  * lightweight sub-header that sticks to the top of that same container.
  */
 export function VerificationFormPanel({ detail }: { detail: InitiatorApplicationDetail }) {
+  const router = useRouter();
+
   return (
     <div>
       {/* Only sticky from md: up, where this panel becomes its own independent-scroll column —
@@ -22,6 +28,7 @@ export function VerificationFormPanel({ detail }: { detail: InitiatorApplication
         <LoanAssessmentForm
           applicationId={detail.id}
           hasInitiatorInfo={detail.hasInitiatorInfo}
+          onSubmitted={() => router.push("/initiator")}
           initialValues={{
             ...detail.assessment,
             applicantInfo: {
@@ -33,6 +40,8 @@ export function VerificationFormPanel({ detail }: { detail: InitiatorApplication
               nationalId: detail.assessment.applicantInfo?.nationalId || detail.studentInfo.identityNumber || "",
               citizenshipNumber: detail.assessment.applicantInfo?.citizenshipNumber || detail.studentInfo.identityNumber || "",
               citizenshipIssuedPlace: detail.assessment.applicantInfo?.citizenshipIssuedPlace || detail.studentInfo.issuedDistrict || "",
+              citizenshipIssuedDate:
+                detail.assessment.applicantInfo?.citizenshipIssuedDate || toDateInputValue(detail.studentInfo.issuedDate),
               profession: detail.assessment.applicantInfo?.profession || detail.studentInfo.occupation || "",
             },
           }}

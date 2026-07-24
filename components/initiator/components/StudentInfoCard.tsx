@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatNPR } from "@/lib/formatters";
-import type { InitiatorStudentInfo } from "../types/initiator";
-import { User, MapPin, BookOpen, Phone } from "lucide-react";
+import { DocumentGrid } from "../review/DocumentSection";
+import { DocumentModal } from "../review/DocumentModal";
+import type { DocumentItem, InitiatorStudentInfo } from "../types/initiator";
+import { User, MapPin, BookOpen, Phone, FileStack } from "lucide-react";
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
   if (value === undefined || value === null || value === "") return null;
@@ -40,7 +45,17 @@ function SectionCard({
  * Student tab's "Details" section. Family/parent info lives in
  * `FamilyInfoCard` under the Parent tab instead.
  */
-export default function StudentInfoCard({ student }: { student: InitiatorStudentInfo }) {
+export default function StudentInfoCard({
+  student,
+  documents,
+}: {
+  student: InitiatorStudentInfo;
+  /** Student's uploaded documents (photo, identity, academic records, fee structure) — omit to hide this section entirely. */
+  documents?: DocumentItem[];
+}) {
+  const [activeDocument, setActiveDocument] = useState<DocumentItem | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
   return (
     <div className="space-y-5">
       <SectionCard icon={Phone} title="Contact Information">
@@ -94,6 +109,23 @@ export default function StudentInfoCard({ student }: { student: InitiatorStudent
           value={student.expectedSalary ? formatNPR(student.expectedSalary) : undefined}
         />
       </SectionCard>
+
+      {documents !== undefined && (
+        <SectionCard icon={FileStack} title="Documents">
+          <div className="py-2">
+            <DocumentGrid
+              documents={documents}
+              onOpen={(doc) => {
+                setActiveDocument(doc);
+                setModalOpen(true);
+              }}
+              emptyLabel="No student documents uploaded yet."
+            />
+          </div>
+        </SectionCard>
+      )}
+
+      <DocumentModal document={activeDocument} open={modalOpen} onOpenChange={setModalOpen} />
     </div>
   );
 }

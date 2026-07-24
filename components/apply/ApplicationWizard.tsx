@@ -82,6 +82,10 @@ export default function ApplicationWizard() {
   }, []);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep]);
+
+  useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY;
       setScrolled(y > 8);

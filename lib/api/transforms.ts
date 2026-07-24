@@ -14,6 +14,9 @@ import type {
   Document as ApiDocument,
   DocumentType,
   CollegeVerification,
+  ApprovalEntryStatus,
+  ParentVerification,
+  ParentDocument,
 } from "@/types/api";
 import { toNumber, toOptionalNumber } from "@/lib/formatters";
 import type { Application, StudyType as FEStudyType } from "@/types/application";
@@ -23,7 +26,13 @@ import type {
   InitiatorApplicationListItem,
   InitiatorDocumentSet,
 } from "@/components/initiator/types/initiator";
-import { PARENTS_BORROWINGS_WITH_BFIS_OPTIONS, type LoanAssessmentFormValues } from "@/components/initiator/loan-assessment/schema";
+import {
+  PARENTS_BORROWINGS_WITH_BFIS_OPTIONS,
+  SOURCE_OF_INCOME_OPTIONS,
+  CREDIT_RISK_SCORING_OPTIONS,
+  FACILITY_STATUS_OPTIONS,
+  type LoanAssessmentFormValues,
+} from "@/components/initiator/loan-assessment/schema";
 
 // ─── To-backend transforms ────────────────────────────────────────────────────
 
@@ -149,6 +158,12 @@ const DOCUMENT_LABELS: Record<DocumentType, string> = {
   ENROLLMENT_DOCUMENT: "Enrollment Document",
 };
 
+const PARENT_DOCUMENT_LABELS: Record<ParentDocument["documentType"], string> = {
+  NID: "National ID / Citizenship",
+  PAN_ID: "PAN Card",
+  SALARY_SHEET: "Salary Sheet",
+};
+
 const toDocumentItem = (doc: ApiDocument): DocumentItem => ({
   id: doc.id,
   label: DOCUMENT_LABELS[doc.documentType] ?? doc.documentType,
@@ -157,13 +172,20 @@ const toDocumentItem = (doc: ApiDocument): DocumentItem => ({
   uploadedAt: doc.createdAt,
 });
 
+const toParentDocumentItem = (doc: ParentDocument): DocumentItem => ({
+  id: doc.id,
+  label: doc.label || PARENT_DOCUMENT_LABELS[doc.documentType] || doc.documentType,
+  fileType: doc.mimeType?.startsWith("image/") ? "image" : "pdf",
+  url: doc.publicUrl,
+  uploadedAt: doc.uploadedAt,
+});
+
 // Groups the flat `documents[]` relation by review tab, and folds in the college's
 // offer-letter / enrollment-doc links when they were captured via the magic-link
 // verification form rather than uploaded as a regular Document row.
 const groupInitiatorDocuments = (
   documents: ApiDocument[] = [],
-  parentSalarySheetUrl: string | undefined,
-  parentSubmittedAt: string | undefined,
+  parentVerification: ParentVerification | undefined,
   collegeVerification: CollegeVerification | undefined,
 ): InitiatorDocumentSet => {
   const student = documents.filter((d) => STUDENT_DOCUMENT_TYPES.has(d.documentType)).map(toDocumentItem);
@@ -186,9 +208,22 @@ const groupInitiatorDocuments = (
     });
   }
 
-  const parent: DocumentItem[] = parentSalarySheetUrl
-    ? [{ id: "parent-salary-sheet", label: "Salary Sheet", fileType: "pdf", url: parentSalarySheetUrl, uploadedAt: parentSubmittedAt }]
-    : [];
+  // ParentDocument (NID/PAN/every labeled salary sheet) supersedes the legacy
+  // single salarySheetPublicUrl — only fall back to it for older records that
+  // predate ParentDocument and have no rows there.
+  const parent: DocumentItem[] = parentVerification?.documents?.length
+    ? parentVerification.documents.map(toParentDocumentItem)
+    : parentVerification?.salarySheetPublicUrl
+      ? [
+          {
+            id: "parent-salary-sheet",
+            label: "Salary Sheet",
+            fileType: "pdf",
+            url: parentVerification.salarySheetPublicUrl,
+            uploadedAt: parentVerification.submittedAt,
+          },
+        ]
+      : [];
 
   return { student, parent, college };
 };
@@ -196,12 +231,24 @@ const groupInitiatorDocuments = (
 // ─── Initiator assessment (Loan Assessment Form) ───────────────────────────────
 // Maps the backend's flat/nested initiator fields onto the Loan Assessment Form's
 // per-step shape, so reopening an application pre-fills previously-saved values
-// instead of resetting to a blank form. Steps with no backend field (Existing
-// Facilities, the Approval chain) are intentionally omitted — they stay local-draft only.
+// instead of resetting to a blank form. Existing Facilities has no backend field
+// yet and is intentionally omitted — it stays local-draft only.
 
-const toDateInputValue = (iso?: string): string => (iso ? iso.slice(0, 10) : "");
+// Exported so callers outside this module (e.g. VerificationFormPanel, which
+// falls back to the student's own raw ISO-datetime fields for not-yet-filled
+// initiator fields) can also feed a `type="date"` input the exact YYYY-MM-DD
+// shape it requires — passing a full ISO datetime string leaves it blank.
+export const toDateInputValue = (iso?: string | null): string => (iso ? iso.slice(0, 10) : "");
 
 const toYesNo = (value?: boolean): "Yes" | "No" | undefined => (value === undefined ? undefined : value ? "Yes" : "No");
+
+// Falls back to the same per-role default status constants.ts seeds the form
+// with (PENDING for Initiator, WAITING for the rest) when the backend hasn't
+// recorded one yet, so `status` stays required rather than `| undefined`.
+const toApprovalStatus = (
+  value: ApprovalEntryStatus | null | undefined,
+  fallback: LoanAssessmentFormValues["approval"]["support"]["status"],
+): LoanAssessmentFormValues["approval"]["support"]["status"] => value ?? fallback;
 
 // Backend enforces this as a closed enum (@IsEnum(ParentsBorrowingsWithBFIs)), but the
 // wire type is still `string` — narrow against the same option list the form's
@@ -209,6 +256,43 @@ const toYesNo = (value?: boolean): "Yes" | "No" | undefined => (value === undefi
 const PARENTS_BORROWINGS_WITH_BFIS_VALUES = new Set<string>(PARENTS_BORROWINGS_WITH_BFIS_OPTIONS.map((o) => o.value));
 const toParentsBorrowingsWithBFIs = (value?: string | null): LoanAssessmentFormValues["creditAssessment"]["parentsBorrowingsWithBFIs"] =>
   value && PARENTS_BORROWINGS_WITH_BFIS_VALUES.has(value) ? (value as "US" | "OTHER_BFI" | "OTHER_BFIS") : "";
+
+const SOURCE_OF_INCOME_VALUES = new Set<string>(SOURCE_OF_INCOME_OPTIONS.map((o) => o.value));
+const toSourceOfIncome = (value?: string | null): LoanAssessmentFormValues["creditAssessment"]["sourceOfIncome"] =>
+  value && SOURCE_OF_INCOME_VALUES.has(value) ? (value as "FIXED" | "SALARY_RENT_BUSINESS" | "MIXED") : "";
+
+// Backend enforces this as a closed enum too (@IsEnum(RiskCategory)) — same
+// narrowing as above. Also written by the credit-scoring engine itself
+// (CreditScoreService), not just the Initiator's manual selection.
+const CREDIT_RISK_SCORING_VALUES = new Set<string>(CREDIT_RISK_SCORING_OPTIONS.map((o) => o.value));
+const toCreditRiskScoring = (value?: string | null): LoanAssessmentFormValues["creditAssessment"]["creditRiskScoring"] =>
+  value && CREDIT_RISK_SCORING_VALUES.has(value)
+    ? (value as "LOW_RISK" | "MODERATE_RISK" | "MEDIUM_RISK" | "MEDIUM_HIGH_RISK" | "UNGRADED")
+    : "";
+
+// Backend enforces this as a closed enum too (@IsEnum(FacilityStatus)).
+const FACILITY_STATUS_VALUES = new Set<string>(FACILITY_STATUS_OPTIONS.map((o) => o.value));
+const toFacilityStatus = (value?: string | null): LoanAssessmentFormValues["applicantBackground"]["existingFacilities"][number]["status"] =>
+  value && FACILITY_STATUS_VALUES.has(value) ? (value as "PERFORMING" | "OVERDUE" | "NPA" | "CLOSED") : "";
+
+// The Initiator's Family Members table starts empty, but the student already
+// named their father/mother/grandfather back in the apply flow's Step 3 — pre-fill
+// those names (relationship + name only) so the Initiator just adds age/qualification/
+// occupation instead of re-typing names from scratch. Only applies when the Initiator
+// hasn't saved any family members yet — once they have, their saved rows win.
+const studentFamilyDefaults = (
+  record: InitiatorApplicationRecord,
+): LoanAssessmentFormValues["applicantBackground"]["familyMembers"] => {
+  const defaults: LoanAssessmentFormValues["applicantBackground"]["familyMembers"] = [];
+  const add = (personName: string | undefined, relationshipWithBorrower: string) => {
+    if (!personName) return;
+    defaults.push({ personName, age: undefined, qualification: "", relationshipWithBorrower, occupationSocialInvolvement: "" });
+  };
+  add(record.fatherName, "Father");
+  add(record.motherName, "Mother");
+  add(record.grandfatherName, "Grandfather");
+  return defaults;
+};
 
 export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): Partial<LoanAssessmentFormValues> => {
   const g = record.personalGuarantee;
@@ -256,24 +340,34 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
       loanToValueRatio: toOptionalNumber(record.loanToValueRatio),
       dsgir: toOptionalNumber(record.dsgir),
       performanceYears: toOptionalNumber(record.performanceYears),
+      satisfactoryPerformance: toOptionalNumber(record.satisfactoryPerformance),
       bankingRelationshipScore: toOptionalNumber(record.bankingRelationshipScore),
       parentsBorrowingsWithBFIs: toParentsBorrowingsWithBFIs(record.parentsBorrowingsWithBFIs),
       sourceOfIncomeScore: toOptionalNumber(record.sourceOfIncomeScore),
+      sourceOfIncome: toSourceOfIncome(record.sourceOfIncome),
       operationOfInstitution: toOptionalNumber(record.operationOfInstitution),
-      creditRiskScoring: record.creditRiskScoring ?? "",
+      creditRiskScoring: toCreditRiskScoring(record.creditRiskScoring),
       riskGrade: record.riskGrade ?? "",
       totalScore: toOptionalNumber(record.totalScore),
       totalPercentage: toOptionalNumber(record.totalPercentage),
     },
     applicantBackground: {
-      familyMembers: (record.familyMember ?? []).map((m) => ({
-        personName: m.personName ?? "",
-        age: m.age ?? undefined,
-        qualification: m.qualification ?? "",
-        relationshipWithBorrower: m.relationshipWithBorrower ?? "",
-        occupationSocialInvolvement: m.occupationSocialInvolvement ?? "",
+      familyMembers: record.familyMember?.length
+        ? record.familyMember.map((m) => ({
+            personName: m.personName ?? "",
+            age: m.age ?? undefined,
+            qualification: m.qualification ?? "",
+            relationshipWithBorrower: m.relationshipWithBorrower ?? "",
+            occupationSocialInvolvement: m.occupationSocialInvolvement ?? "",
+          }))
+        : studentFamilyDefaults(record),
+      existingFacilities: (record.existingFacility ?? []).map((f) => ({
+        facilityType: f.facilityType ?? "",
+        bank: f.bank ?? "",
+        sanctionedLimit: f.sanctionedLimit ?? undefined,
+        outstanding: f.outstanding ?? undefined,
+        status: toFacilityStatus(f.status),
       })),
-      existingFacilities: [],
       facility: record.facility ?? "",
       purpose: record.purpose ?? "",
       limit: toOptionalNumber(record.limit),
@@ -288,7 +382,9 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
       proposedLoan: toOptionalNumber(record.proposedLoan),
       financeAgainstFmv: toOptionalNumber(record.financeAgainstFmv),
       guarantor: {
-        nameOfGuarantor: g?.nameOfGuarantor ?? "",
+        // Falls back to the student's father's name (from the apply flow's Step 3)
+        // until the Initiator saves a personal guarantee of their own.
+        nameOfGuarantor: g?.nameOfGuarantor || record.fatherName || "",
         relationship: g?.relationship ?? "",
         age: g?.age ?? undefined,
         netWorth: toOptionalNumber(g?.netWorth),
@@ -329,6 +425,42 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
       utilizationOfFund: record.utilizationOfFund ?? "",
       conclusionAndRecommendation: record.conclusionAndRecommendation ?? "",
     },
+    approval: {
+      initiator: {
+        approverName: record.initiatorName ?? "",
+        role: "INITIATOR",
+        status: toApprovalStatus(record.initiatorStatus, "PENDING"),
+        approvedDate: toDateInputValue(record.initiatorDate),
+        remarks: record.initiatorRemarks ?? "",
+        signature: record.initiatorSignature ?? "",
+        branchName: record.branch ?? "",
+        designation: record.initiatorPost ?? "",
+      },
+      support: {
+        approverName: record.supporterName ?? "",
+        role: "SUPPORT",
+        status: toApprovalStatus(record.supporterStatus, "WAITING"),
+        approvedDate: toDateInputValue(record.supporterDate),
+        remarks: record.supporterRemarks ?? "",
+        signature: record.supporterSignature ?? "",
+      },
+      checker: {
+        approverName: record.checkerName ?? "",
+        role: "CHECKER",
+        status: toApprovalStatus(record.checkerStatus, "WAITING"),
+        approvedDate: toDateInputValue(record.checkerDate),
+        remarks: record.checkerRemarks ?? "",
+        signature: record.checkerSignature ?? "",
+      },
+      approver: {
+        approverName: record.approverName ?? "",
+        role: "APPROVER",
+        status: toApprovalStatus(record.approverStatus, "WAITING"),
+        approvedDate: toDateInputValue(record.approverDate),
+        remarks: record.approverRemarks ?? "",
+        signature: record.approverSignature ?? "",
+      },
+    },
   };
 };
 
@@ -356,6 +488,7 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
       identityNumber:  record.identityNumber,
       dob:             record.dateOfBirth,
       issuedDistrict:  record.issuedDistrict,
+      issuedDate:      record.issuedDate,
       gender:          record.gender,
       maritalStatus:   record.maritalStatus,
       occupation:      record.occupation,
@@ -396,12 +529,7 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
       offerLetterPublicUrl:   collegeVerification?.offerLetterPublicUrl,
       enrollmentDocPublicUrl: collegeVerification?.enrollmentDocPublicUrl,
     },
-    documents: groupInitiatorDocuments(
-      record.documents,
-      parentVerification?.salarySheetPublicUrl,
-      parentVerification?.submittedAt,
-      collegeVerification,
-    ),
+    documents: groupInitiatorDocuments(record.documents, parentVerification, collegeVerification),
     assessment: toAssessmentInitialValues(record),
     hasInitiatorInfo: Boolean(record.initiatorUserId),
   };

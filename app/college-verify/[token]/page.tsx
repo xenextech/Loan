@@ -443,7 +443,7 @@ export default function CollegeVerifyPage({
                             <FormLabel>Contact Person Name</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="Name of registrar / admissions officer"
+                                placeholder="eg:Acccounts Officer / Finance Officer"
                                 {...field}
                               />
                             </FormControl>

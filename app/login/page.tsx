@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useLoginMutation } from "@/lib/api/authApi";
 import { useAppDispatch } from "@/lib/hooks";
 import { setCredentials } from "@/lib/store/authSlice";
+import { baseApi } from "@/lib/api/baseApi";
 import Image from "next/image";
 
 const loginSchema = z.object({
@@ -43,6 +44,11 @@ export default function LoginPage() {
       localStorage.setItem("auth_token", result.accessToken);
       localStorage.setItem("auth_user", JSON.stringify(result.user));
 
+      // Defense-in-depth: wipe any cached query responses from a previous
+      // session on this tab (e.g. GET /permissions/me) before the new
+      // user's data loads, in case something reached this point without
+      // going through performLogout() first (see lib/auth/authActions.ts).
+      dispatch(baseApi.util.resetApiState());
       dispatch(
         setCredentials({
           token: result.accessToken,

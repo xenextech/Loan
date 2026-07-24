@@ -65,6 +65,7 @@ import {
   useRecordCollectionActivityMutation,
   useFlagLoanNeedsReviewMutation,
   useNotifyLoanServicingBorrowerMutation,
+  useGetGeneratedAgreementsQuery,
 } from "@/lib/api/dashboardApi";
 import { useGetInitiatorApplicationDetailQuery } from "@/lib/api/initiatorApi";
 import { useDisbursementMonthlyStats } from "./useDisbursementMonthlyStats";
@@ -108,11 +109,6 @@ function getApiErrorMessage(err: unknown): string {
 export function DisbursementDetail({ id }: { id: string }) {
   const router = useRouter();
   const basePath = useDashboardBasePath();
-  /** Only the Approver manages disbursement conditions/confirms tranches — the
-   *  business requirement, not a real backend restriction (the controller is
-   *  gated to every dashboard-staff role, not APPROVER-only). Everyone else
-   *  gets a read-only view. */
-  const canManage = basePath === "/approver";
   const [newConditionLabel, setNewConditionLabel] = useState("");
   const [trancheAmount, setTrancheAmount] = useState("");
   const [accountCredited, setAccountCredited] = useState("");
@@ -126,10 +122,21 @@ export function DisbursementDetail({ id }: { id: string }) {
   const [reviewAssignedRole, setReviewAssignedRole] = useState<UserRole | undefined>(undefined);
   const [notifyConfirmOpen, setNotifyConfirmOpen] = useState(false);
   const currentUserRole = useAppSelector((s) => s.auth.user?.role);
+  /** Credit Manager owns disbursement readiness end-to-end (conditions,
+   *  tranche confirmation) — the Approver no longer determines or confirms
+   *  the disbursement amount. Matches the backend's method-level
+   *  @Roles(CREDIT_MANAGER) on addCondition/updateCondition/confirm, so a
+   *  role that can't act here can't submit and get a 403 either. Everyone
+   *  else gets a read-only view. */
+  const canManage = currentUserRole === "CREDIT_MANAGER";
 
   const { data: application, isLoading: appLoading, error: appError } = useGetDashboardApplicationDetailQuery(id);
   const { data: initiatorDetail, isLoading: initiatorLoading } = useGetInitiatorApplicationDetailQuery(id, { skip: !id });
   const { data: conditions, isLoading: conditionsLoading } = useGetDisbursementConditionsQuery(id);
+  const { data: legalDocuments, isLoading: legalDocumentsLoading } = useGetGeneratedAgreementsQuery(
+    { applicationId: id, page: 1, limit: 50 },
+    { skip: !id },
+  );
   const { rows: trancheRows, disbursementStatus, totalDisbursedAmount, isLoading: trancheLoading } = useDisbursementTrancheHistory(id);
   const [addCondition, { isLoading: adding }] = useAddDisbursementConditionMutation();
   const [updateCondition, { isLoading: updating }] = useUpdateDisbursementConditionMutation();
@@ -143,7 +150,7 @@ export function DisbursementDetail({ id }: { id: string }) {
   const [flagNeedsReview, { isLoading: flagging }] = useFlagLoanNeedsReviewMutation();
   const [notifyBorrower, { isLoading: notifying }] = useNotifyLoanServicingBorrowerMutation();
 
-  const isLoading = appLoading || initiatorLoading || conditionsLoading;
+  const isLoading = appLoading || initiatorLoading || conditionsLoading || legalDocumentsLoading;
 
   if (isLoading) {
     return (
@@ -177,8 +184,17 @@ export function DisbursementDetail({ id }: { id: string }) {
   const doneCount = rows.filter((c) => c.status === "DONE").length;
   const progressPercent = rows.length > 0 ? Math.round((doneCount / rows.length) * 100) : 0;
   const bankAccountReady = Boolean(initiatorDetail?.parentVerification?.bankAccountNumber);
-  const readiness = deriveReadiness({ conditionsDone: doneCount, conditionsTotal: rows.length, bankAccountReady });
+  const legalDocumentReady = Boolean(
+    legalDocuments?.data.some(
+      (doc) => doc.agreementType === "LOAN_AGREEMENT" && (doc.status === "SIGNED" || doc.status === "ACTIVE"),
+    ),
+  );
+  const readiness = deriveReadiness({ conditionsDone: doneCount, conditionsTotal: rows.length, bankAccountReady, legalDocumentReady });
   const allDone = readiness === "ready";
+  // Matches the backend's addCondition/updateCondition gate — conditions
+  // only open up once the Loan Agreement is signed, since they're the
+  // Credit Manager's post-legal-document checklist, not a substitute for it.
+  const canManageConditions = canManage && legalDocumentReady;
   const executed = disbursementStatus !== null;
   // The backend never actually sets `Disbursement.status` to COMPLETED anywhere — it only
   // ever writes PENDING/PARTIAL. So "fully disbursed" is derived here from the real running
@@ -328,7 +344,7 @@ export function DisbursementDetail({ id }: { id: string }) {
       {!canManage && (
         <div className="flex items-center gap-2 rounded-md bg-muted/50 px-4 py-2.5 font-sans">
           <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <p className="text-xs text-muted-foreground">Only the Approver manages conditions and confirms disbursement. This view is read-only.</p>
+          <p className="text-xs text-muted-foreground">Only the Credit Manager manages conditions and confirms disbursement, after the legal document has been processed. This view is read-only.</p>
         </div>
       )}
 
@@ -348,7 +364,7 @@ export function DisbursementDetail({ id }: { id: string }) {
           <ul className="divide-y divide-border border-y border-border">
             {rows.map((condition) => (
               <li key={condition.id} className="flex items-center justify-between gap-3 py-2.5">
-                {canManage ? (
+                {canManageConditions ? (
                   <label className="flex items-center gap-2.5 min-w-0 text-left cursor-pointer">
                     <Checkbox
                       checked={condition.status === "DONE"}
@@ -384,7 +400,16 @@ export function DisbursementDetail({ id }: { id: string }) {
           </ul>
         )}
 
-        {canManage && (
+        {canManage && !legalDocumentReady && (
+          <div className="flex items-start gap-2.5 rounded-md bg-muted/50 px-4 py-3 font-sans">
+            <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              Conditions open up once the Loan Agreement legal document is generated and signed.
+            </p>
+          </div>
+        )}
+
+        {canManageConditions && (
           <div className="flex items-center gap-2 font-sans">
             <Input
               placeholder="Add a condition…"
@@ -408,7 +433,9 @@ export function DisbursementDetail({ id }: { id: string }) {
             <p className="text-sm font-medium">
               {!bankAccountReady
                 ? "Cannot disburse — the parent's bank account is not on file yet."
-                : `Cannot disburse until all ${rows.length} condition${rows.length === 1 ? "" : "s"} are met.`}
+                : !legalDocumentReady
+                  ? "Cannot disburse — generate and sign the Loan Agreement legal document first."
+                  : `Cannot disburse until all ${rows.length} condition${rows.length === 1 ? "" : "s"} are met.`}
             </p>
           </div>
         ) : (

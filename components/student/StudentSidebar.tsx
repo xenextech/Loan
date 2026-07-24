@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { clearCredentials } from "@/lib/store/authSlice";
+import { performLogout } from "@/lib/auth/authActions";
 import {
   CheckCircle2,
   FileEdit,
@@ -23,6 +23,7 @@ import {
   LogOut,
   GraduationCap,
   Menu,
+  Inbox,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -47,8 +48,8 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/notifications",
-    icon: Bell,
-    label: "Notifications",
+    icon: Inbox,
+    label: "Inbox",
     exact: false,
   },
   {
@@ -98,9 +99,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAppSelector((s) => s.auth.user);
 
   const handleSignOut = () => {
-    dispatch(clearCredentials());
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
+    performLogout(dispatch);
     router.push("/");
   };
 

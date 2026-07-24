@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/student/ApplicationCard";
+import { StudentConsentCard } from "@/components/student/StudentConsentCard";
 import {
   StudentInfoSection,
   FamilyInfoSection,
@@ -126,6 +127,8 @@ export default function ApplicationDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {isSubmitted && <StudentConsentCard applicationId={application.id} />}
 
       <div className="space-y-4">
         <StudentInfoSection app={application} />
