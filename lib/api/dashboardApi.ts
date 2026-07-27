@@ -34,7 +34,9 @@ import type {
   DocumentVaultQuery,
   DocumentVaultRow,
   GeneratedAgreementRecord,
+  GeneratedAgreementQuery,
   CreateGeneratedAgreementBody,
+  ForwardGeneratedAgreementBody,
   InsuranceStats,
   InsurancePolicyRecord,
   CreateInsurancePolicyBody,
@@ -536,7 +538,7 @@ export const dashboardApi = baseApi.injectEndpoints({
     getDocumentVault: builder.query<PaginatedData<DocumentVaultRow>, DocumentVaultQuery | void>({
       query: (params) => ({ url: "/dashboard/documents/vault", params: params ?? undefined }),
     }),
-    getGeneratedAgreements: builder.query<PaginatedData<GeneratedAgreementRecord>, Paged<{ applicationId?: string }>>({
+    getGeneratedAgreements: builder.query<PaginatedData<GeneratedAgreementRecord>, GeneratedAgreementQuery | void>({
       query: (params) => ({ url: "/dashboard/documents/agreements", params: params ?? undefined }),
       providesTags: (result) =>
         result
@@ -554,6 +556,23 @@ export const dashboardApi = baseApi.injectEndpoints({
     markAgreementSigned: builder.mutation<GeneratedAgreementRecord, string>({
       query: (id) => ({ url: `/dashboard/documents/agreements/${id}/mark-signed`, method: "PATCH" }),
       invalidatesTags: (_r, _e, id) => [{ type: "GeneratedAgreement", id }, { type: "GeneratedAgreement", id: "LIST" }],
+    }),
+    forwardGeneratedAgreement: builder.mutation<GeneratedAgreementRecord, { id: string; body: ForwardGeneratedAgreementBody }>({
+      query: ({ id, body }) => ({ url: `/dashboard/documents/agreements/${id}/forward`, method: "POST", body }),
+      invalidatesTags: (_r, _e, { id }) => [{ type: "GeneratedAgreement", id }, { type: "GeneratedAgreement", id: "LIST" }],
+    }),
+    uploadSignedAgreement: builder.mutation<GeneratedAgreementRecord, { id: string; file: File }>({
+      query: ({ id, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return {
+          url: `/dashboard/documents/agreements/${id}/upload-signed`,
+          method: "POST",
+          body: formData,
+          formData: true,
+        };
+      },
+      invalidatesTags: (_r, _e, { id }) => [{ type: "GeneratedAgreement", id }, { type: "GeneratedAgreement", id: "LIST" }],
     }),
 
     // ─── 8. Insurance tracker ─────────────────────────────────────────────
@@ -729,6 +748,8 @@ export const {
   useCreateGeneratedAgreementMutation,
   useSendAgreementToSignMutation,
   useMarkAgreementSignedMutation,
+  useForwardGeneratedAgreementMutation,
+  useUploadSignedAgreementMutation,
   useGetInsuranceStatsQuery,
   useGetInsurancePoliciesQuery,
   useCreateInsurancePolicyMutation,

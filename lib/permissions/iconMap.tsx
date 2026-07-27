@@ -16,6 +16,7 @@ import {
   Bell,
   Landmark,
   Users,
+  FileSignature,
   type LucideIcon,
 } from "lucide-react";
 
@@ -41,6 +42,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   Bell,
   Landmark,
   Users,
+  FileSignature,
 };
 
 export function resolveIcon(name: string): LucideIcon {

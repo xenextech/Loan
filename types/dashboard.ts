@@ -469,9 +469,41 @@ export interface GeneratedAgreementRecord {
   generatedByName: string | null;
   sentToSignAt: string | null;
   signedAt: string | null;
+  /** Role-level hand-off — e.g. Credit Manager forwards to Initiator so that
+   *  role's staff can print, collect a physical signature, and upload the
+   *  signed scan back (see uploadSignedAgreement). Role-wide, not per-user. */
+  forwardedToRole: UserRole | null;
+  forwardedByUserId: string | null;
+  forwardedAt: string | null;
+  forwardNote: string | null;
   createdAt: string;
   updatedAt: string;
   application: ApplicationRef;
+}
+
+export interface GeneratedAgreementQuery {
+  page?: number;
+  limit?: number;
+  applicationId?: string;
+  /** Scope to documents forwarded to this role — used by a role's own
+   *  "Legal Document Vault" queue (e.g. Initiator). */
+  forwardedToRole?: UserRole;
+  /** "Legal" filter — the document type. */
+  agreementType?: GeneratedAgreementType;
+  status?: GeneratedAgreementStatus;
+  /** "Student" filter — matches student name or application number. */
+  search?: string;
+  /** "Academic" filter — matches college name or course name. */
+  academicSearch?: string;
+  /** "Date" filter — only documents created on/after this date (ISO). */
+  dateFrom?: string;
+  /** "Date" filter — only documents created on/before this date (ISO). */
+  dateTo?: string;
+}
+
+export interface ForwardGeneratedAgreementBody {
+  toRole: UserRole;
+  note?: string;
 }
 
 /** Shape of GeneratedAgreementRecord.templateSnapshot for LOAN_AGREEMENT /

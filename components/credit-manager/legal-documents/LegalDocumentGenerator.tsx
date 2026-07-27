@@ -203,7 +203,7 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
     { applicationId: id, page: 1, limit: 50 },
     { skip: !id },
   );
-  const [createAgreement, { isLoading: generating }] = useCreateGeneratedAgreementMutation();
+  const [createAgreement] = useCreateGeneratedAgreementMutation();
   const [sendToSign] = useSendAgreementToSignMutation();
   const [markSigned] = useMarkAgreementSignedMutation();
 
@@ -399,7 +399,10 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
   const showHypothecationBlanks = agreementType === "HYPOTHECATION";
   const showBlanksSection = showBorrowerBlanks || showHypothecationBlanks;
 
+  const [generating, setGenerating] = useState(false);
+
   const handleGenerate = async () => {
+    setGenerating(true);
     try {
       await createAgreement({
         applicationId: id,
@@ -443,6 +446,8 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
       setRemarks("");
     } catch (err) {
       toast.error(getApiErrorMessage(err));
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -500,7 +505,9 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
           </CardHeader>
           <CardContent className="p-5 space-y-5">
             <div>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2.5">Document Type</p>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2.5">
+                Document Type
+              </p>
               <Select value={agreementType} onValueChange={(v) => setAgreementType(v as LegalDocumentType)}>
                 <SelectTrigger className="h-9 text-sm w-full">
                   <SelectValue />
@@ -672,7 +679,7 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
               transition={{ duration: 0.25, ease: "easeOut" }}
             >
               <Card className="border-border shadow-none flex flex-col h-full">
-                <CardHeader className="px-5 py-4 border-b border-border flex-row items-start justify-between gap-3 space-y-0">
+                <CardHeader className="px-5 py-4 border-b border-border flex justify-between gap-3 space-y-0">
                   <div>
                     <CardTitle className="text-sm font-semibold text-foreground">Live Preview</CardTitle>
                     <p className="text-xs text-muted-foreground mt-0.5">Snapshot from when you last clicked &quot;Live Preview&quot;.</p>
