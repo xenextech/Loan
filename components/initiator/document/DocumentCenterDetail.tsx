@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Table,
   TableBody,
   TableCell,
@@ -22,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, CheckCircle2, XCircle, FileText, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, FileText, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/formatters";
 import {
@@ -30,13 +23,10 @@ import {
   useVerifyOfferLetterMutation,
   useGetDocumentVaultQuery,
   useGetGeneratedAgreementsQuery,
-  useCreateGeneratedAgreementMutation,
   useSendAgreementToSignMutation,
   useMarkAgreementSignedMutation,
 } from "@/lib/api/dashboardApi";
-import type { GeneratedAgreementType, GeneratedAgreementStatus } from "@/types/dashboard";
-
-const AGREEMENT_TYPES: GeneratedAgreementType[] = ["LOAN_AGREEMENT", "GUARANTEE_DEED", "HYPOTHECATION", "PROMISSORY_NOTE"];
+import type { GeneratedAgreementStatus } from "@/types/dashboard";
 
 const STATUS_BADGE_CLASS: Record<GeneratedAgreementStatus, string> = {
   DRAFT: "bg-muted text-muted-foreground",
@@ -49,13 +39,11 @@ export function DocumentCenterDetail({ id }: { id: string }) {
   const router = useRouter();
   const basePath = useDashboardBasePath();
   const [refInput, setRefInput] = useState("");
-  const [agreementType, setAgreementType] = useState<GeneratedAgreementType>("LOAN_AGREEMENT");
 
   const { data: application, isLoading: appLoading } = useGetDashboardApplicationDetailQuery(id);
   const { data: vault, isLoading: vaultLoading } = useGetDocumentVaultQuery({ applicationId: id, page: 1, limit: 50 });
   const { data: agreements, isLoading: agreementsLoading } = useGetGeneratedAgreementsQuery({ applicationId: id, page: 1, limit: 50 });
   const [verifyOfferLetter, { data: verifyResult, isLoading: verifying }] = useVerifyOfferLetterMutation();
-  const [createAgreement, { isLoading: creatingAgreement }] = useCreateGeneratedAgreementMutation();
   const [sendToSign] = useSendAgreementToSignMutation();
   const [markSigned] = useMarkAgreementSignedMutation();
 
@@ -65,15 +53,6 @@ export function DocumentCenterDetail({ id }: { id: string }) {
       await verifyOfferLetter({ applicationId: id, refOrQrToken: refInput.trim() }).unwrap();
     } catch {
       toast.error("Verification request failed");
-    }
-  };
-
-  const handleCreateAgreement = async () => {
-    try {
-      await createAgreement({ applicationId: id, agreementType }).unwrap();
-      toast.success("Agreement draft generated.");
-    } catch {
-      toast.error("Failed to generate agreement");
     }
   };
 
@@ -160,30 +139,6 @@ export function DocumentCenterDetail({ id }: { id: string }) {
             ))}
           </ul>
         )}
-      </div>
-
-      {/* Agreement generator */}
-      <div>
-        <h3 className="text-sm font-bold text-foreground mb-4">Agreement generator</h3>
-        <div className="flex items-center gap-3 mb-1">
-          <Select value={agreementType} onValueChange={(v) => setAgreementType(v as GeneratedAgreementType)}>
-            <SelectTrigger className="h-9 text-sm w-56">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {AGREEMENT_TYPES.map((t) => (
-                <SelectItem key={t} value={t}>{t.replaceAll("_", " ")}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button size="sm" className="gap-1.5" disabled={creatingAgreement} onClick={handleCreateAgreement}>
-            {creatingAgreement ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            Generate Draft
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          No PDF rendering pipeline exists yet — this creates a draft record with borrower/loan terms auto-populated from the application.
-        </p>
       </div>
 
       {/* Generated agreements for this application */}

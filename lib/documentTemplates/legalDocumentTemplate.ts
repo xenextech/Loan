@@ -1,23 +1,3 @@
-// Single source of truth for the Legal Document (Loan Agreement / Guarantee
-// Deed / Hypothecation / Promissory Note) preview & print layout — shared by
-// the Credit Manager's live generator preview (pre-submission, built from
-// the application's effective loan terms) and the read-only viewer for an
-// already-generated GeneratedAgreementRecord (post-submission, built from
-// its stored templateSnapshot). Both cases feed the exact same shape so the
-// live preview the Credit Manager edits is pixel-identical to what gets
-// persisted.
-//
-// LOAN_AGREEMENT renders as a Nepali-language "कर्जा प्रस्ताव पत्र" (loan
-// proposal letter) — structure and clause text mirror the bank's own paper
-// template (see lib/nepaliNumber.ts for the amount-in-words helper). The
-// lending financial institution's name is editable per document (via
-// `institutionName`, defaulting to "Unnati") since the platform may generate
-// documents on behalf of different partner banks/NBFCs, not just Unnati.
-// Fields the application data doesn't capture (borrower address, citizenship
-// no., collateral parcel details, branch name, etc.) are left as dotted
-// blanks for manual completion, same as on the paper original. The other
-// three document types keep the existing generic English template, which
-// also honors `institutionName`.
 
 import NepaliDate from "nepali-date-converter";
 import { formatNepaliRupeeWords, toDevanagariNumeral } from "@/lib/nepaliNumber";
@@ -136,7 +116,7 @@ function formatBsDate(iso?: string | null): string {
   const d = iso ? new Date(iso) : new Date();
   if (Number.isNaN(d.getTime())) return "................";
   try {
-    return NepaliDate.fromAD(d).format("YYYY÷MM÷DD", "np");
+    return NepaliDate.fromAD(d).format("YYYY-MM-DD", "np");
   } catch {
     return "................";
   }
@@ -306,7 +286,7 @@ function buildLoanProposalLetterHtml(
     .title-box { text-align: center; margin: 6px 0 16px; }
     .title-box h1 { font-size: 15pt; font-weight: 700; color: #1f2937; letter-spacing: 1px; }
     .addressee { font-size: 10pt; margin-bottom: 12px; line-height: 1.9; }
-    .body-text { font-size: 10pt; margin-bottom: 12px; text-align: justify; }
+    .body-text { font-size: 10pt; margin-bottom: 12px; text-align: justify;}
     h2.section { font-size: 10.5pt; font-weight: 700; margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #d1d5db; color: #1f2937; }
     h3 { font-size: 10pt; font-weight: 700; margin: 14px 0 6px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9.5pt; }
@@ -517,7 +497,7 @@ function nepaliLegalStyles(): string {
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap');
     @page { size: A4; margin: 18mm 20mm; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Noto Sans Devanagari", "Mangal", "Times New Roman", serif; font-size: 10.5pt; color: #111; line-height: 1.75; }
+    body { font-family: "Noto Sans Devanagari", "Mangal", "Times New Roman", serif; font-size: 10.5pt; color: #111; line-height: 1.75;padding:20px }
     .header { border-bottom: 2.5px solid #000000; padding-bottom: 12px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: flex-end; }
     .brand { font-size: 13pt; font-weight: 800; color: #000000; text-transform: uppercase; letter-spacing: 1px; font-family: "Times New Roman", Times, serif; }
     .brand-sub { font-size: 8pt; color: #6b7280; margin-top: 2px; font-family: "Times New Roman", Times, serif; }
