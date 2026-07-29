@@ -93,11 +93,11 @@ export function hasAppraisalData(application: InitiatorApplicationRecord): boole
       application.proposedLoan,
       application.financeAgainstFmv,
       application.personalGuarantee?.nameOfGuarantor,
-      application.insurance?.insuredAssets,
-      application.insurance?.valueOfAssets,
-      application.insurance?.sumOfInsurance,
-      application.insurance?.insuranceCoverage,
-      application.insurance?.insuranceRemarks,
+      application.insurance?.insuredName,
+      application.insurance?.insuranceCompanyName,
+      application.insurance?.sumInsured,
+      application.insurance?.maturityDate,
+      application.insurance?.policyNo,
       application.blacklistStatus,
       application.blacklistReason,
       application.blacklistDate,
@@ -172,11 +172,11 @@ export default function ApplicationAppraisalDetails({ application }: { applicati
   );
 
   const showInsurance = hasAny(
-    application.insurance?.insuredAssets,
-    application.insurance?.valueOfAssets,
-    application.insurance?.sumOfInsurance,
-    application.insurance?.insuranceCoverage,
-    application.insurance?.insuranceRemarks,
+    application.insurance?.insuredName,
+    application.insurance?.insuranceCompanyName,
+    application.insurance?.sumInsured,
+    application.insurance?.maturityDate,
+    application.insurance?.policyNo,
   );
 
   const showCompliance = hasAny(
@@ -305,11 +305,11 @@ export default function ApplicationAppraisalDetails({ application }: { applicati
 
       {showInsurance && (
         <SectionCard icon={ShieldCheck} title="Insurance">
-          <InfoRow label="Insured Assets" value={application.insurance?.insuredAssets} />
-          <InfoRow label="Value of Assets" value={nprOrUndefined(application.insurance?.valueOfAssets)} />
-          <InfoRow label="Sum of Insurance" value={nprOrUndefined(application.insurance?.sumOfInsurance)} />
-          <InfoRow label="Insurance Coverage" value={percentOrUndefined(application.insurance?.insuranceCoverage)} />
-          <InfoRow label="Remarks" value={application.insurance?.insuranceRemarks} />
+          <InfoRow label="Insured Name" value={application.insurance?.insuredName} />
+          <InfoRow label="Insurance Company Name" value={application.insurance?.insuranceCompanyName} />
+          <InfoRow label="Sum Insured" value={nprOrUndefined(application.insurance?.sumInsured)} />
+          <InfoRow label="Maturity Date" value={application.insurance?.maturityDate ? formatDate(application.insurance.maturityDate) : undefined} />
+          <InfoRow label="Policy No." value={application.insurance?.policyNo} />
         </SectionCard>
       )}
 

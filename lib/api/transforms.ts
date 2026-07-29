@@ -397,11 +397,11 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
     },
     insuranceRepayment: {
       insurance: {
-        insuredAssets: ins?.insuredAssets ?? "",
-        valueOfAssets: toOptionalNumber(ins?.valueOfAssets),
-        sumOfInsurance: toOptionalNumber(ins?.sumOfInsurance),
-        insuranceCoverage: toOptionalNumber(ins?.insuranceCoverage),
-        insuranceRemarks: ins?.insuranceRemarks ?? "",
+        insuredName: ins?.insuredName ?? "",
+        insuranceCompanyName: ins?.insuranceCompanyName ?? "",
+        sumInsured: toOptionalNumber(ins?.sumInsured),
+        maturityDate: toDateInputValue(ins?.maturityDate),
+        policyNo: ins?.policyNo ?? "",
       },
       repaymentCapacity: {
         insuredAssets: toOptionalNumber(rc?.insuredAssets),

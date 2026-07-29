@@ -195,11 +195,11 @@ export const securitySchema = z.object({
 // RepaymentCapacity record per application — both single-entry.
 
 export const insuranceSchema = z.object({
-  insuredAssets: optionalText(300),
-  valueOfAssets: optionalNumber,
-  sumOfInsurance: optionalNumber,
-  insuranceCoverage: optionalNumber,
-  insuranceRemarks: optionalText(500),
+  insuredName: optionalText(300),
+  insuranceCompanyName: optionalText(300),
+  sumInsured: optionalNumber,
+  maturityDate: optionalText(20),
+  policyNo: optionalText(100),
 });
 
 export const repaymentCapacitySchema = z.object({

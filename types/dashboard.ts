@@ -634,6 +634,7 @@ export interface InsuranceStats {
 export interface InsurancePolicyRecord {
   id: string;
   applicationId: string;
+  applicantName: string;
   policyNumber: string;
   insurer: string;
   policyType: string | null;
@@ -650,6 +651,7 @@ export interface InsurancePolicyRecord {
 
 export interface CreateInsurancePolicyBody {
   applicationId: string;
+  applicantName: string;
   policyNumber: string;
   insurer: string;
   policyType?: string;

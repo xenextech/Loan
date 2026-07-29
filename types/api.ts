@@ -355,11 +355,11 @@ export interface InitiatorPersonalGuaranteeRecord {
 }
 
 export interface InitiatorInsuranceRecord {
-  insuredAssets?: string;
-  valueOfAssets?: number;
-  sumOfInsurance?: number;
-  insuranceCoverage?: number;
-  insuranceRemarks?: string;
+  insuredName?: string;
+  insuranceCompanyName?: string;
+  sumInsured?: number;
+  maturityDate?: string;
+  policyNo?: string;
 }
 
 export interface InitiatorRepaymentCapacityRecord {
