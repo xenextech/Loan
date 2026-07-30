@@ -1,5 +1,6 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
@@ -12,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -22,7 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { step1Schema, type Step1FormData } from "@/lib/validations/schemas";
 import LoanAmountField from "@/components/apply/fields/LoanAmountField";
-import { ArrowRight, Loader2, User, BookOpen, Wallet } from "lucide-react";
+import { formatNPR } from "@/lib/formatters";
+import { ArrowRight, Loader2, User, BookOpen, Wallet, School } from "lucide-react";
 
 interface Step1Props {
   defaultValues?: Partial<Step1FormData>;
@@ -75,8 +78,22 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(watchedValues)]);
 
+  // College Marketplace prefill data arrives asynchronously, after this form
+  // has already mounted with empty defaultValues — react-hook-form only
+  // reads defaultValues once at init, so a plain prop change wouldn't reach
+  // the live field values. Reset once, the moment collegeId first appears.
+  const appliedPrefillRef = useRef(false);
+  useEffect(() => {
+    if (defaultValues?.collegeId && !appliedPrefillRef.current) {
+      appliedPrefillRef.current = true;
+      form.reset((prev) => ({ ...prev, ...defaultValues }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultValues]);
+
   const loanAmount = form.watch("loanAmount");
   const courseDuration = form.watch("courseDuration");
+  const isPrefilled = Boolean(defaultValues?.collegeId);
 
   return (
     <Form {...form}>
@@ -133,7 +150,23 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
         >
-          <SectionHeading icon={BookOpen} title="Study Details" />
+          <div className="flex items-center justify-between gap-3 mb-6 -mt-6">
+            <SectionHeading icon={BookOpen} title="Study Details" />
+            {isPrefilled && (
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge variant="secondary" className="text-[10px] gap-1">
+                  <School className="w-3 h-3" />
+                  From College Marketplace
+                </Badge>
+                <Link
+                  href="/dashboard/college"
+                  className="text-xs text-primary font-medium hover:underline"
+                >
+                  Change college
+                </Link>
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <FormField
               control={form.control}
@@ -141,7 +174,7 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Study Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
@@ -165,7 +198,11 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Course Duration</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value ?? ""}
+                    disabled={isPrefilled}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select duration" />
@@ -190,7 +227,12 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Course / Program Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Bachelor of Computer Engineering" {...field} />
+                    <Input
+                      placeholder="e.g. Bachelor of Computer Engineering"
+                      disabled={isPrefilled}
+                      className={isPrefilled ? "bg-muted/50" : undefined}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -203,7 +245,12 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
                 <FormItem className="sm:col-span-2">
                   <FormLabel>College Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Kathmandu College of Management" {...field} />
+                    <Input
+                      placeholder="e.g. Kathmandu College of Management"
+                      disabled={isPrefilled}
+                      className={isPrefilled ? "bg-muted/50" : undefined}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -216,12 +263,30 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
                 <FormItem className="sm:col-span-2">
                   <FormLabel>Board / University</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Tribhuvan University" {...field} />
+                    <Input
+                      placeholder="e.g. Tribhuvan University"
+                      disabled={isPrefilled}
+                      className={isPrefilled ? "bg-muted/50" : undefined}
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {isPrefilled && defaultValues?.tuitionFee !== undefined && (
+              <FormItem className="sm:col-span-2">
+                <FormLabel>Tuition Fee</FormLabel>
+                <FormControl>
+                  <Input
+                    disabled
+                    className="bg-muted/50"
+                    value={formatNPR(defaultValues.tuitionFee)}
+                    readOnly
+                  />
+                </FormControl>
+              </FormItem>
+            )}
           </div>
         </motion.div>
 

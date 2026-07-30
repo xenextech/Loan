@@ -12,9 +12,14 @@ export interface Step1Data {
   email: string;
   studyType: StudyType;
   courseName: string;
+  collegeName: string;
   boardUniversity: string;
   courseDuration: string;
   loanAmount: number;
+  // Present only when arriving from the College Marketplace.
+  collegeId?: string;
+  courseId?: string;
+  tuitionFee?: number;
 }
 
 export interface Step2Data {

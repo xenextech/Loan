@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
@@ -16,6 +17,7 @@ import {
   useSaveStep3Mutation,
   useSubmitApplicationMutation,
 } from "@/lib/api/applicationApi";
+import { useGetPrefillDataQuery } from "@/lib/api/marketplaceApi";
 import WizardProgress from "./WizardProgress";
 import Step1AboutYou from "./steps/Step1AboutYou";
 import Step2Identity from "./steps/Step2Identity";
@@ -80,6 +82,48 @@ export default function ApplicationWizard() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ─── College Marketplace prefill ──────────────────────────────────────────
+  // Only present when arriving via /apply?collegeId=&courseId= — a direct
+  // /apply visit has neither param, so this whole block is a no-op and the
+  // form behaves exactly as it always has.
+  const searchParams = useSearchParams();
+  const collegeIdParam = searchParams.get("collegeId");
+  const courseIdParam = searchParams.get("courseId");
+  const {
+    data: prefillData,
+    isError: prefillError,
+  } = useGetPrefillDataQuery(
+    { collegeId: collegeIdParam ?? "", courseId: courseIdParam ?? "" },
+    { skip: !collegeIdParam || !courseIdParam },
+  );
+
+  useEffect(() => {
+    if (!prefillData || formData.step1?.collegeId) return;
+    dispatch(
+      updateStepData({
+        step: "step1",
+        data: {
+          collegeId: prefillData.collegeId,
+          collegeName: prefillData.collegeName,
+          courseId: prefillData.courseId,
+          courseName: prefillData.courseName,
+          boardUniversity: prefillData.universityName ?? "",
+          courseDuration: prefillData.duration,
+          tuitionFee: prefillData.tuitionFee,
+        },
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillData]);
+
+  useEffect(() => {
+    if (prefillError) {
+      toast.error(
+        "Selected college/course couldn't be loaded — please fill in the details manually.",
+      );
+    }
+  }, [prefillError]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });

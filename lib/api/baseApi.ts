@@ -81,6 +81,7 @@ export const baseApi = createApi({
     "RolePermission",
     "RoleMenu",
     "RoleWidget",
+    "CollegeCatalog",
   ],
   endpoints: () => ({}),
 });

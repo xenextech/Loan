@@ -15,6 +15,11 @@ export const step1Schema = z.object({
     .number()
     .min(50000, "Minimum loan amount is NPR 50,000")
     .max(1500000, "Maximum loan amount is NPR 15,00,000"),
+  // Present only when arriving from the College Marketplace — absent on a
+  // direct /apply visit, which keeps every field above fully editable.
+  collegeId: z.string().optional(),
+  courseId: z.string().optional(),
+  tuitionFee: z.number().optional(),
 });
 
 export const step2Schema = z.object({
