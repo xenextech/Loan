@@ -26,6 +26,12 @@ const buildStep1Body = (data: Step1FormData) => ({
   boardUniversity: data.boardUniversity,
   courseDuration: data.courseDuration, // backend stores as String
   loanAmount: data.loanAmount,
+  // Only sent when the wizard was prefilled from the College Marketplace —
+  // the backend re-derives courseName/collegeName/boardUniversity/
+  // courseDuration from these ids server-side rather than trusting the text
+  // above, so tampering with the free-text fields alone has no effect.
+  collegeId: data.collegeId || undefined,
+  courseId: data.courseId || undefined,
 });
 
 const buildStep2Body = (data: Step2FormData) => ({

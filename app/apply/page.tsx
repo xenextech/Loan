@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import ApplicationWizard from "@/components/apply/ApplicationWizard";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function ApplyPage() {
-  return <ApplicationWizard />;
+  return (
+    <Suspense>
+      <ApplicationWizard />
+    </Suspense>
+  );
 }

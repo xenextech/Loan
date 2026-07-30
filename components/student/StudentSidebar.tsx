@@ -24,6 +24,7 @@ import {
   GraduationCap,
   Menu,
   Inbox,
+  School,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -44,6 +45,12 @@ const NAV_ITEMS = [
     href: "/dashboard/repayment",
     icon: Wallet,
     label: "Repayment",
+    exact: false,
+  },
+  {
+    href: "/dashboard/college",
+    icon: School,
+    label: "College",
     exact: false,
   },
   {

@@ -119,9 +119,7 @@ const mapApplicationDetail = (record: InitiatorApplicationRecord): InitiatorAppl
   },
   insurance: record.insurance && {
     ...record.insurance,
-    valueOfAssets: toOptionalNumber(record.insurance.valueOfAssets),
-    sumOfInsurance: toOptionalNumber(record.insurance.sumOfInsurance),
-    insuranceCoverage: toOptionalNumber(record.insurance.insuranceCoverage),
+    sumInsured: toOptionalNumber(record.insurance.sumInsured),
   },
   repaymentCapacity: record.repaymentCapacity && {
     ...record.repaymentCapacity,

@@ -14,7 +14,7 @@ const CARDS = [
   {
     title: "Partner Banks",
     gif: <Image src="/assets/stakeholder.png" alt="Partner Banks" width={80} height={80}  />, 
-    items: ["12+ Partner Banks", "Best-Rate Matching", "NRB-Regulated Lenders"],
+    items: ["18+ Partner Banks", "Best-Rate Matching", "NRB-Regulated Lenders"],
   },
   {
     title: "Application Support",

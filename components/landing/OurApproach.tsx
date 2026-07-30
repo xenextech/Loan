@@ -6,9 +6,9 @@ import { CheckCircle2, Plus, Building2, Shield, ShieldCheck, File, Banknote } fr
 
 /* ─── Data ───────────────────────────────────────────────────────────────── */
 const FORMULA_ITEMS = [
-  { label: "Financing", className: "bg-green-50 text-primary" },
-  { label: "Guidance", className: "bg-green-50 text-primary" },
-  { label: "Trusted Banks", className: "bg-green-50 text-primary" },
+  { label: "18+ Partner Banks", className: "bg-green-50 text-primary" },
+  { label: "Student-First Guidance", className: "bg-green-50 text-primary" },
+  { label: "Smart Loan Matching", className: "bg-green-50 text-primary" },
 ] as const;
 
 const BENEFITS = [
@@ -125,7 +125,7 @@ export default function OurApproach() {
                 The Unnati Formula
               </h3>
 
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-2.5">
                 {FORMULA_ITEMS.map((item, i) => (
                   <span key={item.label} className="flex items-center gap-2.5">
                     <span
@@ -146,7 +146,7 @@ export default function OurApproach() {
 
               <div className="rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 py-3.5 text-center">
                 <span className="text-[15px] font-bold text-primary">
-                  Confident Education Journey
+                   Every Bank's Best Offer, In One Place
                 </span>
               </div>
             </motion.div>

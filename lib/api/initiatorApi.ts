@@ -209,11 +209,11 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
     ...(hasAnyValue(personalGuarantee) && { personalGuarantee }),
 
     // 7. Insurance — flat fields; the backend gates the upsert on these itself.
-    insuredAssets: ins.insuredAssets || undefined,
-    valueOfAssets: toNumber(ins.valueOfAssets),
-    sumOfInsurance: toNumber(ins.sumOfInsurance),
-    insuranceCoverage: toNumber(ins.insuranceCoverage),
-    insuranceRemarks: ins.insuranceRemarks || undefined,
+    insuredName: ins.insuredName || undefined,
+    insuranceCompanyName: ins.insuranceCompanyName || undefined,
+    sumInsured: toNumber(ins.sumInsured),
+    maturityDate: toISODateTime(ins.maturityDate),
+    policyNo: ins.policyNo || undefined,
 
     // 8. Repayment Capacity — separate nested relation, omit entirely when blank.
     ...(hasAnyValue(repaymentCapacity) && { repaymentCapacity }),

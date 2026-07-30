@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -48,7 +49,7 @@ export function InsuranceCheckerList() {
   const basePath = useDashboardBasePath();
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ applicationId: "", policyNumber: "", insurer: "", sumInsured: "", expiryDate: "" });
+  const [form, setForm] = useState({ applicationId: "", applicantName: "", policyNumber: "", insurer: "", sumInsured: "", expiryDate: "" });
 
   const { data: stats, isLoading: statsLoading } = useGetInsuranceStatsQuery();
   const { data: policies, isLoading: policiesLoading } = useGetInsurancePoliciesQuery({ page, limit: 20 });
@@ -57,20 +58,21 @@ export function InsuranceCheckerList() {
   const rows = policies?.data ?? [];
 
   const handleCreate = async () => {
-    if (!form.applicationId || !form.policyNumber || !form.insurer || !form.sumInsured || !form.expiryDate) {
+    if (!form.applicationId || !form.applicantName || !form.policyNumber || !form.insurer || !form.sumInsured || !form.expiryDate) {
       toast.error("All fields except premium are required");
       return;
     }
     try {
       await createPolicy({
         applicationId: form.applicationId,
+        applicantName: form.applicantName,
         policyNumber: form.policyNumber,
         insurer: form.insurer,
         sumInsured: Number(form.sumInsured),
         expiryDate: new Date(form.expiryDate).toISOString(),
       }).unwrap();
       toast.success("Policy added.");
-      setForm({ applicationId: "", policyNumber: "", insurer: "", sumInsured: "", expiryDate: "" });
+      setForm({ applicationId: "", applicantName: "", policyNumber: "", insurer: "", sumInsured: "", expiryDate: "" });
       setShowAdd(false);
     } catch {
       toast.error("Failed to add policy — check the application ID is valid.");
@@ -106,12 +108,31 @@ export function InsuranceCheckerList() {
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
           <Card className="border-border shadow-none">
             <CardContent className="p-5 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                <Input placeholder="Application ID" value={form.applicationId} onChange={(e) => setForm((f) => ({ ...f, applicationId: e.target.value }))} className="h-9 text-sm" />
-                <Input placeholder="Policy Number" value={form.policyNumber} onChange={(e) => setForm((f) => ({ ...f, policyNumber: e.target.value }))} className="h-9 text-sm" />
-                <Input placeholder="Insurer" value={form.insurer} onChange={(e) => setForm((f) => ({ ...f, insurer: e.target.value }))} className="h-9 text-sm" />
-                <Input type="number" placeholder="Sum Insured (NPR)" value={form.sumInsured} onChange={(e) => setForm((f) => ({ ...f, sumInsured: e.target.value }))} className="h-9 text-sm" />
-                <Input type="date" value={form.expiryDate} onChange={(e) => setForm((f) => ({ ...f, expiryDate: e.target.value }))} className="h-9 text-sm" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Application ID</Label>
+                  <Input placeholder="Application ID" value={form.applicationId} onChange={(e) => setForm((f) => ({ ...f, applicationId: e.target.value }))} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Applicant Name</Label>
+                  <Input placeholder="Applicant Name" value={form.applicantName} onChange={(e) => setForm((f) => ({ ...f, applicantName: e.target.value }))} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Policy Number</Label>
+                  <Input placeholder="Policy Number" value={form.policyNumber} onChange={(e) => setForm((f) => ({ ...f, policyNumber: e.target.value }))} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Insurance Company</Label>
+                  <Input placeholder="Insurance Company" value={form.insurer} onChange={(e) => setForm((f) => ({ ...f, insurer: e.target.value }))} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Sum Insured (NPR)</Label>
+                  <Input type="number" placeholder="Sum Insured (NPR)" value={form.sumInsured} onChange={(e) => setForm((f) => ({ ...f, sumInsured: e.target.value }))} className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Expiry Date</Label>
+                  <Input type="date" value={form.expiryDate} onChange={(e) => setForm((f) => ({ ...f, expiryDate: e.target.value }))} className="h-9 text-sm" />
+                </div>
               </div>
               <Button size="sm" className="gap-1.5" disabled={creating} onClick={handleCreate}>
                 {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
@@ -146,7 +167,7 @@ export function InsuranceCheckerList() {
                     <TableRow className="hover:bg-transparent border-border">
                       <TableHead className="text-xs pl-5">Borrower</TableHead>
                       <TableHead className="text-xs hidden sm:table-cell">Policy No.</TableHead>
-                      <TableHead className="text-xs hidden md:table-cell">Insurer</TableHead>
+                      <TableHead className="text-xs hidden md:table-cell">Insurance Company</TableHead>
                       <TableHead className="text-xs">Sum Insured</TableHead>
                       <TableHead className="text-xs hidden lg:table-cell">Expiry</TableHead>
                       <TableHead className="text-xs text-right pr-5">Status</TableHead>

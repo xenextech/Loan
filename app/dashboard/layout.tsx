@@ -1,13 +1,17 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { GraduationCap, Loader2 } from "lucide-react";
 import StudentSidebar from "@/components/student/StudentSidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
+  // College Marketplace owns its own sidebar/layout (see app/dashboard/college/layout.tsx)
+  // — skip the main student shell there instead of double-rendering a sidebar.
+  const isCollegeSection = pathname?.startsWith("/dashboard/college");
 
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
@@ -30,6 +34,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
     );
+  }
+
+  if (isCollegeSection) {
+    return <>{children}</>;
   }
 
   return (

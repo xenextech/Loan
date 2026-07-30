@@ -131,11 +131,11 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
   },
   insuranceRepayment: {
     insurance: {
-      insuredAssets: "",
-      valueOfAssets: undefined,
-      sumOfInsurance: undefined,
-      insuranceCoverage: undefined,
-      insuranceRemarks: "",
+      insuredName: "",
+      insuranceCompanyName: "",
+      sumInsured: undefined,
+      maturityDate: "",
+      policyNo: "",
     },
     repaymentCapacity: {
       insuredAssets: undefined,

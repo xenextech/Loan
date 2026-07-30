@@ -100,8 +100,11 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
       </ReviewCard>
 
       <ReviewCard title={STEPS[5].title} stepId={6} onEdit={onEdit}>
-        <SummaryItem label="Insured Assets" value={ir?.insurance?.insuredAssets} />
-        <SummaryItem label="Sum of Insurance" value={ir?.insurance?.sumOfInsurance !== undefined ? `NPR ${ir.insurance.sumOfInsurance}` : undefined} />
+        <SummaryItem label="Insured Name" value={ir?.insurance?.insuredName} />
+        <SummaryItem label="Insurance Company Name" value={ir?.insurance?.insuranceCompanyName} />
+        <SummaryItem label="Sum Insured" value={ir?.insurance?.sumInsured !== undefined ? `NPR ${ir.insurance.sumInsured}` : undefined} />
+        <SummaryItem label="Maturity Date" value={ir?.insurance?.maturityDate} />
+        <SummaryItem label="Policy No." value={ir?.insurance?.policyNo} />
         <SummaryItem label="Repayment Capacity — Value of Assets" value={ir?.repaymentCapacity?.valueOfAssets !== undefined ? `NPR ${ir.repaymentCapacity.valueOfAssets}` : undefined} />
       </ReviewCard>
 

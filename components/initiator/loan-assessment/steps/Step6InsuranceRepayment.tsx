@@ -4,6 +4,7 @@ import { HeartPulse, Wallet } from "lucide-react";
 import { SectionCard, FormSection } from "../ui/SectionCard";
 import { TextField } from "../fields/TextField";
 import { NumberField } from "../fields/NumberField";
+import { DateField } from "../fields/DateField";
 import { TextareaField } from "../fields/TextareaField";
 
 export function Step6InsuranceRepayment() {
@@ -11,14 +12,12 @@ export function Step6InsuranceRepayment() {
     <div className="space-y-5">
       <SectionCard icon={HeartPulse} title="Insurance" description="Insurance cover held against the applicant or the security. The backend stores a single insurance record per application.">
         <FormSection>
-          <TextField name="insuranceRepayment.insurance.insuredAssets" label="Insured Assets" placeholder="e.g. Commercial building structures" />
-          <NumberField name="insuranceRepayment.insurance.valueOfAssets" label="Value of Assets" suffix="NPR" />
-          <NumberField name="insuranceRepayment.insurance.sumOfInsurance" label="Sum of Insurance" suffix="NPR" />
-          <NumberField name="insuranceRepayment.insurance.insuranceCoverage" label="Insurance Coverage" suffix="%" />
+          <TextField name="insuranceRepayment.insurance.insuredName" label="Insured Name" placeholder="e.g. Ram Prasad Sharma" />
+          <TextField name="insuranceRepayment.insurance.insuranceCompanyName" label="Insurance Company Name" placeholder="e.g. IME General Insurance" />
+          <NumberField name="insuranceRepayment.insurance.sumInsured" label="Sum Insured" suffix="NPR" />
+          <DateField name="insuranceRepayment.insurance.maturityDate" label="Maturity Date" />
+          <TextField name="insuranceRepayment.insurance.policyNo" label="Policy No." placeholder="e.g. IMG-PROP-2080-092" />
         </FormSection>
-        <div className="mt-4">
-          <TextareaField name="insuranceRepayment.insurance.insuranceRemarks" label="Insurance Remarks" rows={3} />
-        </div>
       </SectionCard>
 
       <SectionCard icon={Wallet} title="Repayment Capacity" description="The backend stores a single repayment capacity record per application, separate from the insurance record above.">
