@@ -47,13 +47,17 @@ const ONES_TO_NINETY_NINE = [
 
 function twoDigitWords(n: number): string {
   if (n <= 0) return "";
+  // Crore counts can legitimately exceed 99 (e.g. १०० करोड), which the 0-99
+  // lookup table can't express — recurse so the higher-order part is still
+  // spelled out instead of silently rendering an empty string.
+  if (n > 99) return nepaliNumberToWords(n);
   return ONES_TO_NINETY_NINE[n] ?? "";
 }
 
 /** Converts a non-negative integer to Nepali words using the lakh/crore system. */
 export function nepaliNumberToWords(value: number): string {
   let n = Math.trunc(Math.abs(value));
-  if (n === 0) return "सुन्ना";
+  if (n === 0) return "शून्य";
 
   const parts: string[] = [];
   const crore = Math.floor(n / 10000000);

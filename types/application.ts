@@ -26,6 +26,7 @@ export interface Step2Data {
   identityType: IdentityType;
   identityNumber: string;
   identityName: string;
+  dobBs: string;
   dob: string;
   issuedDistrict: string;
   issuedDate: string;

@@ -71,6 +71,16 @@ function monthsFromPeriod(period?: number | null, unit?: "YEAR" | "MONTH" | null
   return unit === "YEAR" ? period * 12 : period;
 }
 
+/** Mirrors the backend's `firstFilled` — a typed-in override wins, then the
+ *  data already stored on the application, then a blank on the document. */
+function firstFilled(...values: (string | null | undefined)[]): string | null {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return null;
+}
+
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
@@ -150,26 +160,38 @@ const EMPTY_BLANKS: BlankFields = {
   bankAccountNumber: "",
 };
 
+/**
+ * `onFile` is the value already stored on the application. When present it is
+ * shown as the placeholder and used on the document unless the Credit Manager
+ * types something else, so known data never has to be re-keyed and the
+ * document never prints a blank for something the system already knows.
+ */
 function BlankInput({
   label,
   value,
   onChange,
   placeholder,
+  onFile,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  onFile?: string | null;
 }) {
+  const known = onFile?.trim();
   return (
     <div className="min-w-0">
       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5">{label}</p>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? "...................."}
+        placeholder={known ?? placeholder ?? "Leave empty for a blank line"}
         className="h-8 text-sm"
       />
+      {known && !value.trim() && (
+        <p className="text-[10px] text-muted-foreground mt-1">From application — leave empty to use</p>
+      )}
     </div>
   );
 }
@@ -270,10 +292,14 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
       documentNumber: null,
       agreementType,
       status: "DRAFT" as const,
-      studentName: application?.fullName ?? "—",
-      applicationNumber: application?.applicationNumber ?? "—",
+      // No em-dash fallbacks: a missing value must reach the template as null
+      // so it renders as a ruled blank rather than printing "—" on a legal
+      // document.
+      studentName: application?.fullName ?? "",
+      applicationNumber: application?.applicationNumber ?? "",
       collegeName: application?.collegeName ?? null,
-      loanProduct: application?.facility ?? "Education Loan",
+      courseName: application?.studyInformation?.courseName ?? null,
+      loanProduct: application?.facility ?? null,
       finalDisbursementAmount: effective.principal,
       interestRate: effective.interestRate,
       tenureMonths: effective.tenureMonths,
@@ -285,16 +311,46 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
       generatedByName: generatorName,
       generatedAt: new Date().toISOString(),
       institutionName,
-      studentAddress: blanks.studentAddress.trim() || null,
-      studentCitizenshipNo: blanks.studentCitizenshipNo.trim() || null,
-      studentCitizenshipOffice: blanks.studentCitizenshipOffice.trim() || null,
-      studentCitizenshipIssueDate: blanks.studentCitizenshipIssueDate.trim() || null,
-      studentFatherOrHusbandName: blanks.studentFatherOrHusbandName.trim() || null,
-      studentGrandfatherName: blanks.studentGrandfatherName.trim() || null,
-      studentPermanentDistrict: blanks.studentPermanentDistrict.trim() || null,
-      studentPermanentMunicipality: blanks.studentPermanentMunicipality.trim() || null,
-      studentPermanentWardNo: blanks.studentPermanentWardNo.trim() || null,
-      branchManagerName: blanks.branchManagerName.trim() || null,
+      // Same precedence the backend applies at generation time, so the preview
+      // shows the borrower details already on file rather than empty rules.
+      studentAddress: firstFilled(
+        blanks.studentAddress,
+        application?.correspondenceAddress,
+        application?.permanentAddress,
+      ),
+      studentCitizenshipNo: firstFilled(
+        blanks.studentCitizenshipNo,
+        application?.citizenshipNumber,
+        application?.identityNumber,
+      ),
+      studentCitizenshipOffice: firstFilled(
+        blanks.studentCitizenshipOffice,
+        application?.citizenshipIssuedPlace,
+        application?.issuedDistrict,
+      ),
+      studentCitizenshipIssueDate: firstFilled(blanks.studentCitizenshipIssueDate),
+      studentFatherOrHusbandName: firstFilled(
+        blanks.studentFatherOrHusbandName,
+        application?.fatherName,
+        application?.spouseName,
+      ),
+      studentGrandfatherName: firstFilled(
+        blanks.studentGrandfatherName,
+        application?.grandfatherName,
+      ),
+      studentPermanentDistrict: firstFilled(
+        blanks.studentPermanentDistrict,
+        application?.district,
+      ),
+      studentPermanentMunicipality: firstFilled(
+        blanks.studentPermanentMunicipality,
+        application?.municipality,
+      ),
+      studentPermanentWardNo: firstFilled(
+        blanks.studentPermanentWardNo,
+        application?.ward,
+      ),
+      branchManagerName: firstFilled(blanks.branchManagerName),
       collateralOwnerName: blanks.collateralOwnerName.trim() || null,
       collateralAddress: blanks.collateralAddress.trim() || null,
       collateralPlotNo: blanks.collateralPlotNo.trim() || null,
@@ -553,7 +609,7 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
                 <div>
                   <p className="text-xs font-semibold text-foreground">Fill in the blanks</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    These aren&apos;t captured on the application yet — they show as dotted blanks in the document until you type them in here.
+                    Greyed values are already on the application and will be used as-is. Type only to override or to supply what&apos;s missing — anything still empty prints as a ruled line to complete in ink.
                   </p>
                 </div>
 
@@ -562,20 +618,60 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
                     <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">Borrower</p>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-3">
                       <div className="col-span-2">
-                        <BlankInput label="Address" value={blanks.studentAddress} onChange={setBlank("studentAddress")} />
+                        <BlankInput
+                          label="Address"
+                          value={blanks.studentAddress}
+                          onChange={setBlank("studentAddress")}
+                          onFile={application.correspondenceAddress ?? application.permanentAddress}
+                        />
                       </div>
-                      <BlankInput label="Citizenship No." value={blanks.studentCitizenshipNo} onChange={setBlank("studentCitizenshipNo")} />
-                      <BlankInput label="Citizenship Issuing Office" value={blanks.studentCitizenshipOffice} onChange={setBlank("studentCitizenshipOffice")} />
+                      <BlankInput
+                        label="Citizenship No."
+                        value={blanks.studentCitizenshipNo}
+                        onChange={setBlank("studentCitizenshipNo")}
+                        onFile={application.citizenshipNumber ?? application.identityNumber}
+                      />
+                      <BlankInput
+                        label="Citizenship Issuing Office"
+                        value={blanks.studentCitizenshipOffice}
+                        onChange={setBlank("studentCitizenshipOffice")}
+                        onFile={application.citizenshipIssuedPlace ?? application.issuedDistrict}
+                      />
                       {showBorrowerCitizenshipIssueDate && (
-                        <BlankInput label="Citizenship Issue Date" value={blanks.studentCitizenshipIssueDate} onChange={setBlank("studentCitizenshipIssueDate")} />
+                        <BlankInput label="Citizenship Issue Date (BS)" value={blanks.studentCitizenshipIssueDate} onChange={setBlank("studentCitizenshipIssueDate")} />
                       )}
                       {showBorrowerParentageBlanks && (
                         <>
-                          <BlankInput label="Father's / Husband's Name" value={blanks.studentFatherOrHusbandName} onChange={setBlank("studentFatherOrHusbandName")} />
-                          <BlankInput label="Grandfather's Name" value={blanks.studentGrandfatherName} onChange={setBlank("studentGrandfatherName")} />
-                          <BlankInput label="Permanent Address — District" value={blanks.studentPermanentDistrict} onChange={setBlank("studentPermanentDistrict")} />
-                          <BlankInput label="Permanent Address — Municipality" value={blanks.studentPermanentMunicipality} onChange={setBlank("studentPermanentMunicipality")} />
-                          <BlankInput label="Permanent Address — Ward No." value={blanks.studentPermanentWardNo} onChange={setBlank("studentPermanentWardNo")} />
+                          <BlankInput
+                            label="Father's / Husband's Name"
+                            value={blanks.studentFatherOrHusbandName}
+                            onChange={setBlank("studentFatherOrHusbandName")}
+                            onFile={application.fatherName ?? application.spouseName}
+                          />
+                          <BlankInput
+                            label="Grandfather's Name"
+                            value={blanks.studentGrandfatherName}
+                            onChange={setBlank("studentGrandfatherName")}
+                            onFile={application.grandfatherName}
+                          />
+                          <BlankInput
+                            label="Permanent Address — District"
+                            value={blanks.studentPermanentDistrict}
+                            onChange={setBlank("studentPermanentDistrict")}
+                            onFile={application.district}
+                          />
+                          <BlankInput
+                            label="Permanent Address — Municipality"
+                            value={blanks.studentPermanentMunicipality}
+                            onChange={setBlank("studentPermanentMunicipality")}
+                            onFile={application.municipality}
+                          />
+                          <BlankInput
+                            label="Permanent Address — Ward No."
+                            value={blanks.studentPermanentWardNo}
+                            onChange={setBlank("studentPermanentWardNo")}
+                            onFile={application.ward}
+                          />
                         </>
                       )}
                     </div>
@@ -682,7 +778,7 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
                 <CardHeader className="px-5 py-4 border-b border-border flex justify-between gap-3 space-y-0">
                   <div>
                     <CardTitle className="text-sm font-semibold text-foreground">Live Preview</CardTitle>
-                    <p className="text-xs text-muted-foreground mt-0.5">Snapshot from when you last clicked &quot;Live Preview&quot;.</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Updates as you type. Status badges and this note are preview-only and never print.</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownloadPreview}>
