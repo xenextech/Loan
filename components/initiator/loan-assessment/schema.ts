@@ -239,13 +239,16 @@ export const recommendationSchema = z.object({
 // Persisted via PATCH .../initiator's `approval` field — see
 // ApplicationInitiatorService.buildApprovalUpdate() on the backend.
 
+// Official designation/team mapping used across the approval chain — each
+// value is "<code> (<full title>)" so both the abbreviation staff use day to
+// day and its full title are visible in the dropdown.
 export const DESIGNATION_OPTIONS = [
-  "Branch Manager",
-  "Assistant Branch Manager",
-  "Credit Officer",
-  "Relationship Manager",
-  "Loan Officer",
-  "Operations Manager",
+  "ARO (Assistant Relationship Officer)",
+  "RO (Relationship Officer)",
+  "BM (Branch Manager)",
+  "CRAD (Credit Risk Assessment Department)",
+  "DH (Department Head) / CNNMO, CEO",
+  "CAD (Credit Administration Department)",
 ] as const;
 
 export const approvalStatusSchema = z.enum([

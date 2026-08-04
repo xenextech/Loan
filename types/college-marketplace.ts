@@ -72,6 +72,7 @@ export interface MarketplaceCourse {
   tuitionFee: number;
   admissionFee?: number | null;
   totalFee: number;
+  bannerUrl?: string | null;
   isFeatured: boolean;
   isPopular: boolean;
   isActive: boolean;
@@ -79,6 +80,7 @@ export interface MarketplaceCourse {
 
 // Detail shape returned by GET /marketplace/colleges/:id
 export interface MarketplaceCollegeDetail extends Omit<MarketplaceCollege, "startingTuition" | "durationRange" | "courseCount"> {
+  aboutContent?: string | null;
   website?: string | null;
   contactEmail?: string | null;
   contactPhone?: string | null;
@@ -91,7 +93,7 @@ export interface MarketplaceCollegeDetail extends Omit<MarketplaceCollege, "star
 // Detail page content. All new fields are optional: a course without them
 // still renders a complete page, just without that section.
 export interface MarketplaceCourseDetail extends MarketplaceCourse {
-  bannerUrl?: string | null;
+  aboutContent?: string | null;
   learningOutcomes: string[];
   careerOutcomes?: CareerOutcome[] | null;
   curriculum?: CurriculumSemester[] | null;
@@ -141,4 +143,89 @@ export interface CollegeListFilters {
   sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
+  includeInactive?: boolean;
+}
+
+// ─── Admin CRUD input types (mirror the backend DTOs) ──────────────────────
+
+export interface CreateUniversityInput {
+  name: string;
+  shortName?: string;
+  isActive?: boolean;
+}
+
+export type UpdateUniversityInput = Partial<CreateUniversityInput>;
+
+export interface CreateCollegeInput {
+  name: string;
+  universityId?: string | null;
+  description?: string | null;
+  aboutContent?: string | null;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  address?: string | null;
+  province?: string | null;
+  district?: string | null;
+  municipality?: string | null;
+  website?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  eligibility?: string | null;
+  requiredDocs?: string | null;
+  accreditation?: string | null;
+  isFeatured?: boolean;
+  isActive?: boolean;
+}
+
+export type UpdateCollegeInput = Partial<CreateCollegeInput>;
+
+export interface CreateCourseInput {
+  collegeId: string;
+  name: string;
+  category: CourseCategory;
+  degreeLevel: DegreeLevel;
+  duration: string;
+  durationMonths?: number | null;
+  description?: string | null;
+  aboutContent?: string | null;
+  eligibility?: string | null;
+  seatsAvailable?: number | null;
+  tuitionFee: number;
+  admissionFee?: number | null;
+  totalFee: number;
+  bannerUrl?: string | null;
+  learningOutcomes?: string[];
+  careerOutcomes?: CareerOutcome[] | null;
+  curriculum?: CurriculumSemester[] | null;
+  feeBreakdown?: FeeBreakdownItem[] | null;
+  industryDemand?: string | null;
+  intake?: string | null;
+  credits?: number | null;
+  medium?: string | null;
+  attendanceType?: string | null;
+  isFeatured?: boolean;
+  isPopular?: boolean;
+  isActive?: boolean;
+}
+
+export type UpdateCourseInput = Partial<CreateCourseInput>;
+
+export interface QueryCoursesAdminFilters {
+  search?: string;
+  collegeId?: string;
+  category?: CourseCategory;
+  degreeLevel?: DegreeLevel;
+  includeInactive?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+// GET /marketplace/courses (admin) row shape — course + parent college/university
+export interface AdminCourseListItem extends MarketplaceCourse {
+  aboutContent?: string | null;
+  college: {
+    id: string;
+    name: string;
+    university: { id: string; name: string; shortName?: string | null } | null;
+  };
 }

@@ -31,6 +31,16 @@ const SLIDES = [
     image: "/assets/hero4.png",
     alt: "Group of graduates celebrating at a ceremony",
   },
+   {
+    animatedWord: "Re-Skilling",
+    image: "/assets/hero2.png",
+    alt: "Group of graduates celebrating at a ceremony",
+  },
+  {
+    animatedWord: "Up Skilling",
+    image: "/assets/hero3.png",
+    alt: "Group of graduates celebrating at a ceremony",
+  }
 ] as const;
 
 const STATIC_SUB =

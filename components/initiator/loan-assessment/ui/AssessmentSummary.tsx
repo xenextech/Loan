@@ -15,11 +15,6 @@ function optionLabel(options: readonly { value: string; label: string }[], value
   return options.find((o) => o.value === value)?.label ?? value;
 }
 
-function truncate(text?: string, max = 140) {
-  if (!text) return undefined;
-  return text.length > max ? `${text.slice(0, max)}…` : text;
-}
-
 interface AssessmentSummaryProps {
   /** Omit for a pure read-only summary (no per-card Edit button) — e.g. Supporter/Approver review. */
   onEdit?: (stepId: number) => void;
@@ -69,7 +64,7 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
 
       <ReviewCard title={STEPS[2].title} stepId={3} onEdit={onEdit}>
         <SummaryItem label="Credit Limit" value={c?.creditLimit !== undefined ? `NPR ${c.creditLimit}` : undefined} />
-        <SummaryItem label="Loan to Value Ratio (%)" value={c?.loanToValueRatio !== undefined ? `${c.loanToValueRatio}%` : undefined} />
+        <SummaryItem label="Loan to Income Ratio (%)" value={c?.loanToValueRatio !== undefined ? `${c.loanToValueRatio}%` : undefined} />
         <SummaryItem label="DSGIR (%)" value={c?.dsgir !== undefined ? `${c.dsgir}%` : undefined} />
         <SummaryItem label="Operation of Institution (Years)" value={c?.operationOfInstitution} />
         <SummaryItem label="Satisfactory Performance (Years)" value={c?.satisfactoryPerformance} />
@@ -109,17 +104,17 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
       </ReviewCard>
 
       <ReviewCard title={STEPS[6].title} stepId={7} onEdit={onEdit}>
-        <SummaryItem label="AML / CFT Risk" value={truncate(r?.amlRisk)} />
-        <SummaryItem label="Waiver" value={truncate(r?.waiver)} />
-        <SummaryItem label="Banking Relationship" value={truncate(r?.bankingRelationshipRemarks)} />
-        <SummaryItem label="Key Credit Risk Mitigation" value={truncate(r?.keyCreditRiskMitigation)} />
+        <SummaryItem label="AML / CFT Risk" value={r?.amlRisk} />
+        <SummaryItem label="Waiver" value={r?.waiver} />
+        <SummaryItem label="Banking Relationship" value={r?.bankingRelationshipRemarks} />
+        <SummaryItem label="Key Credit Risk Mitigation" value={r?.keyCreditRiskMitigation} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[7].title} stepId={8} onEdit={onEdit}>
-        <SummaryItem label="Justification of Loan" value={truncate(rec?.justificationOfLoan)} />
-        <SummaryItem label="Account Strategy" value={truncate(rec?.accountStrategy)} />
-        <SummaryItem label="Disbursement" value={truncate(rec?.disbursementSection)} />
-        <SummaryItem label="Conclusion & Recommendation" value={truncate(rec?.conclusionAndRecommendation)} />
+        <SummaryItem label="Justification of Loan" value={rec?.justificationOfLoan} />
+        <SummaryItem label="Account Strategy" value={rec?.accountStrategy} />
+        <SummaryItem label="Disbursement" value={rec?.disbursementSection} />
+        <SummaryItem label="Conclusion & Recommendation" value={rec?.conclusionAndRecommendation} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[8].title} stepId={9} onEdit={onEdit}>

@@ -190,7 +190,7 @@ export function ApprovalWorkflowDetail({ id }: { id: string }) {
           <SummaryRow label="Branch" value={application.branch} />
           <SummaryRow label="Risk Grade" value={summary.riskGrade} success={Boolean(summary.riskGrade)} />
           <SummaryRow label="DSGIR" value={summary.dsgir !== null ? `${summary.dsgir}%` : undefined} />
-          <SummaryRow label="Loan to Value" value={summary.loanToValueRatio !== null ? `${summary.loanToValueRatio}%` : undefined} />
+          <SummaryRow label="Loan to Income Ratio" value={summary.loanToValueRatio !== null ? `${summary.loanToValueRatio}%` : undefined} />
           <SummaryRow label="Collateral" value={summary.collateralText} />
           <SummaryRow
             label="CICL"

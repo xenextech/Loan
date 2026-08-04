@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { ShieldCheck, UserCheck } from "lucide-react";
 import { SectionCard, FormSection } from "../ui/SectionCard";
@@ -15,9 +16,29 @@ import type { LoanAssessmentFormValues } from "../schema";
 const toOptions = (values: readonly string[]) => values.map((v) => ({ value: v, label: v }));
 
 export function Step5SecurityGuarantee() {
-  const { control } = useFormContext<LoanAssessmentFormValues>();
+  const { control, setValue } = useFormContext<LoanAssessmentFormValues>();
   const security = useWatch({ control, name: "security" });
   const blacklistedStatus = useWatch({ control, name: "applicantInfo.blacklistedStatus" });
+  const familyMembers = useWatch({ control, name: "applicantBackground.familyMembers" });
+  const guarantorRelationship = security?.guarantor?.relationship;
+  const guarantorName = security?.guarantor?.nameOfGuarantor;
+
+  // Guarantor is very often a family member — Step 4's Family Members table
+  // already has Father/Mother/Grandfather names (pre-filled from the student's
+  // own application, or entered/edited by the Initiator). Typing a matching
+  // relationship here auto-fills the name from that table instead of
+  // re-typing it, but only while the name field is still blank — once the
+  // Initiator has entered/edited a name, this never overwrites it again.
+  useEffect(() => {
+    if (guarantorName || !guarantorRelationship) return;
+    const match = familyMembers?.find(
+      (m) => m.relationshipWithBorrower?.trim().toLowerCase() === guarantorRelationship.trim().toLowerCase(),
+    );
+    if (match?.personName) {
+      setValue("security.guarantor.nameOfGuarantor", match.personName, { shouldDirty: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guarantorRelationship]);
 
   const fmv = Number(security?.fmv);
   const proposedLoan = Number(security?.proposedLoan);
@@ -34,7 +55,7 @@ export function Step5SecurityGuarantee() {
         </FormSection>
         <div className="mt-4">
           <ReadonlyField
-            label="Calculated Loan to Value"
+            label="Calculated Loan to Income"
             value={calculatedLtv === undefined ? "—" : `${calculatedLtv}%`}
             hint="Proposed loan ÷ FMV — for reference, enter the approved figure into Finance Against FMV above."
           />

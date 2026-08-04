@@ -18,6 +18,20 @@ export default function AdminLayout({
   const router = useRouter();
   const [gate, setGate] = useState<Gate>("checking");
 
+  // Belt-and-suspenders against the page (rather than just <main>) scrolling
+  // on very tall content: force the actual document to never scroll at desktop
+  // widths, so <main>'s own overflow-y-auto is unambiguously the only scroll
+  // region, regardless of any intermediate flex/height containment quirk.
+  // "lg:overflow-hidden" reuses the exact Tailwind utility already compiled
+  // for this page (see the wrapping div below), just applied to body too.
+  useEffect(() => {
+    if (gate !== "ok") return;
+    document.body.classList.add("lg:overflow-hidden");
+    return () => {
+      document.body.classList.remove("lg:overflow-hidden");
+    };
+  }, [gate]);
+
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     const raw = localStorage.getItem("auth_user");
@@ -100,7 +114,7 @@ export default function AdminLayout({
           fallbackName="Unnati Admin Portal"
           footerIcon={ShieldCheck}
         />
-        <main className="flex-1 min-w-0 overflow-y-auto pt-14 lg:pt-0">
+        <main className="flex-1 min-w-0 min-h-0 overflow-y-auto pt-14 lg:pt-0">
           {children}
         </main>
       </div>

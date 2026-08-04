@@ -76,7 +76,7 @@ export function Step3CreditAssessment() {
       <SectionCard icon={Gauge} title="Credit Scoring" description="Facility sizing and underwriting inputs.">
         <FormSection>
           <NumberField name="creditAssessment.creditLimit" label="Credit Limit" suffix="NPR" />
-          <NumberField name="creditAssessment.loanToValueRatio" label="Loan to Value Ratio (%)" suffix="%" />
+          <NumberField name="creditAssessment.loanToValueRatio" label="Loan to Income Ratio (%)" suffix="%" />
           <NumberField name="creditAssessment.dsgir" label="DSGIR (%)" suffix="%" />
           <NumberField name="creditAssessment.operationOfInstitution" label="Operation of Institution (Years)" />
           <NumberField name="creditAssessment.satisfactoryPerformance" label="Satisfactory Performance (Years)" />

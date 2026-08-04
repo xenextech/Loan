@@ -24,8 +24,7 @@ import Image from "next/image";
 interface CourseCardProps {
   course: MarketplaceCourse;
   collegeId: string;
-  /** Shown only when provided — omit inside a college's own course list
-   * (redundant there); pass it in cross-college contexts like Related Courses. */
+
   collegeName?: string;
   universityName?: string | null;
 }
@@ -36,15 +35,23 @@ export function CourseCard({ course, collegeId, collegeName, universityName }: C
   return (
     <Card className="group border-border overflow-hidden p-0 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
       <div className="relative h-36 bg-linear-to-br from-[#15C35B] to-[#0F7D3C] flex items-center justify-center overflow-hidden">
-           <div className="">
-                      <Image
-                    src="https://images.unsplash.com/photo-1591123120675-6f7f1aae0e5b?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    alt=""
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                  />
-                  </div>
+        {course.bannerUrl ? (
+          <Image
+            src={course.bannerUrl}
+            alt=""
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        ) : (
+          <Image
+            src="https://images.unsplash.com/photo-1591123120675-6f7f1aae0e5b?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+            alt=""
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        )}
         <div className="absolute top-2 left-2 flex gap-1">
           {course.isFeatured && (
             <Badge className="gap-1 bg-white/95 text-foreground border-0 shadow-sm text-[9px] font-semibold px-1.5 h-4">

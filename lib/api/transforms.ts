@@ -298,6 +298,9 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
   const g = record.personalGuarantee;
   const ins = record.insurance;
   const rc = record.repaymentCapacity;
+  // Only default relationship alongside the name fallback below — never once
+  // the Initiator has saved a guarantee of their own.
+  const guarantorIsFatherFallback = !g?.nameOfGuarantor && !!record.fatherName;
 
   return {
     applicantInfo: {
@@ -305,7 +308,15 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
       relationshipStartDate: toDateInputValue(record.relationshipStartDate),
       group: record.customerGroup ?? "",
       obligorNumber: record.obligorNumber ?? "",
-      permanentAddress: record.permanentAddress ?? "",
+      // Falls back to the student's own structured address (apply flow's Step 2:
+      // province/district/municipality/ward) until the Initiator saves a
+      // permanent address of their own — same precedent as the guarantor name
+      // fallback below.
+      permanentAddress:
+        record.permanentAddress ||
+        [record.municipality, record.ward ? `Ward ${record.ward}` : undefined, record.district, record.province]
+          .filter(Boolean)
+          .join(", "),
       correspondenceAddress: record.correspondenceAddress ?? "",
       contactNumber: record.phoneNumber ?? "",
       profession: record.profession ?? "",
@@ -385,7 +396,7 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
         // Falls back to the student's father's name (from the apply flow's Step 3)
         // until the Initiator saves a personal guarantee of their own.
         nameOfGuarantor: g?.nameOfGuarantor || record.fatherName || "",
-        relationship: g?.relationship ?? "",
+        relationship: g?.relationship || (guarantorIsFatherFallback ? "Father" : ""),
         age: g?.age ?? undefined,
         netWorth: toOptionalNumber(g?.netWorth),
         guarantorConsent: toYesNo(g?.guarantorConsent),
