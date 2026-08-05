@@ -51,11 +51,51 @@ export const applicantInfoSchema = z.object({
 
 // ─── Step 2 — NRB Reporting ─────────────────────────────────────────────────
 // Field names match the backend's actual regulatory codes exactly (Basel
-// classification/risk weight, NRB Directive 9.3/9.4 codes, SIS classification,
-// Green Finance taxonomy) — these are bank-assigned codes rather than a fixed
-// option list, so every field below is free text.
+// classification/risk weight, NRB Directive 9.3/9.4 codes, SIS classification).
+// The *_OPTIONS lists below are the bank's current fixed coding for an
+// education loan product; every field still validates as free text so the UI
+// (SelectWithOtherField) can save a manually-overridden custom value too.
 
 export const YES_NO_OPTIONS = ["Yes", "No"] as const;
+
+export const BASEL_CLASSIFICATION_OPTIONS = [
+  {
+    value: "Regulatory Retail Portfolio (RRP)",
+    label: "Regulatory Retail Portfolio (RRP) — credit limit up to NPR 25M",
+    riskWeight: 75,
+  },
+  {
+    value: "Claims on domestic corporate (Unrated)",
+    label: "Claims on domestic corporate (Unrated) — credit limit above NPR 25M",
+    riskWeight: 100,
+  },
+  { value: "Past due claims", label: "Past due claims — past due", riskWeight: 150 },
+] as const;
+
+export const NRB_93_SECTOR_CODE_OPTIONS = [{ value: "NF Education Loan", label: "NF — Education Loan" }] as const;
+
+export const NRB_93_KA_PRODUCT_CODE_OPTIONS = [
+  { value: "KB Education Loan", label: "KB — Education Loan" },
+] as const;
+
+export const NRB_94_SECURITY_TYPE_CODE_OPTIONS = [
+  { value: "JC Personal Guarantee", label: "JC — Personal Guarantee" },
+] as const;
+
+export const SIS_1_PRODUCT_TYPE_OPTIONS = [
+  { value: "A4 Long Term Loan – Others", label: "A4 — Long Term Loan – Others" },
+] as const;
+
+export const SIS_2_SECTOR_OPTIONS = [{ value: "PB Education Loan", label: "PB — Education Loan" }] as const;
+
+export const SIS_3_SECURITY_OPTIONS = [
+  { value: "EA Personal Guarantee", label: "EA — Personal Guarantee" },
+] as const;
+
+export const SIS_4_INSTITUTIONAL_GROUPING_OPTIONS = [
+  { value: "FA (Male)", label: "FA — Male" },
+  { value: "FB (Female)", label: "FB — Female" },
+] as const;
 
 export const nrbReportingSchema = z.object({
   baselClassification: optionalText(120),

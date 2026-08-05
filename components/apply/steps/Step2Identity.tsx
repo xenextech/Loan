@@ -422,7 +422,7 @@ export default function Step2Identity({
                 <FormItem>
                   <FormLabel>Issued Date</FormLabel>
                   <FormControl>
-                    <AdDatePicker value={field.value} onChange={field.onChange} placeholder="YYYY-MM-DD" />
+                    <BsDatePicker value={field.value} onChange={field.onChange} placeholder="YYYY-MM-DD" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
