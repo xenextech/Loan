@@ -179,8 +179,9 @@ export default function Step4ReviewSubmit({
                 .replace(/\b\w/g, (l) => l.toUpperCase()),
             },
             { label: "Name on Doc", value: step2?.identityName },
-            { label: "Issued Date (BS)", value: step2?.dobBs },
-            { label: "Issued Date (AD)", value: step2?.dob },
+            { label: "DOB (BS)", value: step2?.dobBs },
+            {label:"Issued Date", value: step2?.issuedDate},
+            { label: "DOB (AD)", value: step2?.dob },
             { label: "Doc Number", value: step2?.identityNumber },
             {
               label: "Gender",
