@@ -258,7 +258,7 @@ export function NewApplicationDetailsForm({
             <SelectInput control={form.control} name="gender" label="Gender" options={NA_GENDER_OPTIONS} />
             <SelectInput control={form.control} name="occupation" label="Occupation" options={NA_OCCUPATION_OPTIONS} />
             <TextInput control={form.control} name="issuedDistrict" label="Issued District" />
-            <TextInput control={form.control} name="issuedDate" label="Issued Date" type="date" />
+            <DateBsInput control={form.control} name="issuedDate" label="Issued Date" />
           </FormSection>
 
           {identityType && (
