@@ -49,6 +49,12 @@ const SEND_BACK_TARGETS: { value: ApplicationStage; label: string }[] = [
   { value: "CHECKING", label: "Checker" },
 ];
 
+const APPROVER_DESIGNATION_OPTIONS = [
+  "Head Digital Banking and Transaction",
+  "CNNMO",
+  "CEO",
+] as const;
+
 function getApiErrorMessage(err: unknown): string | undefined {
   if (err && typeof err === "object" && "data" in err) {
     const data = (err as { data?: unknown }).data;
@@ -71,6 +77,8 @@ export function ApproverApprovalActions({ applicationId, stage }: { applicationI
   const currentUser = useAppSelector((s) => s.auth.user);
   const userDisplayName = displayName(currentUser, "your account");
   const [attestationName, setAttestationName] = useState("");
+  const [branchName, setBranchName] = useState("");
+  const [designation, setDesignation] = useState("");
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [sendBackOpen, setSendBackOpen] = useState(false);
@@ -87,7 +95,14 @@ export function ApproverApprovalActions({ applicationId, stage }: { applicationI
 
   const handleApprove = async () => {
     try {
-      await approveApplication(applicationId).unwrap();
+      await approveApplication({
+        applicationId,
+        data: {
+          branchName: branchName.trim() || undefined,
+          designation: designation || undefined,
+          signature: attestationName.trim() || undefined,
+        },
+      }).unwrap();
       toast.success("Application approved", { description: "A loan account has been created." });
       setApproveOpen(false);
       router.push("/approver");
@@ -99,7 +114,15 @@ export function ApproverApprovalActions({ applicationId, stage }: { applicationI
   const handleReject = async () => {
     if (!rejectReason.trim()) return;
     try {
-      await rejectApplication({ applicationId, data: { reason: rejectReason.trim() } }).unwrap();
+      await rejectApplication({
+        applicationId,
+        data: {
+          reason: rejectReason.trim(),
+          branchName: branchName.trim() || undefined,
+          designation: designation || undefined,
+          signature: attestationName.trim() || undefined,
+        },
+      }).unwrap();
       toast.success("Application rejected");
       setRejectOpen(false);
       setRejectReason("");
@@ -113,7 +136,16 @@ export function ApproverApprovalActions({ applicationId, stage }: { applicationI
     if (!sendBackReason.trim()) return;
     const targetLabel = SEND_BACK_TARGETS.find((t) => t.value === sendBackTarget)?.label ?? "Initiator";
     try {
-      await sendBackApplication({ applicationId, data: { reason: sendBackReason.trim(), toStage: sendBackTarget } }).unwrap();
+      await sendBackApplication({
+        applicationId,
+        data: {
+          reason: sendBackReason.trim(),
+          toStage: sendBackTarget,
+          branchName: branchName.trim() || undefined,
+          designation: designation || undefined,
+          signature: attestationName.trim() || undefined,
+        },
+      }).unwrap();
       toast.success("Application sent back", { description: `Returned to the ${targetLabel} for corrections.` });
       setSendBackOpen(false);
       setSendBackReason("");
@@ -137,6 +169,11 @@ export function ApproverApprovalActions({ applicationId, stage }: { applicationI
         waitingMessage={
           actionable ? undefined : `This application is at the ${stage ? STAGE_LABEL[stage] : "Not started"} stage — no Approver action is available here.`
         }
+        branchName={branchName}
+        onBranchNameChange={setBranchName}
+        designation={designation}
+        designationOptions={APPROVER_DESIGNATION_OPTIONS}
+        onDesignationChange={setDesignation}
         attestationName={attestationName}
         onAttestationNameChange={setAttestationName}
       >

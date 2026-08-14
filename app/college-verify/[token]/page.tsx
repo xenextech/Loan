@@ -31,7 +31,6 @@ import {
   Upload,
   FileText,
   Loader2,
-  AlertCircle,
   BookOpen,
   UserPlus,
   ArrowRight,
@@ -44,6 +43,21 @@ import {
 } from "@/lib/api/collegeApi";
 import { formatNPR } from "@/lib/formatters";
 import { useCurrentUser } from "@/lib/hooks";
+import VerificationEmailGate from "@/components/apply/VerificationEmailGate";
+
+function getApiErrorMessage(err: unknown): string {
+  if (err && typeof err === "object" && "data" in err) {
+    const data = (err as { data?: { message?: string | string[] } }).data;
+    if (data?.message)
+      return Array.isArray(data.message) ? data.message.join(", ") : data.message;
+  }
+  if (err && typeof err === "object" && "status" in err) {
+    const status = (err as { status?: unknown }).status;
+    if (typeof status === "number")
+      return `Request failed with status ${status}. Please try again.`;
+  }
+  return "Something went wrong. Please try again.";
+}
 
 const collegeFormSchema = z.object({
   collegeName: z.string().min(1, "College name is required"),
@@ -131,8 +145,17 @@ export default function CollegeVerifyPage({
 }) {
   const { token } = use(params);
   const currentUser = useCurrentUser();
-  const { data, isLoading, isError } =
-    useGetApplicationByCollegeTokenQuery(token);
+  const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
+  // isLoading (not isFetching) is what should gate the full-page skeleton —
+  // isFetching is also true on every background refetch (e.g. after an offer
+  // letter/enrollment doc upload invalidates this query's tag), which was
+  // blowing away the whole rendered form and looking like a page refresh on
+  // every upload. isLoading only means "no data yet", so an in-place refetch
+  // just updates data quietly once it resolves.
+  const { data, isLoading, error } = useGetApplicationByCollegeTokenQuery(
+    { token, email: confirmedEmail ?? undefined },
+    { skip: !confirmedEmail },
+  );
   const [submitForm, { isLoading: isSubmittingForm }] =
     useSubmitCollegeFormMutation();
   const [uploadOfferLetter, { isLoading: isUploadingOL }] =
@@ -153,7 +176,22 @@ export default function CollegeVerifyPage({
     },
   });
 
-  if (isLoading) {
+  // Nothing about the application is fetched (let alone shown) until the
+  // recipient confirms the email that received this invitation. A failed
+  // attempt (wrong email, expired/invalid/revoked link) returns to this same
+  // gate with the error shown, so a mistyped email can just be corrected.
+  if (!confirmedEmail || error) {
+    return (
+      <VerificationEmailGate
+        recipientLabel="College"
+        isLoading={isLoading}
+        error={error ? getApiErrorMessage(error) : null}
+        onConfirm={(email) => setConfirmedEmail(email)}
+      />
+    );
+  }
+
+  if (isLoading || !data) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg space-y-4">
@@ -164,37 +202,19 @@ export default function CollegeVerifyPage({
     );
   }
 
-  if (isError || !data) {
-    return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-7 h-7 text-destructive" />
-          </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">
-            Invalid or Expired Link
-          </h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            This verification link is no longer valid. Please contact the loan
-            applicant for a new link.
-          </p>
-          <Button asChild variant="outline">
-            <Link href="/">Back to Home</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const onSubmitForm = async (values: CollegeFormValues) => {
     try {
-      await submitForm({ token, ...values }).unwrap();
+      await submitForm({
+        token,
+        email: confirmedEmail ?? undefined,
+        ...values,
+      }).unwrap();
       toast.success("Verification submitted", {
         description: "Your college verification has been saved successfully.",
       });
       setFormSubmitted(true);
-    } catch {
-      toast.error("Failed to submit. Please try again.");
+    } catch (err) {
+      toast.error("Failed to submit", { description: getApiErrorMessage(err) });
     }
   };
 
@@ -204,14 +224,22 @@ export default function CollegeVerifyPage({
   ) => {
     try {
       if (type === "offer-letter") {
-        await uploadOfferLetter({ token, file }).unwrap();
+        await uploadOfferLetter({
+          token,
+          file,
+          email: confirmedEmail ?? undefined,
+        }).unwrap();
         toast.success("Offer letter uploaded");
       } else {
-        await uploadEnrollment({ token, file }).unwrap();
+        await uploadEnrollment({
+          token,
+          file,
+          email: confirmedEmail ?? undefined,
+        }).unwrap();
         toast.success("Enrollment document uploaded");
       }
-    } catch {
-      toast.error("Upload failed. Please try again.");
+    } catch (err) {
+      toast.error("Upload failed", { description: getApiErrorMessage(err) });
     }
   };
 
@@ -298,13 +326,25 @@ export default function CollegeVerifyPage({
           {/* Application summary */}
           <Card className="shadow-sm">
             <CardContent className="p-6 space-y-4">
-              <div className="bg-muted/50 rounded-xl px-4 py-3">
-                <p className="text-xs text-muted-foreground">
-                  Application Number
-                </p>
-                <p className="text-base font-bold font-mono text-foreground">
-                  {data.applicationNumber}
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-muted/50 rounded-xl px-4 py-3">
+                  <p className="text-xs text-muted-foreground">
+                    Application Number
+                  </p>
+                  <p className="text-base font-bold font-mono text-foreground">
+                    {data.applicationNumber}
+                  </p>
+                </div>
+                {data.verificationCode && (
+                  <div className="bg-muted/50 rounded-xl px-4 py-3">
+                    <p className="text-xs text-muted-foreground">
+                      Verification ID
+                    </p>
+                    <p className="text-base font-bold font-mono text-foreground">
+                      {data.verificationCode}
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[

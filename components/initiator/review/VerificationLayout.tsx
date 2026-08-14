@@ -60,10 +60,6 @@ export function VerificationLayout({ detail }: { detail: InitiatorApplicationDet
         </div>
       </header>
 
-      {/* Body: form panel resizes between full-width and its split width; the review
-          panel collapses to 0 width when hidden (clipped via overflow-hidden) and
-          expands to its split width when shown — one shared transition duration
-          keeps both edges moving together, reading as a single slide. */}
       <div className="flex flex-col md:flex-row md:items-start">
         <div
           className={cn(

@@ -34,6 +34,7 @@ import { STATUS_BADGE_CLASS as EMI_STATUS_BADGE_CLASS } from "@/components/initi
 import { useLoanHealth } from "./hooks/useLoanHealth";
 import LoanServicingPanel from "./loan-servicing/LoanServicingPanel";
 import ApplicationAppraisalDetails, { hasAppraisalData } from "./ApplicationAppraisalDetails";
+import { CreditManagerApprovalActions } from "./CreditManagerApprovalActions";
 
 const TRANCHE_STATUS_CLASS: Record<string, string> = {
   CREDITED: "bg-[var(--success)]/15 text-[oklch(0.42_0.18_145)] dark:text-success",
@@ -274,6 +275,14 @@ export default function CreditManagerLoanDetail({ id }: { id: string }) {
           <Separator />
         </>
       )}
+
+      {/* Credit Manager's own decision — Reject/Send Back for documentation or
+          disbursement issues found during appraisal. */}
+      <div className="space-y-3">
+        <CreditManagerApprovalActions applicationId={id} stage={application.stage ?? null} />
+      </div>
+
+      <Separator />
 
       {/* Credit score */}
       {fullDetail?.creditScore && (

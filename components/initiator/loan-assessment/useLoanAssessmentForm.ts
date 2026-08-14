@@ -53,8 +53,29 @@ export function useLoanAssessmentForm(
   applicationId: string,
   initialValues?: Partial<LoanAssessmentFormValues>,
   hasInitiatorInfo = false,
+  applicationLoanAmount?: number,
+  /** Defaults to the full 10-step flow — pass a smaller count (e.g. 9, to
+   *  drop the Review & Submit step) for a resubmission. */
+  totalSteps: number = TOTAL_STEPS,
 ) {
   const storageKey = `${DRAFT_STORAGE_PREFIX}${applicationId}`;
+  const hasValidLoanAmount = typeof applicationLoanAmount === "number" && applicationLoanAmount > 0;
+
+  // Credit Limit must always equal the application's requested loan amount —
+  // Step4CreditAssessment keeps form state in sync while mounted, but every
+  // payload sent to the backend is re-stamped here too, so the value actually
+  // submitted can never drift from the source even if that step was never
+  // visited in this session (e.g. navigating via the Stepper).
+  const withEnforcedCreditLimit = useCallback(
+    (values: LoanAssessmentFormValues): LoanAssessmentFormValues =>
+      hasValidLoanAmount
+        ? {
+            ...values,
+            creditAssessment: { ...values.creditAssessment, creditLimit: applicationLoanAmount },
+          }
+        : values,
+    [hasValidLoanAmount, applicationLoanAmount],
+  );
 
   const form = useForm<LoanAssessmentFormValues>({
     resolver: zodResolver(loanAssessmentSchema),
@@ -115,7 +136,7 @@ export function useLoanAssessmentForm(
 
   const goToStep = useCallback(
     async (target: number) => {
-      const clamped = Math.min(Math.max(target, 1), TOTAL_STEPS);
+      const clamped = Math.min(Math.max(target, 1), totalSteps);
       if (clamped > currentStep) {
         const fields = STEP_FIELD_PATHS[currentStep] ?? [];
         const valid = fields.length ? await form.trigger(fields) : true;
@@ -124,14 +145,14 @@ export function useLoanAssessmentForm(
           return false;
         }
       }
-      if (clamped === TOTAL_STEPS) {
+      if (clamped === totalSteps) {
         await form.trigger();
       }
       setCurrentStep(clamped);
       setMaxStepReached((prev) => Math.max(prev, clamped));
       return true;
     },
-    [currentStep, form],
+    [currentStep, form, totalSteps],
   );
 
   const goNext = useCallback(() => goToStep(currentStep + 1), [currentStep, goToStep]);
@@ -155,7 +176,7 @@ export function useLoanAssessmentForm(
    */
   const submitStepAndAdvance = useCallback(async () => {
     if (isSyncingStep) return false; // guard against double-submit while a request is in flight
-    if (currentStep >= TOTAL_STEPS) return false; // Review step submits via `submit()` instead
+    if (currentStep >= totalSteps) return false; // Review step submits via `submit()` instead
 
     const fields = STEP_FIELD_PATHS[currentStep] ?? [];
     const valid = fields.length ? await form.trigger(fields) : true;
@@ -169,7 +190,10 @@ export function useLoanAssessmentForm(
       if (isFirstEverSave) {
         await createInitiatorApplication({ applicationId, data: form.getValues("applicantInfo") }).unwrap();
       } else {
-        await updateInitiatorApplication({ applicationId, data: form.getValues() }).unwrap();
+        await updateInitiatorApplication({
+          applicationId,
+          data: withEnforcedCreditLimit(form.getValues()),
+        }).unwrap();
       }
     } catch (err) {
       toast.error(isFirstEverSave ? "Failed to submit applicant information" : "Failed to update the assessment", {
@@ -178,18 +202,20 @@ export function useLoanAssessmentForm(
       return false;
     }
 
-    const next = Math.min(currentStep + 1, TOTAL_STEPS);
+    const next = Math.min(currentStep + 1, totalSteps);
     setCurrentStep(next);
     setMaxStepReached((prev) => Math.max(prev, next));
     return true;
   }, [
     isSyncingStep,
     currentStep,
+    totalSteps,
     hasInitiatorInfo,
     form,
     applicationId,
     createInitiatorApplication,
     updateInitiatorApplication,
+    withEnforcedCreditLimit,
   ]);
 
   const saveDraft = useCallback(() => {
@@ -207,7 +233,7 @@ export function useLoanAssessmentForm(
       if (isSyncingStep) return false;
       const valid = await form.trigger();
       if (!valid) {
-        await goToStep(TOTAL_STEPS);
+        await goToStep(totalSteps);
         toast.error("Some required fields are missing", {
           description: "Review the highlighted sections before submitting.",
         });
@@ -219,7 +245,10 @@ export function useLoanAssessmentForm(
       // clicking "Update" on each one.
       let updatedApplication;
       try {
-        updatedApplication = await updateInitiatorApplication({ applicationId, data: form.getValues() }).unwrap();
+        updatedApplication = await updateInitiatorApplication({
+          applicationId,
+          data: withEnforcedCreditLimit(form.getValues()),
+        }).unwrap();
       } catch (err) {
         toast.error("Failed to save the assessment", { description: getApiErrorMessage(err) ?? "Please try again." });
         return false;
@@ -247,7 +276,7 @@ export function useLoanAssessmentForm(
       }
 
       // Full form already validated above — parse to get the clean, coerced payload.
-      await onValid(loanAssessmentSchema.parse(form.getValues()));
+      await onValid(loanAssessmentSchema.parse(withEnforcedCreditLimit(form.getValues())));
       try {
         window.localStorage.removeItem(storageKey);
       } catch {
@@ -255,7 +284,17 @@ export function useLoanAssessmentForm(
       }
       return true;
     },
-    [form, goToStep, storageKey, isSyncingStep, applicationId, updateInitiatorApplication, resubmitApplication],
+    [
+      form,
+      goToStep,
+      storageKey,
+      isSyncingStep,
+      applicationId,
+      updateInitiatorApplication,
+      resubmitApplication,
+      withEnforcedCreditLimit,
+      totalSteps,
+    ],
   );
 
   return useMemo(

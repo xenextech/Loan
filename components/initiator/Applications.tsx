@@ -38,7 +38,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "pending-approval", label: "Pending Approval" },
   { key: "disbursed", label: "Disbursed" },
   { key: "rejected", label: "Rejected" },
-  { key: "sent-back", label: "Sent Back" },
+  { key: "sent-back", label: "Return" },
 ];
 
 const TAB_KEYS = new Set<TabKey>(TABS.map((t) => t.key));
@@ -47,10 +47,6 @@ function isTabKey(value: string | null): value is TabKey {
   return value !== null && TAB_KEYS.has(value as TabKey);
 }
 
-// "My Queue" is backed by a dedicated endpoint (college-verified + Initiator-created
-// applications ready for this Initiator's own review) — every other tab is backed by
-// GET /dashboard/applications, the same stage-based `filter` the Support/Checker/
-// Approver dashboards use, undefined for "All" (every submitted application).
 const TAB_FILTER: Partial<Record<TabKey, DashboardApplicationsFilter>> = {
   "pending-approval": "pending",
   disbursed: "disbursed",

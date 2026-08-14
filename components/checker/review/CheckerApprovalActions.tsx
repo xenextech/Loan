@@ -28,6 +28,9 @@ import type { ApplicationStage } from "@/types/dashboard";
  *  in dashboard-approval.service.ts). */
 const CHECK_ACTIONABLE_STAGES: ReadonlyArray<ApplicationStage | null> = ["SUPPORTED", "SENT_BACK"];
 
+// Only one option "for now" — expand this list as more designations apply.
+const CHECKER_DESIGNATION_OPTIONS = ["BM"] as const;
+
 function getApiErrorMessage(err: unknown): string | undefined {
   if (err && typeof err === "object" && "data" in err) {
     const data = (err as { data?: unknown }).data;
@@ -42,14 +45,17 @@ function getApiErrorMessage(err: unknown): string | undefined {
 
 /**
  * The Checker's only action on an application: a single tick marking it as checked
- * (`check`, gated server-side to `@Roles(CREDIT_MANAGER, CHECKER)`). No Send
- * Back/Reject controls here — those belong to the Supporter and Approver dashboards.
+ * (`check`, gated server-side to `@Roles(CHECKER)` — Credit Manager no longer shares
+ * this route). No Send Back/Reject controls here — those belong to the Supporter and
+ * Approver dashboards.
  */
 export function CheckerApprovalActions({ applicationId, stage }: { applicationId: string; stage: ApplicationStage | null }) {
   const router = useRouter();
   const currentUser = useAppSelector((s) => s.auth.user);
   const userDisplayName = displayName(currentUser, "your account");
   const [attestationName, setAttestationName] = useState("");
+  const [branchName, setBranchName] = useState("");
+  const [designation, setDesignation] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const [checkApplication, { isLoading: isChecking }] = useCheckApplicationMutation();
@@ -59,7 +65,14 @@ export function CheckerApprovalActions({ applicationId, stage }: { applicationId
 
   const handleCheck = async () => {
     try {
-      await checkApplication(applicationId).unwrap();
+      await checkApplication({
+        applicationId,
+        data: {
+          branchName: branchName.trim() || undefined,
+          designation: designation || undefined,
+          signature: attestationName.trim() || undefined,
+        },
+      }).unwrap();
       toast.success("Application checked", { description: "Moved to the Approver queue." });
       setConfirmOpen(false);
       router.push("/checker");
@@ -81,6 +94,11 @@ export function CheckerApprovalActions({ applicationId, stage }: { applicationId
         waitingMessage={
           actionable ? undefined : `This application is at the ${stage ? STAGE_LABEL[stage] : "Not started"} stage — no Check action is available here.`
         }
+        branchName={branchName}
+        onBranchNameChange={setBranchName}
+        designation={designation}
+        designationOptions={CHECKER_DESIGNATION_OPTIONS}
+        onDesignationChange={setDesignation}
         attestationName={attestationName}
         onAttestationNameChange={setAttestationName}
       >

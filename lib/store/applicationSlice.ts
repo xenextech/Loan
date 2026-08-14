@@ -14,7 +14,6 @@ interface ApplicationState {
   hasUnsavedChanges: boolean;
   // Post-submission
   submittedApplicationNumber: string | null;
-  submissionLinks: { parentLink: string | null; collegeLink: string | null };
 }
 
 const initialState: ApplicationState = {
@@ -26,7 +25,6 @@ const initialState: ApplicationState = {
   lastSavedAt: null,
   hasUnsavedChanges: false,
   submittedApplicationNumber: null,
-  submissionLinks: { parentLink: null, collegeLink: null },
 };
 
 const applicationSlice = createSlice({
@@ -67,17 +65,9 @@ const applicationSlice = createSlice({
 
     setSubmitted(
       state,
-      action: PayloadAction<{
-        applicationNumber: string;
-        parentLink?: string;
-        collegeLink?: string;
-      }>
+      action: PayloadAction<{ applicationNumber: string }>
     ) {
       state.submittedApplicationNumber = action.payload.applicationNumber;
-      state.submissionLinks = {
-        parentLink: action.payload.parentLink ?? null,
-        collegeLink: action.payload.collegeLink ?? null,
-      };
     },
 
     resetApplication(state) {

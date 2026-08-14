@@ -49,6 +49,10 @@ const buildInitiatorCreateBody = (data: ApplicantInfo) => ({
   panNumber: data.pan || undefined,
   licenseNumber: data.license || undefined,
   bankingRelationship: data.bankingRelationship || undefined,
+  existingBankName: data.existingBankName || undefined,
+  existingBankAccountNumber: data.existingBankAccountNumber || undefined,
+  existingBankSavingsAmount: toNumber(data.existingBankSavingsAmount),
+  existingBankLoanAmount: toNumber(data.existingBankLoanAmount),
   isBlacklisted: data.blacklistedStatus ? data.blacklistedStatus === "BLACKLISTED" : undefined,
 });
 
@@ -154,6 +158,10 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
     panNumber: a.pan || undefined,
     licenseNumber: a.license || undefined,
     bankingRelationship: a.bankingRelationship || undefined,
+    existingBankName: a.existingBankName || undefined,
+    existingBankAccountNumber: a.existingBankAccountNumber || undefined,
+    existingBankSavingsAmount: toNumber(a.existingBankSavingsAmount),
+    existingBankLoanAmount: toNumber(a.existingBankLoanAmount),
     isBlacklisted: a.blacklistedStatus ? a.blacklistedStatus === "BLACKLISTED" : undefined,
 
     // 2. NRB Reporting
@@ -174,6 +182,7 @@ const buildInitiatorUpdateBody = (values: LoanAssessmentFormValues) => {
 
     // 3. Credit Scoring
     creditLimit: toNumber(c.creditLimit),
+    income: toNumber(c.income),
     loanToValueRatio: toNumber(c.loanToValueRatio),
     dsgir: toNumber(c.dsgir),
     performanceYears: toNumber(c.performanceYears),

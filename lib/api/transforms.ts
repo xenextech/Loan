@@ -328,6 +328,10 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
       pan: record.panNumber ?? "",
       license: record.licenseNumber ?? "",
       bankingRelationship: record.bankingRelationship as LoanAssessmentFormValues["applicantInfo"]["bankingRelationship"],
+      existingBankName: record.existingBankName ?? "",
+      existingBankAccountNumber: record.existingBankAccountNumber ?? "",
+      existingBankSavingsAmount: toOptionalNumber(record.existingBankSavingsAmount),
+      existingBankLoanAmount: toOptionalNumber(record.existingBankLoanAmount),
       blacklistedStatus: record.isBlacklisted === undefined ? undefined : record.isBlacklisted ? "BLACKLISTED" : "NOT_BLACKLISTED",
     },
     nrbReporting: {
@@ -348,6 +352,7 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
     },
     creditAssessment: {
       creditLimit: toOptionalNumber(record.creditLimit),
+      income: toOptionalNumber(record.income) ?? toOptionalNumber(record.loanInformation?.expectedSalary),
       loanToValueRatio: toOptionalNumber(record.loanToValueRatio),
       dsgir: toOptionalNumber(record.dsgir),
       performanceYears: toOptionalNumber(record.performanceYears),
@@ -454,6 +459,7 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
         approvedDate: toDateInputValue(record.supporterDate),
         remarks: record.supporterRemarks ?? "",
         signature: record.supporterSignature ?? "",
+        designation: record.supporterPost ?? "",
       },
       checker: {
         approverName: record.checkerName ?? "",
@@ -462,6 +468,7 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
         approvedDate: toDateInputValue(record.checkerDate),
         remarks: record.checkerRemarks ?? "",
         signature: record.checkerSignature ?? "",
+        designation: record.checkerPost ?? "",
       },
       approver: {
         approverName: record.approverName ?? "",
@@ -470,6 +477,7 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
         approvedDate: toDateInputValue(record.approverDate),
         remarks: record.approverRemarks ?? "",
         signature: record.approverSignature ?? "",
+        designation: record.approverPost ?? "",
       },
     },
   };
@@ -490,6 +498,8 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
     collegeVerifiedAt: collegeVerification?.submittedAt ?? "",
     submittedAt:       record.submittedAt ?? record.createdAt,
     workflowStage:     "Initiator Review",
+    stage:             record.stage,
+    sentBackToStage:   record.sentBackToStage,
     studentInfo: {
       fullName:        record.fullName ?? "",
       email:           record.email ?? "",

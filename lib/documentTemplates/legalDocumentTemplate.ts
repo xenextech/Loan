@@ -13,10 +13,6 @@ export type LegalDocumentType =
   | "HYPOTHECATION"
   | "PROMISSORY_NOTE";
 
-// Nepali titles, matching the bank's own paper documents verbatim (as
-// uploaded): कर्जा प्रस्ताव पत्र, व्यक्तिगत जमानत, कर्जा तमसुक, and कर्जा रकम
-// निकासा अनुरोध पत्र — shown as-is in the Document Type picker and on each
-// generated document.
 export const LEGAL_DOCUMENT_TYPE_LABEL: Record<LegalDocumentType, string> = {
   LOAN_AGREEMENT: "कर्जा प्रस्ताव पत्र",
   GUARANTEE_DEED: "व्यक्तिगत जमानत",
@@ -44,13 +40,7 @@ export const MUNICIPALITY_TYPE_LABEL: Record<MunicipalityType, string> = {
   GAUNPALIKA: "गाउँपालिका (गा.पा.)",
 };
 
-/**
- * One party to a deed — the borrower or the guarantor. The paper forms
- * (कर्जा तमसुक, व्यक्तिगत जमानत) describe each party with the same fixed
- * sentence: four generations of parentage, a permanent and a current address,
- * age, name and citizenship. Both parties use identical wording, so they share
- * one shape.
- */
+
 export interface DeedParty {
   name?: string | null;
   age?: string | null;
@@ -78,12 +68,18 @@ export interface DeedParty {
   citizenshipOffice?: string | null;
 }
 
-/**
- * The lending institution as the deeds name it: "<province, district,
- * municipality, ward, locality> स्थित प्रधान कार्यालय भएको <name> को <branch>".
- * Defaults reproduce the uploaded Best Finance forms but stay editable, since
- * the platform also issues documents on behalf of other partner banks/NBFCs.
- */
+
+/** One रोहबर साक्षी (witness) line on PROMISSORY_NOTE — "१) <district> जिल्ला
+ *  <municipality> वडा नं. <wardNo> बस्ने वर्ष <age> को <name>". All optional;
+ *  anything omitted prints as a ruled blank on the document. */
+export interface DocumentWitness {
+  district?: string | null;
+  municipality?: string | null;
+  wardNo?: string | null;
+  age?: string | null;
+  name?: string | null;
+}
+
 export interface LenderIdentity {
   name?: string | null;
   province?: string | null;
@@ -176,6 +172,9 @@ export interface LegalDocumentTemplateData {
   collateralPlotNo?: string | null;
   collateralArea?: string | null;
   collateralRemarks?: string | null;
+  /** PROMISSORY_NOTE only — रोहबर साक्षी list. Null/empty falls back to a
+   *  single blank witness line on the document. */
+  witnesses?: DocumentWitness[] | null;
   /** HYPOTHECATION only — कर्जा रकम निकासा अनुरोध पत्र specific fields. */
   approvalLetterDate?: string | null;
   loanExpiryDate?: string | null;
@@ -273,12 +272,12 @@ function formatBsDate(iso?: string | null): string {
 }
 
 /**
- * "रू.५०,००,०००÷- (अक्षरेपी पचास लाख मात्र)" — the कर्जा प्रस्ताब पत्र's own
+ * "रू.५०,००,०००/- (अक्षरेपी पचास लाख मात्र)" — the कर्जा प्रस्ताब पत्र's own
  * amount style, distinct from the two deeds (see amountMatra/amountAkshare).
  */
 function amountRupeeWords(amount: number | null | undefined): string {
   if (amount === null || amount === undefined) {
-    return `रू.<span class="rule rule-md"></span>÷- (अक्षरेपी <span class="rule rule-lg"></span> मात्र)`;
+    return `रू.<span class="rule rule-md"></span>/- (अक्षरेपी <span class="rule rule-lg"></span> मात्र)`;
   }
   return esc(formatNepaliRupeeWords(amount));
 }
@@ -318,22 +317,22 @@ function formatBsDateSlashed(iso?: string | null): string {
 }
 
 /**
- * BS date as the कर्जा प्रस्ताब पत्र writes it — "२०८२÷०२÷०८". That form uses
+ * BS date as the कर्जा प्रस्ताब पत्र writes it — "२०८२/०२/०८". That form uses
  * the division sign as its separator, not a slash or hyphen; the two Nepali
  * deeds use "/" instead, so the separator is per-document rather than global.
  */
 function formatBsDateDiv(iso?: string | null): string {
   // Unlike the document's own issue date, a missing date here means "not
   // recorded" rather than "today" — so it stays a blank in the paper's own
-  // "२०.....÷ .....÷ ....." shape instead of silently printing the current date.
+  // "२०...../ ...../ ....." shape instead of silently printing the current date.
   if (!iso) {
-    return `२०<span class="rule rule-xs"></span>÷<span class="rule rule-xs"></span>÷<span class="rule rule-xs"></span>`;
+    return `२०<span class="rule rule-xs"></span>/<span class="rule rule-xs"></span>/<span class="rule rule-xs"></span>`;
   }
   const ymd = formatBsDate(iso);
   if (!ymd) {
-    return `२०<span class="rule rule-xs"></span>÷<span class="rule rule-xs"></span>÷<span class="rule rule-xs"></span>`;
+    return `२०<span class="rule rule-xs"></span>/<span class="rule rule-xs"></span>/<span class="rule rule-xs"></span>`;
   }
-  return esc(ymd.replace(/-/g, "÷"));
+  return esc(ymd.replace(/-/g, "/"));
 }
 
 /**
@@ -358,11 +357,7 @@ const DEFAULT_LENDER: Required<Omit<LenderIdentity, "name">> = {
   branch: "मुख्य शाखा कार्यालय",
 };
 
-/**
- * The deed's opening description of the lender, verbatim from the paper form:
- * "बागमती प्रदेश, काठमाडौँ जिल्ला, काठमाडौँ म.न.पा., वडा नं. १, कमलादी स्थित
- *  प्रधान कार्यालय भएको बेष्ट फाइनान्स कम्पनी लि. को मुख्य शाखा कार्यालय"
- */
+
 function lenderDescriptor(lender: LenderIdentity | null | undefined, fallbackName: string): string {
   const l = lender ?? {};
   const province = firstNonEmpty(l.province, DEFAULT_LENDER.province);
@@ -389,12 +384,7 @@ function firstNonEmpty(...values: (string | null | undefined)[]): string | null 
   return null;
 }
 
-/**
- * Builds the borrower's deed party from `borrowerParty` where present, falling
- * back to the flat `student*` fields. The flat fields predate the expanded
- * party block and still populate documents generated before it existed, so
- * both are consulted rather than migrating stored snapshots.
- */
+
 function resolveBorrowerParty(data: LegalDocumentTemplateData): DeedParty {
   const p = data.borrowerParty ?? {};
   return {
@@ -473,12 +463,12 @@ function partyDescriptor(
   return `${parentage}${address}${identity}`;
 }
 
-/** Devanagari-grouped figure only, e.g. "रू.५०,००,०००÷-". */
+/** Devanagari-grouped figure only, e.g. "रू.५०,००,०००/-". */
 function amountFigure(amount: number | null | undefined): string {
   if (amount === null || amount === undefined) {
     return `रू.<span class="rule rule-sm"></span>`;
   }
-  return esc(`रू.${toNepaliGroupedDigits(Math.round(amount))}÷-`);
+  return esc(`रू.${toNepaliGroupedDigits(Math.round(amount))}/-`);
 }
 
 function interestRateText(rate: number | null | undefined): string {
@@ -546,24 +536,14 @@ function formatBsLegalDateLine(iso?: string | null): string {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Print-grade stylesheet — shared by all four documents.
-//
-// Notes on the choices that matter for Devanagari and for print fidelity:
-//  * No `letter-spacing` anywhere. Letter-spacing pulls Devanagari matras and
-//    conjuncts away from their base glyph, which is what made headings look
-//    scrambled.
-//  * Devanagari-capable fonts lead the stack. The previous stack fell through
-//    to Times New Roman, which has no Devanagari coverage, leaving glyph
-//    selection to arbitrary browser substitution.
-//  * Page margins live in `@page` only. Body padding on top of `@page` margins
-//    was double-indenting every printed page.
-//  * Explicit break control keeps headings with their body, holds table rows
-//    and signature blocks together, and repeats table headers across pages.
-//  * Ink is true black, not the grey palette, which prints washed out.
-// ---------------------------------------------------------------------------
 
-const DEVANAGARI_STACK = `"Noto Sans Devanagari", "Kalimati", "Nirmala UI", "Mangal", "Noto Sans", sans-serif`;
+
+// Noto Sans Devanagari (formerly loaded from Google Fonts and listed first)
+// draws conjuncts like ष्ट्र as separated component glyphs instead of the
+// traditional stacked ligature Nepali legal paperwork is set in, so it is
+// deliberately left out here in favour of the system fonts that render the
+// traditional form.
+const DEVANAGARI_STACK = `"Kalimati", "Nirmala UI", "Mangal", "Noto Sans", sans-serif`;
 const LATIN_STACK = `"Times New Roman", Times, Georgia, serif`;
 
 function legalStyles(): string {
@@ -650,6 +630,7 @@ function legalStyles(): string {
       break-after: avoid;
       page-break-after: avoid;
     }
+    h2.section.center { text-align: center; }
     h3 {
       font-size: 10pt;
       font-weight: 700;
@@ -675,7 +656,6 @@ function legalStyles(): string {
     thead { display: table-header-group; }
     tr { break-inside: avoid; page-break-inside: avoid; }
     table.plain, table.plain td, table.plain th { border: 0; padding: 0; background: none; }
-    .witness-table td { height: 30pt; }
 
     /* ---- Ruled blanks for hand-completed fields ---------------------- */
     .rule {
@@ -758,10 +738,7 @@ function legalStyles(): string {
   `;
 }
 
-function statusBadgeHtml(status?: LegalDocumentTemplateData["status"]): string {
-  if (!status) return "";
-  return `<span class="status-badge screen-only status-${esc(status.toLowerCase())}">${esc(status.replaceAll("_", " "))}</span>`;
-}
+
 
 /**
  * Waits for the Devanagari webfont to finish loading before opening the print
@@ -799,49 +776,43 @@ function docHead(titleTag: string): string {
   return `<meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${esc(titleTag)}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
   <style>${legalStyles()}</style>`;
 }
 
-function docHeader(opts: {
-  institutionName: string;
-  documentNumber?: string | null;
-  status?: LegalDocumentTemplateData["status"];
-  bsDate: string;
-  generatedAt?: string | null;
-}): string {
-  const { institutionName, documentNumber, status, bsDate, generatedAt } = opts;
-  const adDate = formatAdDate(generatedAt);
-  return `<table class="header">
-    <tbody>
-      <tr>
-        <td>
-          <div class="brand">${esc(institutionName)}</div>
-          <div class="brand-np">कर्जा विभाग</div>
-        </td>
-        <td class="meta-cell">
-          <div class="meta">
-            <div>च.नं.: ${fill(documentNumber, "sm")}${statusBadgeHtml(status)}</div>
-            <div>मितिः ${fill(bsDate, "sm")} (वि.सं.)</div>
-            ${adDate ? `<div class="ad-date">${esc(adDate)}</div>` : ""}
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>`;
-}
 
-function witnessTableHtml(rows = 2): string {
-  const blankRows = Array.from({ length: rows })
-    .map(() => `<tr><td></td><td></td><td></td><td></td></tr>`)
+
+/**
+ * रोहबर साक्षी — one numbered line per witness, e.g. "१) कास्की जिल्ला ___
+ * वडा नं. ___ बस्ने वर्ष ___ को ___" per the approved paper form (a sentence,
+ * not a table). Falls back to a single blank line when no witnesses are on
+ * record. More can always be added — the numbering just follows the list
+ * length.
+ */
+function witnessListHtml(witnesses?: DocumentWitness[] | null): string {
+  const list = witnesses && witnesses.length > 0 ? witnesses : [{}];
+  const lines = list
+    .map((w, i) => {
+      const num = esc(toDevanagariNumeral(i + 1));
+      return `<p class="clause">${num}) ${fill(w.district, "sm")} जिल्ला ${fill(w.municipality, "sm")} वडा नं. ${fillNum(w.wardNo, "xs")} बस्ने वर्ष ${fillNum(w.age, "xs")} को ${fill(w.name, "md")}</p>`;
+    })
     .join("");
   return `<div class="witness-block">
-    <h2 class="section">रोहबर साक्षी</h2>
-    <table class="witness-table">
-      <thead><tr><th>नाम</th><th>उमेर</th><th>ठेगाना</th><th>दस्तखत</th></tr></thead>
-      <tbody>${blankRows}</tbody>
+    <h2 class="section">साक्षी</h2>
+    ${lines}
+  </div>`;
+}
+
+
+function identifyingWitnessHtml(): string {
+  return `<div class="witness-block body-text" style="margin-top:14px">
+    <strong>सनाखत साक्षी :</strong> जमानी कर्ताले मेरो सामुन्नेमा सहीछाप गरेको ठिक साँचो हो भनी सही गर्ने धनी संस्थामा कार्यरत कर्मचारी
+    <table class="sig-table">
+      <tbody>
+        <tr>
+          <td><div class="sig-line"></div><div>हस्ताक्षरः</div></td>
+          <td><div class="sig-line"></div><div>नाम, पदः</div></td>
+        </tr>
+      </tbody>
     </table>
   </div>`;
 }
@@ -954,7 +925,7 @@ function buildLoanProposalLetterHtml(
     `${municipalityTier(guarantorParty.currentMunicipalityType)} वडा नं. ${fillNum(guarantorParty.currentWardNo, "xs")}, ` +
     `${fill(guarantorParty.currentTole, "sm")} बस्ने ${fill(guarantorParty.grandfatherName, "sm")}/${fill(guarantorParty.grandmotherName, "sm")}को नाति/नातिनी, ` +
     `${fill(guarantorParty.fatherName, "sm")}/${fill(guarantorParty.motherName, "sm")}को छोरा/छोरी,${fill(guarantorParty.fatherInLawName, "md")} ` +
-    `बर्ष ${fillNum(guarantorParty.age, "xs")}को ${fill(guarantorParty.name, "md")} श्री÷श्रीमती ${fill(guarantorParty.name, "sm")} को व्यक्तिगत जमानी ।`;
+    `बर्ष ${fillNum(guarantorParty.age, "xs")}को ${fill(guarantorParty.name, "md")} श्री/श्रीमती ${fill(guarantorParty.name, "sm")} को व्यक्तिगत जमानी ।`;
 
   // Clause letters follow the paper exactly, which skips several Devanagari
   // letters (क, ख, घ, छ, ञ, ट, ठ, ढ, त, द, न, प) rather than running in
@@ -1004,12 +975,7 @@ function buildLoanProposalLetterHtml(
     <h1>कर्जा प्रस्ताब पत्र</h1>
   </div>
 
-  <table class="plain letter-meta">
-    <tbody><tr>
-      <td>च.नं. ${fill(documentNumber, "sm")}${statusBadgeHtml(status)}</td>
-      <td style="text-align:right">मितिः ${bsDate}</td>
-    </tr></tbody>
-  </table>
+ 
 
   <div class="addressee">
     ध्यानाकर्षणः श्री ${fill(studentName, "lg")}<br>
@@ -1037,12 +1003,12 @@ function buildLoanProposalLetterHtml(
   <h2 class="section">२. शुल्क तथा दस्तुरहरु ः</h2>
   <table>
     <tbody>
-      <tr><td style="width:6%">क.</td><td style="width:20%">अन्य</td><td>कर्जा प्रशासनिक÷नविकरण दस्तुर वापत स्वीकृत ${fill(null, "sm")}कर्जा रकमको ${fill(null, "sm")} प्रतिशत (जम्मा रू.${fill(null, "sm")}) यस वित्तीय संस्थामा रहेको तपाईको खाताबाट कट्टा गरिनेछ ।कर्जा सूचना शुल्क वास्तविक खर्च भए बमोजिम लाग्नेछ ।कर्जा सम्बन्धी अन्य फि, शुल्क, दै–दस्तुर समय समयमा वित्तीय संस्थाले तोके अनुसार हुनेछ । साथै त्यस्तो शुल्क, दै–दस्तुर आदि वित्तीय संस्थाको Standard Tariff of Charges (STC) बमोजिम हुनेछन् । सो सम्बन्धी जानकारी वित्तीय संस्थाको वेबसाइट ${esc(data.tariffUrl ?? "https://bestfinance.com.np/standard-tariff-charges/")} मा समेत हेर्न सकिनेछ ।</td></tr>
+      <tr><td style="width:6%">क.</td><td style="width:20%">अन्य</td><td>कर्जा प्रशासनिक/नविकरण दस्तुर वापत स्वीकृत ${fill(null, "sm")}कर्जा रकमको ${fill(null, "sm")} प्रतिशत (जम्मा रू.${fill(null, "sm")}) यस वित्तीय संस्थामा रहेको तपाईको खाताबाट कट्टा गरिनेछ ।कर्जा सूचना शुल्क वास्तविक खर्च भए बमोजिम लाग्नेछ ।कर्जा सम्बन्धी अन्य फि, शुल्क, दै–दस्तुर समय समयमा वित्तीय संस्थाले तोके अनुसार हुनेछ । साथै त्यस्तो शुल्क, दै–दस्तुर आदि वित्तीय संस्थाको Standard Tariff of Charges (STC) बमोजिम हुनेछन् । सो सम्बन्धी जानकारी वित्तीय संस्थाको वेबसाइट ${esc(data.tariffUrl ?? "https://bestfinance.com.np/standard-tariff-charges/")} मा समेत हेर्न सकिनेछ ।</td></tr>
     </tbody>
   </table>
 
   <h2 class="section">३. धितो सुरक्षण</h2>
-  <p class="body-text">ऋणीले उपभोग गर्ने कर्जाको सुरक्षणका लागि निम्नानुसारको घर÷जग्गा वित्तीय संस्थाको नाममा सम्बन्धित मालपोत कार्यालयमा जग्गाधनीले दृस्टिबन्धक लिखत पारीत गरी रोक्का गरिदिनुपर्नेछ ।</p>
+  <p class="body-text">ऋणीले उपभोग गर्ने कर्जाको सुरक्षणका लागि निम्नानुसारको घर/जग्गा वित्तीय संस्थाको नाममा सम्बन्धित मालपोत कार्यालयमा जग्गाधनीले दृस्टिबन्धक लिखत पारीत गरी रोक्का गरिदिनुपर्नेछ ।</p>
   <table>
     <thead><tr><th>जग्गाधनिको नाम</th><th>ठेगाना</th><th>कित्ता नं.</th><th>क्षेत्रफल</th><th>कैफियत</th></tr></thead>
     <tbody>
@@ -1060,7 +1026,7 @@ function buildLoanProposalLetterHtml(
   <p class="clause">स्वीकृत कर्जा रकम ${amount} का लागि ${guaranteeLine}</p>
 
   <h2 class="section">४. भुक्तानी विधि</h2>
-  <p class="body-text">वुंदा नं. ३ मा उल्लेख गरिएनुसारको सम्पूर्ण सुरक्षण लिखतहरुमा सहिछाप÷पारित भए पश्चात ऋणीले कर्जा रकम खातामा राखिदिन अनुरोध गरे बमोजिम तथा कर्जाका सम्पूर्ण शर्तहरु नियमित परिपालना गर्ने गरी स्वीकृत कर्जा रकमको हदसम्म कर्जा रकम ऋणीको खातामा जम्मा हुनेछ । मासिक किस्ता/ब्याज चुक्ता गर्नका लागि तपाईंको खातामा रकम व्यवस्था/जम्मा गरेको हुनुपर्ने छ . <span class="hl">(In case of the Moratorium)  तत्पश्चात् ${fillNum(data.gracePeriodMonths, "xs")} महिना/वर्षसम्म ऋणीलाई प्रवाहित कर्जाको साँवामा दैनिक आधारमा ब्याज गणना गरी प्रत्येक अङ्ग्रेजी महिनाको १) तारिखमा उक्त ब्याज भुक्तानी गर्नुपर्नेछ । </span>‘सो रकम प्रत्येक अंग्रेजी महिनाको १० तारिखका दिन तपाईंको खाताबाट स्वतः कट्टी हुनेछ । तपाईंको कुनै पनि किस्ता<span class="hl">/ब्याज</span> बाँकी रहेमा वा कर्जा चुक्ता गर्न असफल भएमा, वित्तीय संस्थाले तपाईंको तथा तपाईंको एकाघर परिवारको वित्तीय संस्था वा अन्य कुनै पनि बैंक तथा वित्तीय संस्थामा जम्मा रहेको निक्षेपबाट रकम कट्टा गरी गराइ बाँकी लेना असुल गर्न सकिनेछ ।</p>
+  <p class="body-text">वुंदा नं. ३ मा उल्लेख गरिएनुसारको सम्पूर्ण सुरक्षण लिखतहरुमा सहिछाप/पारित भए पश्चात ऋणीले कर्जा रकम खातामा राखिदिन अनुरोध गरे बमोजिम तथा कर्जाका सम्पूर्ण शर्तहरु नियमित परिपालना गर्ने गरी स्वीकृत कर्जा रकमको हदसम्म कर्जा रकम ऋणीको खातामा जम्मा हुनेछ । मासिक किस्ता/ब्याज चुक्ता गर्नका लागि तपाईंको खातामा रकम व्यवस्था/जम्मा गरेको हुनुपर्ने छ . <span class="hl">(In case of the Moratorium)  तत्पश्चात् ${fillNum(data.gracePeriodMonths, "xs")} महिना/वर्षसम्म ऋणीलाई प्रवाहित कर्जाको साँवामा दैनिक आधारमा ब्याज गणना गरी प्रत्येक अङ्ग्रेजी महिनाको १) तारिखमा उक्त ब्याज भुक्तानी गर्नुपर्नेछ । </span>‘सो रकम प्रत्येक अंग्रेजी महिनाको १० तारिखका दिन तपाईंको खाताबाट स्वतः कट्टी हुनेछ । तपाईंको कुनै पनि किस्ता<span class="hl">/ब्याज</span> बाँकी रहेमा वा कर्जा चुक्ता गर्न असफल भएमा, वित्तीय संस्थाले तपाईंको तथा तपाईंको एकाघर परिवारको वित्तीय संस्था वा अन्य कुनै पनि बैंक तथा वित्तीय संस्थामा जम्मा रहेको निक्षेपबाट रकम कट्टा गरी गराइ बाँकी लेना असुल गर्न सकिनेछ ।</p>
 
   <h2 class="section">५. ब्याज गणनाको तरिका</h2>
   <p class="body-text">कर्जामा लाग्ने ब्याजदर वित्तीय संस्थाको प्रचलित आधार दर मा स्वीकृत प्रिमियम थप गरी निर्धारण गरिनेछ। वित्तीय संस्थाको आधार दरमा हुने परिवर्तनका कारण लागू ब्याजदर समय–समयमा परिवर्तन हुन सक्नेछ । प्रत्येक महिना बाँकी रहेको साँवामा सोही दरले ब्याज लाग्नेछ र उक्त ब्याज मासिक किस्तामा समावेश गरी भुक्तानी लिइन्छ। तर यस ऋण प्रस्ताब पत्रमा उल्लेखित शर्तहरुको बर्खिलाप हुने गरी तोकिएको समयमा साँवा तथा व्याज भुक्तानी नगरेमा सम्पूर्ण कर्जा रकममा (वक्यौता समेत) शर्त नं. १ अनुसार वित्तीय  संस्थाले निर्धारण गरेको व्याजदरमा भाखा नाघेको साँवा रकममा २ प्रतिशत वा नेपाल राष्ट्र बैंकले तोकिदिए बमोजिम थप गरी हर्जाना व्याज यसै शर्तको अधिनमा पूर्व सूचना नदिइकनै लगाउन सकिनेछ ।</p>
@@ -1081,7 +1047,7 @@ function buildLoanProposalLetterHtml(
   ${clauseListHtml(termsClauses)}
 
   <h2 class="section">११. कर्जा चुक्ता गर्न असफल भएको घोषणा</h2>
-  <p class="body-text">तलको कुनै एक अवस्था आएमा ऋणीलार्इ कर्जा तिर्न असफल भएको घोषणा गरी तुरुन्त कर्जा असुली प्रक्रिया थालिनेछ :</p>
+  <p class="body-text">तलको कुनै एक अवस्था आएमा ऋणीलाई कर्जा तिर्न असफल भएको घोषणा गरी तुरुन्त कर्जा असुली प्रक्रिया थालिनेछ :</p>
   <p class="body-text">${defaultBlock}</p>
   <p class="body-text">ढ) ऋणीले कर्जाको सावाँ व्याज नतिरेमा वा कर्जाको शर्त उलङघन गरेमा वित्तीय संस्थाले निम्न कार्य गर्न सक्नेछ :</p>
   ${clauseListHtml(defaultActions)}
@@ -1134,7 +1100,7 @@ function buildLoanProposalLetterHtml(
   <div class="guarantor-block">
     <div class="sig-section-title">जमानीकर्ताको स्वीकृति</div>
     <p class="body-text">
-      म देहायमा उल्लिखित तथा हस्ताक्षरित जमानीकर्ताले यो स्वीकार वा मन्जुर गर्दछु कि मैले दिएको व्यक्तिगत जमानीको सुरक्षणले तपाई धनि ${fill(institutionName, "md")} ${branchName} शाखाबाट ऋणी श्री ${fill(studentName, "md")}को नाममा जारी गरेको मिति ${bsDate} को ऋण प्रस्ताब पत्र वा सो को सट्टामा प्रतिस्थापन हुने अर्को पत्रमा उल्लिखित कर्जाको वर्तमान् तथा भविष्यमा उत्पन्न÷सृजना हुने थप दायित्व समेत खाम्ने सम्मको लागि सुरक्षण कायम रहने कुरामा मेरो पूर्ण मञ्जुरी रहेको छ ।
+      म देहायमा उल्लिखित तथा हस्ताक्षरित जमानीकर्ताले यो स्वीकार वा मन्जुर गर्दछु कि मैले दिएको व्यक्तिगत जमानीको सुरक्षणले तपाई धनि ${fill(institutionName, "md")} ${branchName} शाखाबाट ऋणी श्री ${fill(studentName, "md")}को नाममा जारी गरेको मिति ${bsDate} को ऋण प्रस्ताब पत्र वा सो को सट्टामा प्रतिस्थापन हुने अर्को पत्रमा उल्लिखित कर्जाको वर्तमान् तथा भविष्यमा उत्पन्न/सृजना हुने थप दायित्व समेत खाम्ने सम्मको लागि सुरक्षण कायम रहने कुरामा मेरो पूर्ण मञ्जुरी रहेको छ ।
     </p>
     <table class="sig-table">
       <tbody>
@@ -1183,14 +1149,11 @@ function buildGuaranteeDeedHtml(
   } = data;
 
   const institutionName = institutionNameInput?.trim() || DEFAULT_INSTITUTION_NAME;
-  const bsDate = formatBsDate(generatedAt);
   const bsDateSlashed = formatBsDateSlashed(generatedAt);
   const loanAmount = amountAkshare(finalDisbursementAmount);
   const lender = lenderDescriptor(data.lender, institutionName);
 
-  // व्यक्तिगत जमानत names the guarantor with the full address block and the
-  // borrower by parentage and age only — the paper form carries no address
-  // for the borrower here. Both use "जारि मिति" (कर्जा तमसुक uses "जारी मिति").
+
   const guarantorBlock = partyDescriptor(resolveGuarantorParty(data), {
     includeAddress: true,
     issueDateLabel: "जारि मिति",
@@ -1214,7 +1177,7 @@ function buildGuaranteeDeedHtml(
     "११) जमानीको हदसम्म मेरो नामको वा मेरो अंशको सम्पत्तिको मूल्य घटाउने वा हक हस्तान्तरण, धितो, दान गर्ने छैन।",
     "१२) वित्तीय संस्थाको सूचना मेरो अन्तिम ठेगानामा व्यक्ति वा फोन मेसेज वा इमेल वा कुरियर सर्भिस वा हुलाक मार्फत दिन सकिनेछ । रजिष्टर्ड गरिएको मितिले १५ दिन भित्रमा सूचना/पत्र प्राप्त भएको मानिनेछ। वित्तीय संस्थाको कर्मचारीले लिखित प्रमाण दिएमा त्यो अकाट्य प्रमाण हुनेछ।",
     "१३) वित्तीय संस्थाले मलाई लिखित सूचना नदिएसम्म मेरो जमानत बहाल रहनेछ। सूचना पाएपछि पनि सूचना अघिको अवधिको बाँकी दायित्व मैले तिर्नुपर्नेछ ।",
-    "१४) यसमा नपरेका विषय मुलुकी देवानी संहिता (जमानत करार), बैंक तथा वित्तीय संस्था ऐन, र ऋण असुली ऐन बमोजिम हुनेछ।",
+    "१४) यसमा नपरेका विषय मुलुकी देवानी संहिता, बैंक तथा वित्तीय संस्था ऐन, र ऋण असुली ऐन बमोजिम हुनेछ।",
   ];
 
   const guarantorName = resolveGuarantorParty(data).name;
@@ -1222,19 +1185,18 @@ function buildGuaranteeDeedHtml(
   const bodyHtml = `
   <div class="title-box">
     <h1>व्यक्तिगत जमानत</h1>
-    <p class="subtitle">(जमानी दिनेको नाम ${fill(guarantorName, "lg")})</p>
+
   </div>
 
   <div class="body-text">
     लिखितम् लिखत गरी लिने धनीका नाम ${lender} (यसपछि "वित्तीय संस्था" भनिएको छ) । लिखत गरिदिनेका नाम ${guarantorBlock} (जसलाई यसपछि जमानीकर्ता भनिएको छ) आगे वित्तीय संस्थाले ${borrowerBlock} (जसलाई यसपछि ऋणी भनिएको छ) लाई वित्तीय संस्थाले मिति ${bsDateSlashed} मा जारि गरेको ${hl("कर्जा प्रस्ताब पत्र")} बमोजिम स्वीकृत कर्जा ${loanAmount} सम्मको रकम तथा त्यसमा लाग्ने साँवा, ब्याज, कमिसन, फि, मार्जिन, थप दायित्व समेतका लागि म जमानी दिनेले यो जमानत दिएको छु। ऋणीले कर्जा नतिरेपछि वित्तीय संस्थाले मलाई कर्जा चुक्ता गर्न गराउन माग गरेको रकम मैले पनि नतिरेमा मेरो घर घरानाको चल–अचल सम्पत्तिबाट असुल गर्नुहोला। ${hl("मैले माथि उल्लेखित कर्जा नतिरे नतिराएमा")} नेपाल राष्ट्र बैंकले बैंक तथा वित्तीय संस्थाहरुलाई जारी गरेको कालो सूची सम्बन्धि निर्देशनको ब्यवस्था वा सो को सट्टामा प्रतिस्थापन हुने अन्य निर्देशन ${hl("अनुसार")} मेरो नाम कर्जा सूचना केन्द्रको कालो सूचीमा समावेश गरेमा समेत मेरो पूर्ण मञ्जुरी छ । पछि कुनै उजुर वाजुर गर्ने छैन ।
   </div>
 
-  <h2 class="section">तपसिल</h2>
+  <h2 class="section center">तपसिल</h2>
   ${clauseListHtml(termsClauses)}
 
   ${remarksSectionHtml(remarks)}
 
-  ${witnessTableHtml()}
 
   <div class="legal-date">${formatBsLegalDateLine(generatedAt)}</div>
 
@@ -1242,7 +1204,7 @@ function buildGuaranteeDeedHtml(
 
   return docHtmlShell({
     titleTag: `व्यक्तिगत जमानत — ${studentName}`,
-    headerHtml: docHeader({ institutionName, documentNumber, status, bsDate, generatedAt }),
+    headerHtml: "",
     bodyHtml,
     printScript: printScriptHtml(opts.autoPrint),
   });
@@ -1263,6 +1225,7 @@ function buildPromissoryNoteHtml(
     loanProduct,
     finalDisbursementAmount,
     interestRate,
+    tenureMonths,
     remarks,
     generatedAt,
     institutionName: institutionNameInput,
@@ -1271,13 +1234,14 @@ function buildPromissoryNoteHtml(
     collateralPlotNo,
     collateralArea,
     collateralRemarks,
+    witnesses,
   } = data;
 
   const institutionName = institutionNameInput?.trim() || DEFAULT_INSTITUTION_NAME;
-  const bsDate = formatBsDate(generatedAt);
   const bsDateSlashed = formatBsDateSlashed(generatedAt);
   const loanAmount = amountMatra(finalDisbursementAmount);
   const interestRateNp = interestRateText(interestRate);
+  const tenureNp = monthsText(tenureMonths);
   const lender = lenderDescriptor(data.lender, institutionName);
   const borrower = partyDescriptor(resolveBorrowerParty(data), {
     includeAddress: true,
@@ -1294,16 +1258,16 @@ function buildPromissoryNoteHtml(
   </div>
 
   <div class="body-text">
-    यदि साँवा, ब्याज, थप ब्याज, फि, कमिसन, शुल्क आदि ऋण प्रस्ताब पत्र (वा संशोधन/प्रतिस्थापन पत्र) बमोजिम नतिरेमा, तिर्न आलटाल गरेमा, किस्ता खिलाफी गरेमा, वा प्रस्ताब पत्र वा यस लिखतको कुनै शर्त उल्लंघन गरेमा – धनी वित्तीय संस्थाले मेरो तथा मेरो एकाघर परिवारको (कसैको पनि) धनी वित्तीय संस्था वा अन्य कुनै बैंक/वित्तीय संस्थाको शाखामा रहेको/रहने निक्षेप कट्टा गरी गराइ लिएमा, धितो सम्पत्ति बैंक तथा वित्तीय संस्था ऐन, प्रचलित नेपाल कानून वा धनी वित्तीय संस्थाको आफ्नै नीति नियमानुसार लिलाम बिक्री वा अन्य व्यवस्था गरी मबाट लिन बाँकी साँवा, ब्याज, हर्जाना ब्याज, दैदस्तुर, असुली खर्च, कानूनी खर्च लगायत सम्पूर्ण लेना असुलउपर गरेमा मेरो मञ्जुरी रहेको छ। सोबाट लेना रकम असुल नभएमा धनी वित्तीय संस्थाले म उपर बैंक तथा वित्तीय संस्थाको ऋण असुली ऐन, नियमावली, प्रचलित कानून वा आफ्नै नीति नियमानुसार कारवाही गर्न सक्नेछ – जसमा मेरो पूर्ण मञ्जुरी छ। कथंकदाचित धितो सम्पत्ति कच्चा नकरा भई लिलाम बिक्री हुन नसकेमा वा बिक्री हुँदा पनि लेना नपुगेमा, मेरो तथा मेरो एकाघर परिवारको (जो सुकैको) नाममा रहेको घर–घरानाको सम्पत्तिबाट तपाईं धनी वित्तीय संस्थाले असुलउपर गर्न सक्नु हुनेछ । नेपाल राष्ट्र बैंकको कालोसूची निर्देशनमा भएको व्यवस्था बमोजिम मेरो वा यस कर्जासगँ सम्बद्ध अन्य पक्षको नाम कर्जा सूचना केन्द्रको कालोसूचीमा समावेश गरेमा पनि मेरो पूर्ण मञ्जुरी छ । भनी यो लिखत अद्योपान्त पढी, बाचि, सुनी लिखतमा लेखिएको व्यहोराको अर्थ र परिणाम समेत बुझी तपसिलका साक्षीहरूका रोहबरमा यो कर्जा तमसुकको लिखतमा सहीछाप गरी तपाईं धनी वित्तीय संस्थालाई दिएँ ।
+    यदि साँवा, ब्याज, थप ब्याज, फि, कमिसन, शुल्क आदि ऋण प्रस्ताब पत्र (वा संशोधन/प्रतिस्थापन पत्र) बमोजिम नतिरेमा, तिर्न आलटाल गरेमा, किस्ता खिलाफी गरेमा, वा प्रस्ताब पत्र वा यस लिखतको कुनै शर्त उल्लंघन गरेमा – धनी वित्तीय संस्थाले मेरो तथा मेरो एकाघर परिवारको धनी वित्तीय संस्था वा अन्य कुनै बैंक/वित्तीय संस्थाको शाखामा रहेको/रहने निक्षेप कट्टा गरी गराइ लिएमा, धितो सम्पत्ति बैंक तथा वित्तीय संस्था ऐन, प्रचलित नेपाल कानून वा धनी वित्तीय संस्थाको आफ्नै नीति नियमानुसार लिलाम बिक्री वा अन्य व्यवस्था गरी मबाट लिन बाँकी साँवा, ब्याज, हर्जाना ब्याज, दैदस्तुर, असुली खर्च, कानूनी खर्च लगायत सम्पूर्ण लेना असुलउपर गरेमा मेरो मञ्जुरी रहेको छ। सोबाट लेना रकम असुल नभएमा धनी वित्तीय संस्थाले म उपर बैंक तथा वित्तीय संस्थाको ऋण असुली ऐन, नियमावली, प्रचलित कानून वा आफ्नै नीति नियमानुसार कारवाही गर्न सक्नेछ – जसमा मेरो पूर्ण मञ्जुरी छ। कथंकदाचित धितो सम्पत्ति कच्चा नकरा भई लिलाम बिक्री हुन नसकेमा वा बिक्री हुँदा पनि लेना नपुगेमा, मेरो तथा मेरो एकाघर परिवारको नाममा रहेको घर–घरानाको सम्पत्तिबाट तपाईं धनी वित्तीय संस्थाले असुलउपर गर्न सक्नु हुनेछ । नेपाल राष्ट्र बैंकको कालोसूची निर्देशनमा भएको व्यवस्था बमोजिम मेरो वा यस कर्जासगँ सम्बद्ध अन्य पक्षको नाम कर्जा सूचना केन्द्रको कालोसूचीमा समावेश गरेमा पनि मेरो पूर्ण मञ्जुरी छ । भनी यो लिखत अद्योपान्त पढी, बाचि, सुनी लिखतमा लेखिएको व्यहोराको अर्थ र परिणाम समेत बुझी तपसिलका साक्षीहरूका रोहबरमा यो कर्जा तमसुकको लिखतमा सहीछाप गरी तपाईं धनी वित्तीय संस्थालाई दिएँ ।
   </div>
 
-  <h2 class="section">तपसिल</h2>
+  <h2 class="section center">तपसिल</h2>
 
   <h3>(क) स्वीकृत कर्जाको विवरण</h3>
   <table>
-    <thead><tr><th style="width:8%">क्र.सं.</th><th>स्वीकृत कर्जाको किसिम</th><th>कर्जा रकम (अंक र अक्षरमा)</th><th style="width:18%">ब्याज/कमिशन</th></tr></thead>
+    <thead><tr><th style="width:8%">क्र.सं.</th><th>स्वीकृत कर्जाको किसिम</th><th>कर्जा रकम (अंक र अक्षरमा)</th><th style="width:16%">ब्याज</th><th style="width:14%">अवधि</th></tr></thead>
     <tbody>
-      <tr><td>१</td><td>${formatLoanProduct(loanProduct)}</td><td>${loanAmount}</td><td>वार्षिक ${interestRateNp}</td></tr>
+      <tr><td>१</td><td>${formatLoanProduct(loanProduct)}</td><td>${loanAmount}</td><td>वार्षिक ${interestRateNp}</td><td>${tenureNp}</td></tr>
     </tbody>
   </table>
 
@@ -1323,7 +1287,9 @@ function buildPromissoryNoteHtml(
 
   ${remarksSectionHtml(remarks)}
 
-  ${witnessTableHtml()}
+  ${witnessListHtml(witnesses)}
+
+  ${identifyingWitnessHtml()}
 
   <div class="legal-date">${formatBsLegalDateLine(generatedAt)}</div>
 
@@ -1331,7 +1297,7 @@ function buildPromissoryNoteHtml(
 
   return docHtmlShell({
     titleTag: `कर्जा तमसुक — ${studentName}`,
-    headerHtml: docHeader({ institutionName, documentNumber, status, bsDate, generatedAt }),
+    headerHtml: "",
     bodyHtml,
     printScript: printScriptHtml(opts.autoPrint),
   });
@@ -1430,7 +1396,7 @@ function buildDisbursementRequestHtml(
 
   return docHtmlShell({
     titleTag: `कर्जा रकम निकासा अनुरोध पत्र — ${studentName}`,
-    headerHtml: docHeader({ institutionName, documentNumber, status, bsDate, generatedAt }),
+    headerHtml: "",
     bodyHtml,
     printScript: printScriptHtml(opts.autoPrint),
   });

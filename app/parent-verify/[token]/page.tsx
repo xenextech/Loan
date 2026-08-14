@@ -29,7 +29,6 @@ import {
   Phone,
   Mail,
   GraduationCap,
-  AlertCircle,
   Upload,
   FileText,
   Loader2,
@@ -48,6 +47,7 @@ import {
 } from "@/lib/api/collegeApi";
 import { formatNPR } from "@/lib/formatters";
 import type { ParentDocument } from "@/types/api";
+import VerificationEmailGate from "@/components/apply/VerificationEmailGate";
 
 const nepaliPhone = z
   .string()
@@ -82,11 +82,13 @@ function getApiErrorMessage(err: unknown): string {
 // docs and salary sheets alike) since the backend lets the parent rename any of them.
 function DocumentLabel({
   token,
+  email,
   documentId,
   label,
   fallback,
 }: {
   token: string;
+  email?: string;
   documentId: string;
   label?: string | null;
   fallback: string;
@@ -98,7 +100,7 @@ function DocumentLabel({
   const handleSave = async () => {
     if (!value.trim()) return;
     try {
-      await updateLabel({ token, documentId, label: value.trim() }).unwrap();
+      await updateLabel({ token, email, documentId, label: value.trim() }).unwrap();
       setEditing(false);
     } catch (err) {
       toast.error("Failed to update label", { description: getApiErrorMessage(err) });
@@ -159,12 +161,14 @@ function DocumentLabel({
 // NID / PAN ID — exactly one document each, re-uploading replaces the previous file.
 function IdentityDocumentCard({
   token,
+  email,
   documentType,
   title,
   hint,
   document,
 }: {
   token: string;
+  email?: string;
   documentType: ParentIdentityDocumentType;
   title: string;
   hint: string;
@@ -174,7 +178,7 @@ function IdentityDocumentCard({
 
   const handleUpload = async (file: File) => {
     try {
-      await uploadDoc({ token, documentType, file }).unwrap();
+      await uploadDoc({ token, email, documentType, file }).unwrap();
       toast.success(`${title} uploaded`);
     } catch (err) {
       toast.error("Upload failed", { description: getApiErrorMessage(err) });
@@ -204,6 +208,7 @@ function IdentityDocumentCard({
                 <span className="text-muted-foreground text-xs">·</span>
                 <DocumentLabel
                   token={token}
+                  email={email}
                   documentId={document.id}
                   label={document.label}
                   fallback={title}
@@ -250,9 +255,11 @@ function IdentityDocumentCard({
 // upload several at once and label each one individually afterwards.
 function SalarySheetSection({
   token,
+  email,
   documents,
 }: {
   token: string;
+  email?: string;
   documents: ParentDocument[];
 }) {
   const [uploadSheets, { isLoading }] = useUploadParentSalarySheetMutation();
@@ -262,6 +269,7 @@ function SalarySheetSection({
     try {
       await uploadSheets({
         token,
+        email,
         files: Array.from(files),
         label: pendingLabel.trim() || undefined,
       }).unwrap();
@@ -287,6 +295,7 @@ function SalarySheetSection({
                 <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                 <DocumentLabel
                   token={token}
+                  email={email}
                   documentId={doc.id}
                   label={doc.label}
                   fallback={`Salary Sheet ${i + 1}`}
@@ -361,8 +370,17 @@ export default function ParentVerifyPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = use(params);
-  const { data, isLoading, isError } =
-    useGetApplicationByParentTokenQuery(token);
+  const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
+  // isLoading (not isFetching) is what should gate the full-page skeleton —
+  // isFetching is also true on every background refetch (e.g. after a salary
+  // sheet/identity document upload invalidates this query's tag), which was
+  // blowing away the whole rendered form and looking like a page refresh on
+  // every upload. isLoading only means "no data yet", so an in-place refetch
+  // just updates data quietly once it resolves.
+  const { data, isLoading, error } = useGetApplicationByParentTokenQuery(
+    { token, email: confirmedEmail ?? undefined },
+    { skip: !confirmedEmail },
+  );
   const [submitProfile, { isLoading: isSubmittingProfile }] =
     useSubmitParentProfileMutation();
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -379,35 +397,28 @@ export default function ParentVerifyPage({
     },
   });
 
-  if (isLoading) {
+  // Nothing about the application is fetched (let alone shown) until the
+  // recipient confirms the email that received this invitation. A failed
+  // attempt (wrong email, expired/invalid/revoked link) returns to this same
+  // gate with the error shown, so a mistyped email can just be corrected.
+  if (!confirmedEmail || error) {
+    return (
+      <VerificationEmailGate
+        recipientLabel="Parent"
+        isLoading={isLoading}
+        error={error ? getApiErrorMessage(error) : null}
+        onConfirm={(email) => setConfirmedEmail(email)}
+      />
+    );
+  }
+
+  if (isLoading || !data) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg space-y-4">
           <Skeleton className="h-10 w-48 mx-auto" />
           <Skeleton className="h-64 w-full rounded-2xl" />
           <Skeleton className="h-32 w-full rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
-
-  if (isError || !data) {
-    return (
-      <div className="min-h-screen bg-muted/30 flex items-center justify-center px-4">
-        <div className="text-center max-w-sm">
-          <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-7 h-7 text-destructive" />
-          </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">
-            Invalid or Expired Link
-          </h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            This verification link is no longer valid. Please ask the student to
-            share a new link.
-          </p>
-          <Button asChild variant="outline">
-            <Link href="/">Back to Home</Link>
-          </Button>
         </div>
       </div>
     );
@@ -426,7 +437,11 @@ export default function ParentVerifyPage({
       bankAccountNumber: values.bankAccountNumber || undefined,
     };
     try {
-      await submitProfile({ token, ...payload }).unwrap();
+      await submitProfile({
+        token,
+        email: confirmedEmail ?? undefined,
+        ...payload,
+      }).unwrap();
       toast.success("Profile saved", {
         description: "Your information has been submitted successfully.",
       });
@@ -503,13 +518,25 @@ export default function ParentVerifyPage({
           {/* Application summary */}
           <Card className="shadow-sm">
             <CardContent className="p-6 space-y-5">
-              <div className="bg-muted/50 rounded-xl px-4 py-3">
-                <p className="text-xs text-muted-foreground">
-                  Application Number
-                </p>
-                <p className="text-base font-bold font-mono text-foreground">
-                  {data.applicationNumber}
-                </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-muted/50 rounded-xl px-4 py-3">
+                  <p className="text-xs text-muted-foreground">
+                    Application Number
+                  </p>
+                  <p className="text-base font-bold font-mono text-foreground">
+                    {data.applicationNumber}
+                  </p>
+                </div>
+                {data.verificationCode && (
+                  <div className="bg-muted/50 rounded-xl px-4 py-3">
+                    <p className="text-xs text-muted-foreground">
+                      Verification ID
+                    </p>
+                    <p className="text-base font-bold font-mono text-foreground">
+                      {data.verificationCode}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -769,6 +796,7 @@ export default function ParentVerifyPage({
 
               <IdentityDocumentCard
                 token={token}
+                email={confirmedEmail ?? undefined}
                 documentType="NID"
                 title="National ID / Citizenship"
                 hint="Front and back in a single file, or the citizenship certificate"
@@ -777,6 +805,7 @@ export default function ParentVerifyPage({
 
               <IdentityDocumentCard
                 token={token}
+                email={confirmedEmail ?? undefined}
                 documentType="PAN_ID"
                 title="PAN Card"
                 hint="Permanent Account Number card"
@@ -785,7 +814,11 @@ export default function ParentVerifyPage({
 
               <Separator />
 
-              <SalarySheetSection token={token} documents={salarySheets} />
+              <SalarySheetSection
+                token={token}
+                email={confirmedEmail ?? undefined}
+                documents={salarySheets}
+              />
             </CardContent>
           </Card>
 

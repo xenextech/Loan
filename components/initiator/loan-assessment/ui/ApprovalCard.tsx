@@ -16,8 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { ApprovalRole, ApprovalStatus } from "../types";
 import { TERMINAL_APPROVAL_STATUSES } from "../types";
-import { DESIGNATION_OPTIONS } from "../schema";
-import { ApprovalStatusBadge, APPROVAL_STATUS_CONFIG } from "./StatusBadge";
+import { ApprovalStatusBadge, APPROVAL_STATUS_CONFIG, getApprovalStatusLabel } from "./StatusBadge";
 import { SignaturePlaceholder } from "./SignaturePlaceholder";
 
 /** One action button on an editable card — e.g. Approve/Reject, or Support's Review/Field Verify/Support/Send Back. */
@@ -38,10 +37,12 @@ interface ApprovalCardProps {
   approvedDate?: string;
   remarks?: string;
   signature?: string;
-  /** Only the Initiator's card collects these — undefined/no handlers on the other three roles. */
+  /** Only the Initiator's card collects a branch — undefined/no handler on the other three roles. */
   branchName?: string;
-  designation?: string;
   onBranchNameChange?: (value: string) => void;
+  /** Every role has its own designation field, with a role-specific options list. */
+  designation?: string;
+  designationOptions?: readonly string[];
   onDesignationChange?: (value: string) => void;
   /** This is the approval card belonging to the logged-in user. */
   isCurrentUserRole: boolean;
@@ -65,8 +66,9 @@ export function ApprovalCard({
   remarks,
   signature,
   branchName,
-  designation,
   onBranchNameChange,
+  designation,
+  designationOptions,
   onDesignationChange,
   isCurrentUserRole,
   isUnlocked,
@@ -76,7 +78,8 @@ export function ApprovalCard({
   onSignatureChange,
   onAction,
 }: ApprovalCardProps) {
-  const showBranchDesignation = onBranchNameChange !== undefined || onDesignationChange !== undefined;
+  const showBranchName = onBranchNameChange !== undefined;
+  const showDesignation = onDesignationChange !== undefined;
   const isDecided = TERMINAL_APPROVAL_STATUSES.includes(status);
   const isEditable = isCurrentUserRole && isUnlocked && !isDecided;
   const isDisabledCard = !isCurrentUserRole || !isUnlocked;
@@ -109,7 +112,7 @@ export function ApprovalCard({
             <p className="text-[11px] text-muted-foreground">{role}</p>
           </div>
         </div>
-        <ApprovalStatusBadge status={status} />
+        <ApprovalStatusBadge role={role} status={status} />
       </div>
 
       <div className="p-4 space-y-4">
@@ -133,39 +136,43 @@ export function ApprovalCard({
           </div>
         </div>
 
-        {showBranchDesignation && (
+        {(showBranchName || showDesignation) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <Building2 className="w-3 h-3" /> Branch Name
-              </Label>
-              <Input
-                value={branchName ?? ""}
-                onChange={(e) => onBranchNameChange?.(e.target.value)}
-                disabled={!isEditable}
-                placeholder={isEditable ? "e.g. Kathmandu Branch" : "Not set"}
-                className="h-8"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Designation</Label>
-              <Select
-                value={designation || undefined}
-                onValueChange={(value) => onDesignationChange?.(value)}
-                disabled={!isEditable}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select designation" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DESIGNATION_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {showBranchName && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Building2 className="w-3 h-3" /> Branch Name
+                </Label>
+                <Input
+                  value={branchName ?? ""}
+                  onChange={(e) => onBranchNameChange?.(e.target.value)}
+                  disabled={!isEditable}
+                  placeholder={isEditable ? "e.g. Kathmandu Branch" : "Not set"}
+                  className="h-8"
+                />
+              </div>
+            )}
+            {showDesignation && (
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Designation</Label>
+                <Select
+                  value={designation || undefined}
+                  onValueChange={(value) => onDesignationChange?.(value)}
+                  disabled={!isEditable}
+                >
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Select designation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(designationOptions ?? []).map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         )}
 
@@ -189,7 +196,7 @@ export function ApprovalCard({
           <div className={cn("flex items-start gap-2 rounded-lg px-3 py-2 text-xs", decidedConfig.className)}>
             <decidedConfig.icon className="w-3.5 h-3.5 shrink-0 mt-0.5" />
             <span>
-              {decidedConfig.label} by <strong>{approverName || roleLabel}</strong>
+              {getApprovalStatusLabel(role, status)} by <strong>{approverName || roleLabel}</strong>
               {approvedDate ? ` on ${approvedDate}` : ""}.
             </span>
           </div>

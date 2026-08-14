@@ -97,6 +97,11 @@ export interface InitiatorApplicationDetail extends InitiatorApplicationListItem
    *  tells the Loan Assessment Form's Step 1 to PATCH instead of re-attempting a POST
    *  (which the backend correctly rejects with 409 once the record already exists). */
   hasInitiatorInfo: boolean;
+  /** Current pipeline stage — used together with sentBackToStage to detect a
+   *  resubmission (Support/Approver sent it back to the Initiator) so the
+   *  Loan Assessment Form can skip the Review & Submit step on reopen. */
+  stage?: import("@/types/dashboard").ApplicationStage | null;
+  sentBackToStage?: import("@/types/dashboard").ApplicationStage | null;
 }
 
 /**

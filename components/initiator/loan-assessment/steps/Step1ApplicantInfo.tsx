@@ -1,11 +1,17 @@
 import { UserRound } from "lucide-react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { SectionCard, FormSection } from "../ui/SectionCard";
 import { TextField } from "../fields/TextField";
+import { NumberField } from "../fields/NumberField";
 import { DateField } from "../fields/DateField";
 import { SelectField } from "../fields/SelectField";
-import { BANKING_RELATIONSHIP_OPTIONS, BLACKLISTED_STATUS_OPTIONS } from "../schema";
+import { BANKING_RELATIONSHIP_OPTIONS, BLACKLISTED_STATUS_OPTIONS, type LoanAssessmentFormValues } from "../schema";
 
 export function Step1ApplicantInfo() {
+  const { control } = useFormContext<LoanAssessmentFormValues>();
+  const bankingRelationship = useWatch({ control, name: "applicantInfo.bankingRelationship" });
+  const hasExistingAccount = bankingRelationship === "EXISTING";
+
   return (
     <div className="space-y-5">
       <SectionCard icon={UserRound} title="Applicant Identity" description="Core KYC details for the borrower.">
@@ -47,6 +53,38 @@ export function Step1ApplicantInfo() {
           />
         </FormSection>
       </SectionCard>
+
+      {hasExistingAccount && (
+        <SectionCard
+          title="Existing Bank Account Details"
+          description="Required since Banking Relationship is Existing."
+        >
+          <FormSection>
+            <TextField
+              name="applicantInfo.existingBankName"
+              label="Bank Name"
+              placeholder="e.g. Nepal Bank Limited"
+              required
+            />
+            <TextField
+              name="applicantInfo.existingBankAccountNumber"
+              label="Account Number"
+              placeholder="e.g. 0123456789012"
+              required
+            />
+            <NumberField
+              name="applicantInfo.existingBankSavingsAmount"
+              label="Savings"
+              suffix="NPR"
+            />
+            <NumberField
+              name="applicantInfo.existingBankLoanAmount"
+              label="Loan Amount"
+              suffix="NPR"
+            />
+          </FormSection>
+        </SectionCard>
+      )}
     </div>
   );
 }
