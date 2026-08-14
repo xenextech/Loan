@@ -2,30 +2,34 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { StepDefinition } from "../types";
 import { STEPS } from "../constants";
 
 interface StepperProps {
+  /** Defaults to the full 10-step list — pass a shorter slice (e.g. dropping
+   *  Step 10) to reflect a variant flow, like an Initiator resubmission. */
+  steps?: StepDefinition[];
   currentStep: number;
   maxStepReached: number;
   onStepClick: (step: number) => void;
 }
 
-export function Stepper({ currentStep, maxStepReached, onStepClick }: StepperProps) {
+export function Stepper({ steps = STEPS, currentStep, maxStepReached, onStepClick }: StepperProps) {
   return (
     <div className="w-full">
       {/* Mobile: compact current-step indicator */}
       <div className="flex sm:hidden items-center justify-between px-4 py-3 bg-muted/50 rounded-xl">
         <span className="text-sm font-semibold text-foreground">
-          Step {currentStep} of {STEPS.length}
+          Step {currentStep} of {steps.length}
         </span>
         <span className="text-sm text-muted-foreground truncate max-w-[55%]">
-          {STEPS[currentStep - 1]?.shortLabel}
+          {steps[currentStep - 1]?.shortLabel}
         </span>
       </div>
 
       {/* Desktop: horizontal stepper */}
       <div className="hidden sm:flex items-start w-full overflow-x-auto no-scrollbar pb-1">
-        {STEPS.map((step, idx) => {
+        {steps.map((step, idx) => {
           const isCurrent = step.id === currentStep;
           const isCompleted = step.id < currentStep || (step.id <= maxStepReached && step.id < currentStep);
           const isClickable = step.id <= maxStepReached;
@@ -64,7 +68,7 @@ export function Stepper({ currentStep, maxStepReached, onStepClick }: StepperPro
                 </span>
               </button>
 
-              {idx < STEPS.length - 1 && (
+              {idx < steps.length - 1 && (
                 <div className="flex-1 mt-4 mx-1">
                   <div className="h-px bg-border relative overflow-hidden">
                     {step.id < currentStep && <div className="absolute inset-0 bg-primary" />}
@@ -79,7 +83,7 @@ export function Stepper({ currentStep, maxStepReached, onStepClick }: StepperPro
       <div className="mt-3 hidden sm:block h-1 bg-muted rounded-full overflow-hidden">
         <div
           className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
-          style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+          style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
         />
       </div>
     </div>

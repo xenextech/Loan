@@ -9,8 +9,8 @@ import type { LoanAssessmentFormValues } from "../schema";
 const STEP_ID_BY_KEY: Record<string, number> = {
   applicantInfo: 1,
   nrbReporting: 2,
-  creditAssessment: 3,
-  applicantBackground: 4,
+  applicantBackground: 3,
+  creditAssessment: 4,
   security: 5,
   insuranceRepayment: 6,
   riskAssessment: 7,

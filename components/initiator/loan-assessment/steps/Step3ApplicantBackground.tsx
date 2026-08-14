@@ -1,6 +1,7 @@
 "use client";
 
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { useEffect } from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { Users, Landmark } from "lucide-react";
 import { SectionCard, FormSection } from "../ui/SectionCard";
 import { RepeatableTable, type RepeatableTableColumn } from "../ui/RepeatableTable";
@@ -11,11 +12,49 @@ import { TextareaField } from "../fields/TextareaField";
 import { FACILITY_STATUS_OPTIONS } from "../schema";
 import type { LoanAssessmentFormValues } from "../schema";
 
-export function Step4ApplicantBackground() {
-  const { control } = useFormContext<LoanAssessmentFormValues>();
+const FEE_RATE = 0.0125; // 1.25%
+
+interface Step3ApplicantBackgroundProps {
+  /** The student's requested loan amount — the single source of truth for
+   *  the "Limit" field on this step. Mirrors the prop Step 4 receives so
+   *  that Limit is populated even when Step 4 has never been mounted yet. */
+  applicationLoanAmount?: number;
+}
+
+export function Step3ApplicantBackground({ applicationLoanAmount }: Step3ApplicantBackgroundProps) {
+  const { control, setValue, getValues } = useFormContext<LoanAssessmentFormValues>();
 
   const familyMembers = useFieldArray({ control, name: "applicantBackground.familyMembers" });
   const existingFacilities = useFieldArray({ control, name: "applicantBackground.existingFacilities" });
+
+  // Prefer the prop (applicationLoanAmount) which is available immediately on
+  // mount. Fall back to the form field (creditAssessment.creditLimit) which
+  // Step4CreditAssessment writes — only populated after the user visits Step 4.
+  const savedCreditLimit = useWatch({ control, name: "creditAssessment.creditLimit" });
+  const effectiveLimit =
+    typeof applicationLoanAmount === "number" && applicationLoanAmount > 0
+      ? applicationLoanAmount
+      : typeof savedCreditLimit === "number" && savedCreditLimit > 0
+        ? savedCreditLimit
+        : undefined;
+
+  // Auto-populate limit and fee whenever the effective loan amount is known.
+  // Only overwrite if the field is still blank — lets the user override without
+  // their value being clobbered on re-render.
+  useEffect(() => {
+    if (typeof effectiveLimit !== "number" || effectiveLimit <= 0) return;
+
+    const currentLimit = getValues("applicantBackground.limit");
+    if (!currentLimit) {
+      setValue("applicantBackground.limit", effectiveLimit, { shouldDirty: false });
+    }
+
+    const autoFee = Math.round(effectiveLimit * FEE_RATE * 100) / 100;
+    const currentFee = getValues("applicantBackground.fee");
+    if (!currentFee) {
+      setValue("applicantBackground.fee", autoFee, { shouldDirty: false });
+    }
+  }, [effectiveLimit, getValues, setValue]);
 
   const familyColumns: RepeatableTableColumn[] = [
     { key: "personName", header: "Name", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.personName`} label="" placeholder="Name" /> },
@@ -64,10 +103,18 @@ export function Step4ApplicantBackground() {
         <FormSection columns={3}>
           <TextField name="applicantBackground.facility" label="Facility" placeholder="e.g. Term Loan" />
           <TextField name="applicantBackground.purpose" label="Purpose" placeholder="e.g. Tuition Fee Financing" />
-          <NumberField name="applicantBackground.limit" label="Limit" suffix="NPR" />
+          <div className="space-y-1.5">
+            <NumberField name="applicantBackground.limit" label="Limit" suffix="NPR" />
+            <p className="text-xs text-muted-foreground">Auto-filled from loan amount. Editable.</p>
+          </div>
           <NumberField name="applicantBackground.period" label="Period" suffix="months" />
           <NumberField name="applicantBackground.interestRate" label="Interest Rate" suffix="%" />
-          <NumberField name="applicantBackground.fee" label="Fee" suffix="NPR" />
+          <div className="space-y-1.5">
+            <NumberField name="applicantBackground.fee" label="Fee" suffix="NPR" />
+            <p className="text-xs text-muted-foreground">
+              Auto-calculated: Limit × 1.25%. Editable.
+            </p>
+          </div>
         </FormSection>
         <div className="mt-4">
           <TextareaField name="applicantBackground.remarks" label="Remarks" rows={3} />

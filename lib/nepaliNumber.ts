@@ -1,6 +1,6 @@
 // Devanagari digit + Nepali number-to-words helpers, used by the Loan
 // Agreement legal document template to render amounts the way Nepali
-// financial institutions do on paper: "रू.५०,००,०००÷- (अक्षरेपी पचास लाख मात्र)".
+// financial institutions do on paper: "रू.५०,००,०००/- (अक्षरेपी पचास लाख मात्र)".
 
 const DEVANAGARI_DIGITS = ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"];
 
@@ -80,9 +80,9 @@ export function nepaliNumberToWords(value: number): string {
 
 /**
  * Formats a rupee amount the way Nepali loan documents do, e.g.
- * formatNepaliRupeeWords(5000000) -> 'रू.५०,००,०००÷- (अक्षरेपी पचास लाख मात्र)'
+ * formatNepaliRupeeWords(5000000) -> 'रू.५०,००,०००/- (अक्षरेपी पचास लाख मात्र)'
  */
 export function formatNepaliRupeeWords(amount: number): string {
   const rounded = Math.round(amount);
-  return `रू.${toNepaliGroupedDigits(rounded)}÷- (अक्षरेपी ${nepaliNumberToWords(rounded)} मात्र)`;
+  return `रू.${toNepaliGroupedDigits(rounded)}/- (अक्षरेपी ${nepaliNumberToWords(rounded)} मात्र)`;
 }

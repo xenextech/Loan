@@ -63,7 +63,18 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
       </ReviewCard>
 
       <ReviewCard title={STEPS[2].title} stepId={3} onEdit={onEdit}>
+        <SummaryItem label="Family Members" value={`${bg?.familyMembers?.length ?? 0} recorded`} />
+        <SummaryItem label="Existing Facilities (local only)" value={`${bg?.existingFacilities?.length ?? 0} recorded`} />
+        <SummaryItem label="This Facility" value={bg?.facility} />
+        <SummaryItem label="Purpose" value={bg?.purpose} />
+        <SummaryItem label="Limit" value={bg?.limit !== undefined ? `NPR ${bg.limit}` : undefined} />
+        <SummaryItem label="Period" value={bg?.period !== undefined ? `${bg.period} months` : undefined} />
+        <SummaryItem label="Interest Rate" value={bg?.interestRate !== undefined ? `${bg.interestRate}%` : undefined} />
+      </ReviewCard>
+
+      <ReviewCard title={STEPS[3].title} stepId={4} onEdit={onEdit}>
         <SummaryItem label="Credit Limit" value={c?.creditLimit !== undefined ? `NPR ${c.creditLimit}` : undefined} />
+        <SummaryItem label="Income" value={c?.income !== undefined ? `NPR ${c.income}` : undefined} />
         <SummaryItem label="Loan to Income Ratio (%)" value={c?.loanToValueRatio !== undefined ? `${c.loanToValueRatio}%` : undefined} />
         <SummaryItem label="DSGIR (%)" value={c?.dsgir !== undefined ? `${c.dsgir}%` : undefined} />
         <SummaryItem label="Operation of Institution (Years)" value={c?.operationOfInstitution} />
@@ -75,15 +86,6 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
         <SummaryItem label="Total Score" value={c?.totalScore} />
         <SummaryItem label="Total Percentage" value={c?.totalPercentage !== undefined ? `${c.totalPercentage}%` : undefined} />
         <SummaryItem label="Credit Risk Scoring" value={c?.creditRiskScoring} />
-      </ReviewCard>
-
-      <ReviewCard title={STEPS[3].title} stepId={4} onEdit={onEdit}>
-        <SummaryItem label="Family Members" value={`${bg?.familyMembers?.length ?? 0} recorded`} />
-        <SummaryItem label="Existing Facilities (local only)" value={`${bg?.existingFacilities?.length ?? 0} recorded`} />
-        <SummaryItem label="This Facility" value={bg?.facility} />
-        <SummaryItem label="Purpose" value={bg?.purpose} />
-        <SummaryItem label="Limit" value={bg?.limit !== undefined ? `NPR ${bg.limit}` : undefined} />
-        <SummaryItem label="Interest Rate" value={bg?.interestRate !== undefined ? `${bg.interestRate}%` : undefined} />
       </ReviewCard>
 
       <ReviewCard title={STEPS[4].title} stepId={5} onEdit={onEdit}>
@@ -120,19 +122,19 @@ export function AssessmentSummary({ onEdit }: AssessmentSummaryProps) {
       <ReviewCard title={STEPS[8].title} stepId={9} onEdit={onEdit}>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground w-16">Initiator</span>
-          <ApprovalStatusBadge status={ap?.initiator?.status ?? "PENDING"} />
+          <ApprovalStatusBadge role="INITIATOR" status={ap?.initiator?.status ?? "PENDING"} />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground w-16">Support</span>
-          <ApprovalStatusBadge status={ap?.support?.status ?? "WAITING"} />
+          <ApprovalStatusBadge role="SUPPORT" status={ap?.support?.status ?? "WAITING"} />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground w-16">Checker</span>
-          <ApprovalStatusBadge status={ap?.checker?.status ?? "WAITING"} />
+          <ApprovalStatusBadge role="CHECKER" status={ap?.checker?.status ?? "WAITING"} />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground w-16">Approver</span>
-          <ApprovalStatusBadge status={ap?.approver?.status ?? "WAITING"} />
+          <ApprovalStatusBadge role="APPROVER" status={ap?.approver?.status ?? "WAITING"} />
         </div>
       </ReviewCard>
     </div>

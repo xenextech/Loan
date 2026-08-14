@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +41,87 @@ import {
   Receipt,
   Heart,
   Info,
+  X,
+  Plus,
+  Upload,
 } from "lucide-react";
+
+const MAX_ACADEMIC_RECORDS = 10;
+
+// ─── Inline drop-zone used for each "Add Academic Record" slot ────────────────
+function AcademicRecordDropZone({
+  index,
+  isUploading,
+  onFileSelect,
+}: {
+  index: number;
+  isUploading: boolean;
+  onFileSelect: (file: File | null) => void;
+}) {
+  const [dragging, setDragging] = useState(false);
+  const inputId = `academic-record-${index}`;
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragging(false);
+      const f = e.dataTransfer.files[0];
+      if (f) onFileSelect(f);
+    },
+    [onFileSelect],
+  );
+
+  return (
+    <label
+      htmlFor={inputId}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={handleDrop}
+      className={`flex items-center gap-3 w-full rounded-xl border-2 border-dashed cursor-pointer px-4 py-3.5 transition-all ${
+        dragging
+          ? "border-primary bg-primary/10"
+          : "border-border hover:border-primary/50 hover:bg-accent/30"
+      }`}
+    >
+      <div
+        className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+          dragging ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+        }`}
+      >
+        {isUploading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Plus className="w-4 h-4" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground">
+          {isUploading ? "Uploading…" : index === 0 ? "Add Academic Record" : "Add another record"}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Transcripts, marksheets, certificates · PDF, DOC, DOCX · Max 10 MB
+        </p>
+      </div>
+      <Upload className="w-4 h-4 text-muted-foreground shrink-0" />
+      <input
+        id={inputId}
+        type="file"
+        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        className="sr-only"
+        disabled={isUploading}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onFileSelect(f);
+          // reset so the same file can be re-selected after removal
+          e.target.value = "";
+        }}
+      />
+    </label>
+  );
+}
 
 interface Step3Props {
   defaultValues?: Partial<Step3FormData>;
@@ -95,6 +175,16 @@ export default function Step3FamilyEducation({
     skip: !applicationId,
   });
 
+  // ─── Per-document-type state ──────────────────────────────────────────────
+  const [isUploadingAcademic, setIsUploadingAcademic] = useState(false);
+  // Track which individual academic record is being deleted (by doc id)
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // All ACADEMIC_RECORD documents for this application
+  const academicRecordDocs: Document[] =
+    documents?.filter((d) => d.documentType === "ACADEMIC_RECORD") ?? [];
+
+  // Helpers for all other single-file document types
   const docFor = (documentType: DocumentType): Document | undefined =>
     documents?.find((d) => d.documentType === documentType);
 
@@ -108,6 +198,7 @@ export default function Step3FamilyEducation({
         }
       : null;
 
+  // Generic single-file upload (used by fee structure)
   const uploadFile = async (file: File, documentType: DocumentType) => {
     if (!applicationId) {
       toast.error("No active application. Please refresh.");
@@ -122,6 +213,7 @@ export default function Step3FamilyEducation({
     }
   };
 
+  // Generic single-file remove (used by fee structure)
   const removeUploadedFile = async (documentType: DocumentType) => {
     const doc = docFor(documentType);
     if (!applicationId || !doc) return;
@@ -131,6 +223,43 @@ export default function Step3FamilyEducation({
       toast.error(
         `Failed to remove ${documentType.replace(/_/g, " ").toLowerCase()}`,
       );
+    }
+  };
+
+  // ─── Academic record — multi-upload handlers ──────────────────────────────
+  const uploadAcademicRecord = async (file: File) => {
+    if (!applicationId) {
+      toast.error("No active application. Please refresh.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File must be under 10 MB.");
+      return;
+    }
+    setIsUploadingAcademic(true);
+    try {
+      await uploadDocument({
+        applicationId,
+        documentType: "ACADEMIC_RECORD",
+        file,
+      }).unwrap();
+      toast.success("Academic record uploaded.");
+    } catch {
+      toast.error("Failed to upload academic record.");
+    } finally {
+      setIsUploadingAcademic(false);
+    }
+  };
+
+  const removeAcademicRecord = async (docId: string) => {
+    if (!applicationId) return;
+    setDeletingId(docId);
+    try {
+      await deleteDocument({ applicationId, documentId: docId }).unwrap();
+    } catch {
+      toast.error("Failed to remove academic record.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -159,7 +288,6 @@ export default function Step3FamilyEducation({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(watchedValues)]);
 
-  const academicRecordDoc = toExisting(docFor("ACADEMIC_RECORD"));
   const feeStructureDoc = toExisting(docFor("FEE_STRUCTURE"));
 
   return (
@@ -300,21 +428,76 @@ export default function Step3FamilyEducation({
         >
           <SectionHeading icon={GraduationCap} title="Academic Records" />
           <p className="text-sm text-muted-foreground mb-4">
-            Upload your latest academic transcripts, marksheets, or
-            certificates.
+            Upload your academic transcripts, marksheets, or certificates. You
+            can add multiple documents (e.g. SLC/SEE, +2, Bachelor&apos;s).
           </p>
-          <FileUploadZone
-            label="Academic Records"
-            hint="Transcripts, marksheets, certificates · PDF, DOC, DOCX"
-            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            maxSizeMB={10}
-            onFileSelect={(file) => {
-              if (file) uploadFile(file, "ACADEMIC_RECORD");
-            }}
-            existingFile={academicRecordDoc}
-            onRemoveExisting={() => removeUploadedFile("ACADEMIC_RECORD")}
-            isRemoving={isDeleting}
-          />
+
+          <div className="space-y-3">
+            {/* Existing uploaded records */}
+            {academicRecordDocs.length > 0 && (
+              <div className="space-y-2">
+                {academicRecordDocs.map((doc, idx) => (
+                  <motion.div
+                    key={doc.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 8 }}
+                    transition={{ delay: idx * 0.04 }}
+                    className="flex items-center gap-3 rounded-xl border border-[oklch(0.62_0.18_145)]/30 bg-[oklch(0.62_0.18_145)]/5 p-3.5 pr-2"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {doc.originalFileName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {doc.size
+                          ? `${(doc.size / 1024).toFixed(0)} KB · `
+                          : "Uploaded · "}
+                        {doc.originalFileName.includes(".")
+                          ? doc.originalFileName.split(".").pop()?.toUpperCase()
+                          : "FILE"}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={deletingId === doc.id}
+                      className="w-8 h-8 rounded-full hover:bg-destructive/10 hover:text-destructive shrink-0"
+                      onClick={() => removeAcademicRecord(doc.id)}
+                    >
+                      {deletingId === doc.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <X className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Add another zone — always visible while under cap */}
+            {academicRecordDocs.length < MAX_ACADEMIC_RECORDS && (
+              <AcademicRecordDropZone
+                index={academicRecordDocs.length}
+                isUploading={isUploadingAcademic}
+                onFileSelect={(file) => {
+                  if (file) uploadAcademicRecord(file);
+                }}
+              />
+            )}
+
+            {/* Cap reached notice */}
+            {academicRecordDocs.length >= MAX_ACADEMIC_RECORDS && (
+              <p className="text-xs text-muted-foreground text-center py-2">
+                Maximum of {MAX_ACADEMIC_RECORDS} academic records reached.
+              </p>
+            )}
+          </div>
         </motion.div>
 
         {/* Fee Structure */}

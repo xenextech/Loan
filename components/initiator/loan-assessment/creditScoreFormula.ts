@@ -1,7 +1,7 @@
 // Client-side mirror of the backend's credit-scoring engine — kept in exact
 // lock-step with edu-loan-backend/src/modules/creditScore/{constant/credit-parameters.constant.ts,
 // credit-score.service.ts}. This ONLY drives the live "what would this score"
-// preview in Step3CreditAssessment; the backend (CreditScoreService) remains
+// preview in Step4CreditAssessment; the backend (CreditScoreService) remains
 // the sole authority for any persisted/approval-facing score. If the backend
 // formula ever changes, update both.
 

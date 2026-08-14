@@ -55,6 +55,9 @@ import type {
   ManualAuditEntryBody,
   RejectApplicationBody,
   SendBackApplicationBody,
+  SupportApplicationBody,
+  CheckApplicationBody,
+  ApproveApplicationBody,
   ApplicationFullDetail,
   LoanAccountRecord,
   ConfigureLoanServicingBody,
@@ -295,10 +298,10 @@ export const dashboardApi = baseApi.injectEndpoints({
     // check: CREDIT_MANAGER/CHECKER; approve: APPROVER; reject/send-back: multiple
     // roles). The frontend role picker only decides which buttons are shown —
     // the backend still enforces the real permission from the JWT.
-    supportApplication: builder.mutation<InitiatorApplicationRecord, string>({
-      query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/support`, method: "POST" }),
+    supportApplication: builder.mutation<InitiatorApplicationRecord, { applicationId: string; data?: SupportApplicationBody }>({
+      query: ({ applicationId, data }) => ({ url: `/dashboard/approval/${applicationId}/support`, method: "POST", body: data ?? {} }),
       transformResponse: mapApplicationDetail,
-      invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
+      invalidatesTags: (_r, _e, { applicationId }) => approvalTransitionTags(applicationId),
     }),
     // Initiator-only — resumes an application sent back to them (the Initiator
     // has no formal approval-chain stage otherwise). Lands on CHECKING
@@ -309,15 +312,15 @@ export const dashboardApi = baseApi.injectEndpoints({
       transformResponse: mapApplicationDetail,
       invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
     }),
-    checkApplication: builder.mutation<InitiatorApplicationRecord, string>({
-      query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/check`, method: "POST" }),
+    checkApplication: builder.mutation<InitiatorApplicationRecord, { applicationId: string; data?: CheckApplicationBody }>({
+      query: ({ applicationId, data }) => ({ url: `/dashboard/approval/${applicationId}/check`, method: "POST", body: data ?? {} }),
       transformResponse: mapApplicationDetail,
-      invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
+      invalidatesTags: (_r, _e, { applicationId }) => approvalTransitionTags(applicationId),
     }),
-    approveApplication: builder.mutation<InitiatorApplicationRecord, string>({
-      query: (applicationId) => ({ url: `/dashboard/approval/${applicationId}/approve`, method: "POST" }),
+    approveApplication: builder.mutation<InitiatorApplicationRecord, { applicationId: string; data?: ApproveApplicationBody }>({
+      query: ({ applicationId, data }) => ({ url: `/dashboard/approval/${applicationId}/approve`, method: "POST", body: data ?? {} }),
       transformResponse: mapApplicationDetail,
-      invalidatesTags: (_r, _e, applicationId) => approvalTransitionTags(applicationId),
+      invalidatesTags: (_r, _e, { applicationId }) => approvalTransitionTags(applicationId),
     }),
     rejectApplication: builder.mutation<InitiatorApplicationRecord, { applicationId: string; data: RejectApplicationBody }>({
       query: ({ applicationId, data }) => ({ url: `/dashboard/approval/${applicationId}/reject`, method: "POST", body: data }),

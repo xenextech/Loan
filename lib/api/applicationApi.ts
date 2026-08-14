@@ -1,5 +1,12 @@
 import { baseApi } from "./baseApi";
-import type { LoanApplication, SubmitApplicationResult, ApplicationTracker, StudentConsentRecord } from "@/types/api";
+import type {
+  LoanApplication,
+  SubmitApplicationResult,
+  ApplicationTracker,
+  StudentConsentRecord,
+  VerificationStatusResponse,
+  BankAccountOpening,
+} from "@/types/api";
 import type {
   Step1FormData,
   Step2FormData,
@@ -136,34 +143,83 @@ export const applicationApi = baseApi.injectEndpoints({
       invalidatesTags: (_r, _e, { id }) => [{ type: "Application", id }],
     }),
 
-    // Final submission — returns SUBMITTED application + parent/college magic links
+    // Final submission — declaration + status change only. Parent/college
+    // verification invitations are sent independently (see below); the raw
+    // token/link is never generated in the browser or returned here.
     submitApplication: builder.mutation<
       SubmitApplicationResult,
       {
         id: string;
         informationAccurate: boolean;
         authorizeVerification: boolean;
-        parentContactEmail?: string;
-        collegeContactEmail?: string;
       }
     >({
-      query: ({
-        id,
-        informationAccurate,
-        authorizeVerification,
-        parentContactEmail,
-        collegeContactEmail,
-      }) => ({
+      query: ({ id, informationAccurate, authorizeVerification }) => ({
         url: `/applications/${id}/submit`,
         method: "POST",
-        body: {
-          informationAccurate,
-          authorizeVerification,
-          parentContactEmail,
-          collegeContactEmail,
-        },
+        body: { informationAccurate, authorizeVerification },
       }),
       invalidatesTags: ["Application"],
+    }),
+
+    // ── Parent/college verification invitations ────────────────────────────
+    // Status never includes the raw token — only email, verification code,
+    // status, and timestamps (see VerificationInvitation type).
+    getVerificationStatus: builder.query<VerificationStatusResponse, string>({
+      query: (id) => `/applications/${id}/verification`,
+      providesTags: (_r, _e, id) => [
+        { type: "Application" as const, id: `${id}-verification` },
+      ],
+    }),
+    sendParentVerification: builder.mutation<
+      VerificationStatusResponse["parent"],
+      { id: string; email: string }
+    >({
+      query: ({ id, email }) => ({
+        url: `/applications/${id}/verification/parent`,
+        method: "POST",
+        body: { email },
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "Application" as const, id: `${id}-verification` },
+      ],
+    }),
+    resendParentVerification: builder.mutation<
+      VerificationStatusResponse["parent"],
+      { id: string }
+    >({
+      query: ({ id }) => ({
+        url: `/applications/${id}/verification/parent/resend`,
+        method: "POST",
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "Application" as const, id: `${id}-verification` },
+      ],
+    }),
+    sendCollegeVerification: builder.mutation<
+      VerificationStatusResponse["college"],
+      { id: string; email: string }
+    >({
+      query: ({ id, email }) => ({
+        url: `/applications/${id}/verification/college`,
+        method: "POST",
+        body: { email },
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "Application" as const, id: `${id}-verification` },
+      ],
+    }),
+    resendCollegeVerification: builder.mutation<
+      VerificationStatusResponse["college"],
+      { id: string }
+    >({
+      query: ({ id }) => ({
+        url: `/applications/${id}/verification/college/resend`,
+        method: "POST",
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "Application" as const, id: `${id}-verification` },
+      ],
     }),
 
     // Delete a DRAFT application
@@ -188,6 +244,23 @@ export const applicationApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/applications/${id}/consent/accept`, method: "POST" }),
       invalidatesTags: (_r, _e, id) => [{ type: "Application", id: `${id}-consent` }],
     }),
+
+    // Bank Account Opening — inserted after Parent + College verification,
+    // before the application is eligible for the Initiator's queue. Null
+    // until both of those are complete (nothing to show yet).
+    getBankAccountOpening: builder.query<BankAccountOpening | null, string>({
+      query: (id) => `/applications/${id}/bank-account`,
+      providesTags: (_r, _e, id) => [{ type: "Application", id: `${id}-bank-account` }],
+    }),
+    completeBankAccountOpening: builder.mutation<BankAccountOpening, string>({
+      query: (id) => ({ url: `/applications/${id}/bank-account/complete`, method: "POST" }),
+      // Also invalidates the tracker tag — completing this step is what
+      // makes the "Bank Account Opening" stage flip to COMPLETED there.
+      invalidatesTags: (_r, _e, id) => [
+        { type: "Application", id: `${id}-bank-account` },
+        { type: "Application", id: `${id}-tracker` },
+      ],
+    }),
   }),
 });
 
@@ -203,4 +276,11 @@ export const {
   useGetApplicationTrackerQuery,
   useGetConsentQuery,
   useAcceptConsentMutation,
+  useGetBankAccountOpeningQuery,
+  useCompleteBankAccountOpeningMutation,
+  useGetVerificationStatusQuery,
+  useSendParentVerificationMutation,
+  useResendParentVerificationMutation,
+  useSendCollegeVerificationMutation,
+  useResendCollegeVerificationMutation,
 } = applicationApi;

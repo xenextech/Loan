@@ -138,6 +138,8 @@ export interface ApprovalStageActor {
   id: string | null;
   name: string | null;
   approvedAt: string;
+  post: string | null;
+  branch: string | null;
 }
 
 export interface ApprovalSummary {
@@ -166,7 +168,20 @@ export interface ApprovalSummary {
   };
 }
 
-export interface RejectApplicationBody {
+/** Branch Name / Designation the acting role records for their own decision —
+ *  optional on every real workflow-transition call (support/check/approve/
+ *  reject/send-back). */
+export interface RoleAttestationBody {
+  branchName?: string;
+  designation?: string;
+  signature?: string;
+}
+
+export type SupportApplicationBody = RoleAttestationBody;
+export type CheckApplicationBody = RoleAttestationBody;
+export type ApproveApplicationBody = RoleAttestationBody;
+
+export interface RejectApplicationBody extends RoleAttestationBody {
   reason: string;
 }
 
@@ -174,7 +189,7 @@ export interface SendStudentConsentResult extends StudentConsentRecord {
   consentLink: string;
 }
 
-export interface SendBackApplicationBody {
+export interface SendBackApplicationBody extends RoleAttestationBody {
   reason: string;
   toStage?: ApplicationStage;
 }
@@ -506,6 +521,17 @@ export interface ForwardGeneratedAgreementBody {
   note?: string;
 }
 
+/** One रोहबर साक्षी (witness) line on PROMISSORY_NOTE — "१) <district> जिल्ला
+ *  <municipality> वडा नं. <wardNo> बस्ने वर्ष <age> को <name>". All optional;
+ *  anything omitted prints as a ruled blank on the document. */
+export interface DocumentWitness {
+  district?: string | null;
+  municipality?: string | null;
+  wardNo?: string | null;
+  age?: string | null;
+  name?: string | null;
+}
+
 /** Shape of GeneratedAgreementRecord.templateSnapshot for LOAN_AGREEMENT /
  *  legal documents — everything auto-populated server-side at generation
  *  time (see DashboardDocumentsService.createAgreement). */
@@ -569,6 +595,9 @@ export interface LegalDocumentTemplateSnapshot {
   collateralPlotNo?: string | null;
   collateralArea?: string | null;
   collateralRemarks?: string | null;
+  /** PROMISSORY_NOTE only — रोहबर साक्षी list. Null/empty falls back to a
+   *  single blank witness line on the document. */
+  witnesses?: DocumentWitness[] | null;
   /** HYPOTHECATION only — कर्जा रकम निकासा अनुरोध पत्र specific fields. */
   approvalLetterDate?: string | null;
   loanExpiryDate?: string | null;
@@ -615,6 +644,9 @@ export interface CreateGeneratedAgreementBody {
   collateralPlotNo?: string;
   collateralArea?: string;
   collateralRemarks?: string;
+  /** PROMISSORY_NOTE only — रोहबर साक्षी list. Omit or send an empty array to
+   *  fall back to a single blank witness line. */
+  witnesses?: DocumentWitness[];
   approvalLetterDate?: string;
   loanExpiryDate?: string;
   borrowerPosition?: string;

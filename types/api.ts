@@ -88,15 +88,40 @@ export type DocumentType =
   | 'OFFER_LETTER'
   | 'ENROLLMENT_DOCUMENT';
 
-// ─── Submission result (includes magic links) ────────────────────────────────
+// ─── Submission result ────────────────────────────────────────────────────────
+// Never carries a raw verification link/token — see VerificationInvitation
+// below for what the Initiator is allowed to see about parent/college invites.
 
 export interface SubmitApplicationResult {
   id: string;
   applicationNumber: string;
   status: AppStatus;
   submittedAt: string;
-  parentLink: string;
-  collegeLink: string;
+}
+
+// ─── Verification invitations (parent/college) ────────────────────────────────
+// Safe, Initiator-facing view of an ApplicationLink — never the raw token.
+
+export type VerificationInvitationStatus =
+  | 'PENDING'
+  | 'OPENED'
+  | 'VERIFIED'
+  | 'EXPIRED'
+  | 'REVOKED'
+  | 'FAILED';
+
+export interface VerificationInvitation {
+  email: string;
+  verificationCode: string;
+  status: VerificationInvitationStatus;
+  sentAt: string;
+  expiresAt: string;
+  verifiedAt: string | null;
+}
+
+export interface VerificationStatusResponse {
+  parent: VerificationInvitation | null;
+  college: VerificationInvitation | null;
 }
 
 // ─── Parent verification (via magic link) ────────────────────────────────────
@@ -137,6 +162,7 @@ export interface ParentDocument {
 
 export interface ParentApplicationView {
   applicationNumber: string;
+  verificationCode?: string | null;
   studentName?: string;
   email?: string;
   phoneNumber?: string;
@@ -167,6 +193,26 @@ export interface StudentConsentRecord {
   updatedAt: string;
 }
 
+// ─── Bank Account Opening ─────────────────────────────────────────────────────
+// Inserted after Parent + College verification, before the application is
+// eligible for the Initiator's queue (GET/POST /applications/:id/bank-account
+// [/complete], STUDENT-only, ownership-enforced). Null until both of those
+// verifications are complete — nothing to show yet.
+
+export type BankAccountOpeningStatus = "PENDING" | "COMPLETED";
+
+export interface BankAccountOpening {
+  id: string;
+  applicationId: string;
+  status: BankAccountOpeningStatus;
+  bankUrl: string;
+  notifiedAt: string | null;
+  clickedAt: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ─── College verification ────────────────────────────────────────────────────
 
 export interface CollegeVerification {
@@ -185,6 +231,7 @@ export interface CollegeVerification {
 
 export interface CollegeApplicationView {
   applicationNumber: string;
+  verificationCode?: string | null;
   studentName?: string;
   studentEmail?: string;
   studentPhone?: string;
@@ -483,6 +530,10 @@ export interface InitiatorApplicationRecord {
   panNumber?: string;
   licenseNumber?: string;
   bankingRelationship?: string;
+  existingBankName?: string;
+  existingBankAccountNumber?: string;
+  existingBankSavingsAmount?: number;
+  existingBankLoanAmount?: number;
   isBlacklisted?: boolean;
   // NRB Reporting
   baselClassification?: string;
@@ -501,6 +552,7 @@ export interface InitiatorApplicationRecord {
   greenFinanceTaxonomyTag?: string;
   // Credit Scoring
   creditLimit?: number;
+  income?: number;
   loanToValueRatio?: number;
   dsgir?: number;
   performanceYears?: number;
@@ -556,6 +608,7 @@ export type TrackerStageKey =
   | 'STUDENT'
   | 'PARENT'
   | 'COLLEGE'
+  | 'BANK_ACCOUNT'
   | 'INITIATOR'
   | 'SUPPORTER'
   | 'CREDIT_MANAGER_REVIEW'

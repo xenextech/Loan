@@ -6,8 +6,21 @@ import { useAppSelector } from "@/lib/hooks";
 import type { UserRole } from "@/types/api";
 import { SectionCard } from "../ui/SectionCard";
 import { ApprovalCard, type ApprovalAction } from "../ui/ApprovalCard";
-import type { LoanAssessmentFormValues } from "../schema";
+import {
+  INITIATOR_DESIGNATION_OPTIONS,
+  SUPPORT_DESIGNATION_OPTIONS,
+  CHECKER_DESIGNATION_OPTIONS,
+  APPROVER_DESIGNATION_OPTIONS,
+  type LoanAssessmentFormValues,
+} from "../schema";
 import type { ApprovalRole, ApprovalStatus } from "../types";
+
+const DESIGNATION_OPTIONS_BY_ROLE: Record<ApprovalRole, readonly string[]> = {
+  INITIATOR: INITIATOR_DESIGNATION_OPTIONS,
+  SUPPORT: SUPPORT_DESIGNATION_OPTIONS,
+  CHECKER: CHECKER_DESIGNATION_OPTIONS,
+  APPROVER: APPROVER_DESIGNATION_OPTIONS,
+};
 
 const ROLE_LABELS: Record<ApprovalRole, string> = {
   INITIATOR: "Initiator",
@@ -156,12 +169,14 @@ export function Step9Approval({ currentUserRole, currentUserName }: Step9Approva
                 signature={entry.signature}
                 {...(role === "INITIATOR" && {
                   branchName: approval?.initiator?.branchName,
-                  designation: approval?.initiator?.designation,
                   onBranchNameChange: (value: string) =>
                     setValue("approval.initiator.branchName", value, { shouldDirty: true }),
-                  onDesignationChange: (value: string) =>
-                    setValue("approval.initiator.designation", value, { shouldDirty: true }),
                 })}
+                designation={entry.designation}
+                designationOptions={DESIGNATION_OPTIONS_BY_ROLE[role]}
+                onDesignationChange={(value: string) =>
+                  setValue(`approval.${key}.designation`, value, { shouldDirty: true })
+                }
                 isCurrentUserRole={role === resolvedRole}
                 isUnlocked={isUnlocked(role)}
                 waitingMessage={waitingMessage(role)}

@@ -13,8 +13,8 @@ import { useLoanAssessmentForm } from "./useLoanAssessmentForm";
 import type { LoanAssessmentFormValues, LoanAssessmentSubmitValues } from "./schema";
 import { Step1ApplicantInfo } from "./steps/Step1ApplicantInfo";
 import { Step2NrbReporting } from "./steps/Step2NrbReporting";
-import { Step3CreditAssessment } from "./steps/Step3CreditAssessment";
-import { Step4ApplicantBackground } from "./steps/Step4ApplicantBackground";
+import { Step3ApplicantBackground } from "./steps/Step3ApplicantBackground";
+import { Step4CreditAssessment } from "./steps/Step4CreditAssessment";
 import { Step5SecurityGuarantee } from "./steps/Step5SecurityGuarantee";
 import { Step6InsuranceRepayment } from "./steps/Step6InsuranceRepayment";
 import { Step7RiskAssessment } from "./steps/Step7RiskAssessment";
@@ -27,10 +27,27 @@ interface LoanAssessmentFormProps {
   initialValues?: Partial<LoanAssessmentFormValues>;
   /** True once POST .../initiator has ever succeeded for this application — see useLoanAssessmentForm. */
   hasInitiatorInfo?: boolean;
+  /** The student's requested loan amount (LoanInformation.loanAmount) — the single
+   *  source of truth for Step 4's Credit Limit. Undefined/0 means it failed to load. */
+  applicationLoanAmount?: number;
+  /** True when Support/Approver sent the application back to the Initiator to
+   *  fix and resend. Step 10 (Review & Submit) is a first-submission-only step —
+   *  a resubmission ends at Step 9's Approval chain instead. */
+  isResubmission?: boolean;
   onSubmitted?: (values: LoanAssessmentSubmitValues) => void;
 }
 
-export function LoanAssessmentForm({ applicationId, initialValues, hasInitiatorInfo = false, onSubmitted }: LoanAssessmentFormProps) {
+export function LoanAssessmentForm({
+  applicationId,
+  initialValues,
+  hasInitiatorInfo = false,
+  applicationLoanAmount,
+  isResubmission = false,
+  onSubmitted,
+}: LoanAssessmentFormProps) {
+  const steps = isResubmission ? STEPS.slice(0, TOTAL_STEPS - 1) : STEPS;
+  const totalSteps = steps.length;
+
   const {
     form,
     currentStep,
@@ -42,17 +59,14 @@ export function LoanAssessmentForm({ applicationId, initialValues, hasInitiatorI
     saveDraft,
     submit,
     lastSavedAt,
-  } = useLoanAssessmentForm(applicationId, initialValues, hasInitiatorInfo);
+  } = useLoanAssessmentForm(applicationId, initialValues, hasInitiatorInfo, applicationLoanAmount, totalSteps);
 
-  const step = STEPS[currentStep - 1];
-  const isLastStep = currentStep === TOTAL_STEPS;
-  // Step 1 only reads as "create" (Next) when no initiator record exists yet —
-  // otherwise this step behaves like every other: a PATCH-based Update.
+  const step = steps[currentStep - 1];
+  const isLastStep = currentStep === totalSteps;
+
   const isFirstStep = currentStep === 1 && !hasInitiatorInfo;
 
-  // This form renders both in a plain page (window scrolls) and inside the
-  // review split-screen's own overflow-y-auto column — scrollIntoView finds
-  // whichever scrollable ancestor actually applies, unlike window.scrollTo.
+
   const topRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -72,12 +86,12 @@ export function LoanAssessmentForm({ applicationId, initialValues, hasInitiatorI
       <div className="space-y-5">
         <div ref={topRef} />
         <div className="rounded-xl border border-border bg-card px-4 py-4 sm:px-5">
-          <Stepper currentStep={currentStep} maxStepReached={maxStepReached} onStepClick={goToStep} />
+          <Stepper steps={steps} currentStep={currentStep} maxStepReached={maxStepReached} onStepClick={goToStep} />
         </div>
 
         <div>
           <p className="text-[11px] font-semibold text-primary uppercase tracking-widest mb-1">
-            Step {currentStep} of {TOTAL_STEPS}
+            Step {currentStep} of {totalSteps}
           </p>
           <h2 className="text-lg font-bold text-foreground">{step.title}</h2>
           <p className="text-sm text-muted-foreground mt-0.5">{step.description}</p>
@@ -93,14 +107,14 @@ export function LoanAssessmentForm({ applicationId, initialValues, hasInitiatorI
           >
             {currentStep === 1 && <Step1ApplicantInfo />}
             {currentStep === 2 && <Step2NrbReporting />}
-            {currentStep === 3 && <Step3CreditAssessment />}
-            {currentStep === 4 && <Step4ApplicantBackground />}
+            {currentStep === 3 && <Step3ApplicantBackground applicationLoanAmount={applicationLoanAmount} />}
+            {currentStep === 4 && <Step4CreditAssessment applicationLoanAmount={applicationLoanAmount} />}
             {currentStep === 5 && <Step5SecurityGuarantee />}
             {currentStep === 6 && <Step6InsuranceRepayment />}
             {currentStep === 7 && <Step7RiskAssessment />}
             {currentStep === 8 && <Step8Recommendation />}
             {currentStep === 9 && <Step9Approval />}
-            {currentStep === 10 && <Step10ReviewSubmit onEdit={goToStep} />}
+            {currentStep === 10 && !isResubmission && <Step10ReviewSubmit onEdit={goToStep} />}
           </motion.div>
         </AnimatePresence>
 

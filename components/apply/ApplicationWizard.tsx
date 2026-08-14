@@ -9,6 +9,7 @@ import {
   setApplicationId,
   updateStepData,
   setSubmitted,
+  resetApplication,
 } from "@/lib/store/applicationSlice";
 import {
   useCreateDraftMutation,
@@ -18,6 +19,7 @@ import {
   useSubmitApplicationMutation,
 } from "@/lib/api/applicationApi";
 import { useGetPrefillDataQuery } from "@/lib/api/marketplaceApi";
+import type { DegreeLevel } from "@/types/college-marketplace";
 import WizardProgress from "./WizardProgress";
 import Step1AboutYou from "./steps/Step1AboutYou";
 import Step2Identity from "./steps/Step2Identity";
@@ -42,15 +44,27 @@ const slideVariants = {
   exit: { opacity: 0, x: -48 },
 };
 
+// Marketplace courses classify by DegreeLevel; the apply form classifies by
+// studyType. There's no "short course" DegreeLevel, so CERTIFICATE maps to
+// certification and every degree level (BACHELOR/MASTER/PHD) maps to "program".
+function degreeLevelToStudyType(level: DegreeLevel): Step1FormData["studyType"] {
+  switch (level) {
+    case "CERTIFICATE":
+      return "certification";
+    case "DIPLOMA":
+      return "diploma";
+    case "BACHELOR":
+    case "MASTER":
+    case "PHD":
+    default:
+      return "program";
+  }
+}
+
 export default function ApplicationWizard() {
   const dispatch = useAppDispatch();
-  const {
-    applicationId,
-    currentStep,
-    formData,
-    submittedApplicationNumber,
-    submissionLinks,
-  } = useAppSelector((s) => s.application);
+  const { applicationId, currentStep, formData, submittedApplicationNumber } =
+    useAppSelector((s) => s.application);
 
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -65,24 +79,6 @@ export default function ApplicationWizard() {
   const [submitApplication, { isLoading: isSubmitting }] =
     useSubmitApplicationMutation();
 
-  // Create draft on mount
-  useEffect(() => {
-    if (applicationId) return;
-    createDraft()
-      .unwrap()
-      .then((app) => {
-        dispatch(
-          setApplicationId({ id: app.id, number: app.applicationNumber }),
-        );
-      })
-      .catch(() => {
-        toast.error(
-          "Failed to start application. Please refresh and try again.",
-        );
-      });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // ─── College Marketplace prefill ──────────────────────────────────────────
   // Only present when arriving via /apply?collegeId=&courseId= — a direct
   // /apply visit has neither param, so this whole block is a no-op and the
@@ -90,16 +86,62 @@ export default function ApplicationWizard() {
   const searchParams = useSearchParams();
   const collegeIdParam = searchParams.get("collegeId");
   const courseIdParam = searchParams.get("courseId");
-  const {
-    data: prefillData,
-    isError: prefillError,
-  } = useGetPrefillDataQuery(
+  const marketplaceSelectionKey =
+    collegeIdParam && courseIdParam ? `${collegeIdParam}:${courseIdParam}` : null;
+
+  // Create a draft on mount — but if the URL names a *different*
+  // college/course than whatever draft is already in Redux (e.g. the user
+  // applied to College A, went back to the marketplace without refreshing,
+  // and clicked Apply on College B), the old draft and its step1 data must
+  // not be silently reused: that's what previously froze tuition fee, course
+  // duration and study type at whichever college was applied to first.
+  const handledSelectionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!marketplaceSelectionKey) {
+      if (applicationId) return;
+      createDraft()
+        .unwrap()
+        .then((app) => {
+          dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
+        })
+        .catch(() => {
+          toast.error("Failed to start application. Please refresh and try again.");
+        });
+      return;
+    }
+
+    if (handledSelectionRef.current === marketplaceSelectionKey) return;
+    handledSelectionRef.current = marketplaceSelectionKey;
+
+    const currentSelectionKey =
+      formData.step1?.collegeId && formData.step1?.courseId
+        ? `${formData.step1.collegeId}:${formData.step1.courseId}`
+        : null;
+    if (applicationId && currentSelectionKey === marketplaceSelectionKey) return;
+
+    if (applicationId) dispatch(resetApplication());
+    createDraft()
+      .unwrap()
+      .then((app) => {
+        dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
+      })
+      .catch(() => {
+        toast.error("Failed to start application. Please refresh and try again.");
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marketplaceSelectionKey]);
+
+  const { data: prefillData, isError: prefillError } = useGetPrefillDataQuery(
     { collegeId: collegeIdParam ?? "", courseId: courseIdParam ?? "" },
     { skip: !collegeIdParam || !courseIdParam },
   );
 
   useEffect(() => {
-    if (!prefillData || formData.step1?.collegeId) return;
+    if (!prefillData) return;
+    const isAlreadyPrefilled =
+      formData.step1?.collegeId === prefillData.collegeId &&
+      formData.step1?.courseId === prefillData.courseId;
+    if (isAlreadyPrefilled) return;
     dispatch(
       updateStepData({
         step: "step1",
@@ -111,11 +153,12 @@ export default function ApplicationWizard() {
           boardUniversity: prefillData.universityName ?? "",
           courseDuration: prefillData.duration,
           tuitionFee: prefillData.tuitionFee,
+          studyType: degreeLevelToStudyType(prefillData.degreeLevel),
         },
       }),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefillData]);
+  }, [prefillData, formData.step1?.collegeId, formData.step1?.courseId]);
 
   useEffect(() => {
     if (prefillError) {
@@ -215,13 +258,7 @@ export default function ApplicationWizard() {
         informationAccurate: decl.informationAccurate,
         authorizeVerification: decl.authorizeVerification,
       }).unwrap();
-      dispatch(
-        setSubmitted({
-          applicationNumber: result.applicationNumber,
-          parentLink: result.parentLink,
-          collegeLink: result.collegeLink,
-        }),
-      );
+      dispatch(setSubmitted({ applicationNumber: result.applicationNumber }));
     } catch {
       toast.error("Submission failed. Please try again.");
     }
@@ -236,8 +273,6 @@ export default function ApplicationWizard() {
         loanAmount={formData.step1?.loanAmount ?? 0}
         courseName={formData.step1?.courseName ?? ""}
         submittedAt={new Date().toISOString()}
-        parentLink={submissionLinks?.parentLink ?? undefined}
-        collegeLink={submissionLinks?.collegeLink ?? undefined}
       />
     );
   }
@@ -365,8 +400,9 @@ export default function ApplicationWizard() {
                     isSaving={isSaving3}
                   />
                 )}
-                {currentStep === 4 && (
+                {currentStep === 4 && applicationId && (
                   <Step4ReviewSubmit
+                    applicationId={applicationId}
                     formData={formData}
                     isSubmitting={isSubmitting}
                     onPrev={() => goPrev(4)}

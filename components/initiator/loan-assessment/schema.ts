@@ -29,25 +29,63 @@ export const BLACKLISTED_STATUS_OPTIONS = [
   { value: "BLACKLISTED", label: "Blacklisted" },
 ] as const;
 
-export const applicantInfoSchema = z.object({
-  customerName: z.string().min(1, "Customer name is required").max(200),
-  relationshipStartDate: optionalText(20),
-  group: optionalText(120),
-  obligorNumber: optionalNumber,
-  permanentAddress: optionalText(300),
-  correspondenceAddress: optionalText(300),
-  contactNumber: z.string().min(1, "Contact number is required").max(20),
-  profession: optionalText(120),
-  repaymentSource: optionalText(200),
-  citizenshipNumber: optionalText(60),
-  citizenshipIssuedDate: optionalText(20),
-  citizenshipIssuedPlace: optionalText(120),
-  nationalId: z.string().min(1, "National ID is required").max(60),
-  pan: optionalText(30),
-  license: optionalText(60),
-  bankingRelationship: z.enum(["NEW", "EXISTING"]).optional(),
-  blacklistedStatus: z.enum(["NOT_BLACKLISTED", "BLACKLISTED"]).optional(),
-});
+export const applicantInfoSchema = z
+  .object({
+    customerName: z.string().min(1, "Customer name is required").max(200),
+    relationshipStartDate: optionalText(20),
+    group: optionalText(120),
+    obligorNumber: optionalNumber,
+    permanentAddress: optionalText(300),
+    correspondenceAddress: optionalText(300),
+    contactNumber: z.string().min(1, "Contact number is required").max(20),
+    profession: optionalText(120),
+    repaymentSource: optionalText(200),
+    citizenshipNumber: optionalText(60),
+    citizenshipIssuedDate: optionalText(20),
+    citizenshipIssuedPlace: optionalText(120),
+    nationalId: z.string().min(1, "National ID is required").max(60),
+    pan: optionalText(30),
+    license: optionalText(60),
+    bankingRelationship: z.enum(["NEW", "EXISTING"]).optional(),
+    // Collected only when bankingRelationship is "EXISTING" — see the
+    // superRefine below and Step1ApplicantInfo's conditional reveal.
+    existingBankName: optionalText(120),
+    existingBankAccountNumber: optionalText(60),
+    existingBankSavingsAmount: optionalNumber,
+    existingBankLoanAmount: optionalNumber,
+    blacklistedStatus: z.enum(["NOT_BLACKLISTED", "BLACKLISTED"]).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.bankingRelationship !== "EXISTING") return;
+    if (!data.existingBankName?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["existingBankName"],
+        message: "Required when Banking Relationship is Existing",
+      });
+    }
+    if (!data.existingBankAccountNumber?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["existingBankAccountNumber"],
+        message: "Required when Banking Relationship is Existing",
+      });
+    }
+    if (data.existingBankSavingsAmount === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["existingBankSavingsAmount"],
+        message: "Required when Banking Relationship is Existing",
+      });
+    }
+    if (data.existingBankLoanAmount === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["existingBankLoanAmount"],
+        message: "Required when Banking Relationship is Existing",
+      });
+    }
+  });
 
 // ─── Step 2 — NRB Reporting ─────────────────────────────────────────────────
 // Field names match the backend's actual regulatory codes exactly (Basel
@@ -146,7 +184,19 @@ export const SOURCE_OF_INCOME_OPTIONS = [
 ] as const;
 
 export const creditAssessmentSchema = z.object({
-  creditLimit: optionalNumber,
+  // Always auto-populated from the application's requested loan amount
+  // (LoanInformation.loanAmount) — see Step4CreditAssessment, which is the
+  // only place that ever calls setValue on this field. Refined (not made a
+  // plain required number) so the underlying type stays number | undefined,
+  // matching every other numeric field here; undefined only happens if the
+  // source loan amount itself failed to load, in which case this message
+  // points at the real cause instead of "Required".
+  creditLimit: optionalNumber.refine((val) => val !== undefined, {
+    message: "Credit Limit could not be set — the application's requested loan amount is missing.",
+  }),
+  // Customer's assessed income — entered manually alongside Credit Limit,
+  // unlike Credit Limit itself which always mirrors the requested loan amount.
+  income: optionalNumber,
   loanToValueRatio: optionalNumber,
   dsgir: optionalNumber,
   performanceYears: optionalNumber,
@@ -199,9 +249,12 @@ export const applicantBackgroundSchema = z.object({
   // "This facility" — the credit facility being proposed under this application.
   facility: optionalText(120),
   purpose: optionalText(200),
+  // Auto-populated from creditAssessment.creditLimit (the student's requested
+  // loan amount) — see Step3ApplicantBackground. Editable to allow overrides.
   limit: optionalNumber,
   period: optionalNumber,
   interestRate: optionalNumber,
+  // Auto-calculated as creditLimit × 1.25% — shown in NPR, editable.
   fee: optionalNumber,
   remarks: optionalText(1000),
 });
@@ -210,17 +263,40 @@ export const applicantBackgroundSchema = z.object({
 // The backend stores exactly one security and one personal guarantee per
 // application (1:1 relations, not lists) — single-entry, not repeatable.
 
-export const guarantorSchema = z.object({
-  nameOfGuarantor: optionalText(120),
-  relationship: optionalText(80),
-  age: optionalNumber,
-  netWorth: optionalNumber,
-  guarantorConsent: z.enum(["Yes", "No"]).optional(),
-  ciclStatus: z.enum(["Yes", "No"]).optional(),
-  ciclRemarks: optionalText(300),
-  blackListedDate: optionalText(20),
-  releasedDate: optionalText(20),
-});
+// guarantorConsent is labeled "Legal Obligation" in the UI (Step5SecurityGuarantee).
+// When it's "Yes", the consent/obligated person's name and relationship become
+// required — reusing the guarantor's own name/relationship fields rather than
+// inventing new ones, since the backend's PersonalGuarantee model already
+// captures exactly that person (no separate "obligated person" entity exists).
+export const guarantorSchema = z
+  .object({
+    nameOfGuarantor: optionalText(120),
+    relationship: optionalText(80),
+    age: optionalNumber,
+    netWorth: optionalNumber,
+    guarantorConsent: z.enum(["Yes", "No"]).optional(),
+    ciclStatus: z.enum(["Yes", "No"]).optional(),
+    ciclRemarks: optionalText(300),
+    blackListedDate: optionalText(20),
+    releasedDate: optionalText(20),
+  })
+  .superRefine((data, ctx) => {
+    if (data.guarantorConsent !== "Yes") return;
+    if (!data.relationship?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["relationship"],
+        message: "Required when Legal Obligation is Yes",
+      });
+    }
+    if (!data.nameOfGuarantor?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["nameOfGuarantor"],
+        message: "Required when Legal Obligation is Yes",
+      });
+    }
+  });
 
 export const securitySchema = z.object({
   securityDetails: optionalText(300),
@@ -279,16 +355,29 @@ export const recommendationSchema = z.object({
 // Persisted via PATCH .../initiator's `approval` field — see
 // ApplicationInitiatorService.buildApprovalUpdate() on the backend.
 
-// Official designation/team mapping used across the approval chain — each
-// value is "<code> (<full title>)" so both the abbreviation staff use day to
-// day and its full title are visible in the dropdown.
-export const DESIGNATION_OPTIONS = [
-  "ARO (Assistant Relationship Officer)",
-  "RO (Relationship Officer)",
-  "BM (Branch Manager)",
-  "CRAD (Credit Risk Assessment Department)",
-  "DH (Department Head) / CNNMO, CEO",
-  "CAD (Credit Administration Department)",
+// Designation options are role-specific — each of the four approval-chain
+// roles has its own fixed list of job titles it can sign off as.
+export const INITIATOR_DESIGNATION_OPTIONS = [
+  "ARO (Assistant Relationship Officer) - Initiator",
+  "BM - Recommended by",
+] as const;
+
+export const SUPPORT_DESIGNATION_OPTIONS = [
+  "CRAD",
+  "Head CRAD",
+  "Head Digital Banking and Transaction",
+  "CNNMO",
+] as const;
+
+// CHECKER is the same seat as "Credit Manager" elsewhere in the app (see
+// schema.prisma's LoanApplication comment — CREDIT_MANAGER reuses the
+// checker* columns).
+export const CHECKER_DESIGNATION_OPTIONS = ["Documentation", "Disbursement"] as const;
+
+export const APPROVER_DESIGNATION_OPTIONS = [
+  "Head Digital Banking and Transaction",
+  "CNNMO",
+  "CEO",
 ] as const;
 
 export const approvalStatusSchema = z.enum([
@@ -308,13 +397,13 @@ export const approvalEntrySchema = z.object({
   approvedDate: optionalText(20),
   remarks: optionalText(1000),
   signature: optionalText(120),
+  designation: optionalText(60),
 });
 
-// Only the Initiator's card collects Branch Name / Designation — the other
-// three roles use the plain approvalEntrySchema.
+// Only the Initiator's card additionally collects a Branch Name — the other
+// three roles use the plain approvalEntrySchema (which now includes designation).
 export const initiatorApprovalEntrySchema = approvalEntrySchema.extend({
   branchName: optionalText(120),
-  designation: optionalText(60),
 });
 
 export const approvalSchema = z.object({

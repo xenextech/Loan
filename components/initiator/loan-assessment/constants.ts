@@ -5,8 +5,13 @@ import type { LoanAssessmentFormValues } from "./schema";
 export const STEPS: StepDefinition[] = [
   { id: 1, key: "applicant", title: "Applicant Information", shortLabel: "Applicant", description: "Core KYC and relationship details for the borrower." },
   { id: 2, key: "nrb", title: "NRB Reporting", shortLabel: "NRB", description: "Regulatory classification fields for NRB submission." },
-  { id: 3, key: "credit", title: "Credit Assessment", shortLabel: "Credit", description: "Credit limit, LTV and underwriting inputs." },
-  { id: 4, key: "background", title: "Applicant Background", shortLabel: "Background", description: "Family members and existing credit facilities." },
+  // Background comes before Credit Assessment on purpose: the facility's
+  // interest rate and period, plus the applicant's existing facilities, are all
+  // captured here and are the inputs Credit Assessment's DSGIR is derived from
+  // (see affordabilityFormula.ts). Collecting them first means DSGIR and the
+  // credit score can be calculated in a single forward pass.
+  { id: 3, key: "background", title: "Applicant Background", shortLabel: "Background", description: "Family members, this facility's terms and existing credit facilities." },
+  { id: 4, key: "credit", title: "Credit Assessment", shortLabel: "Credit", description: "Credit limit, affordability ratios and underwriting inputs." },
   { id: 5, key: "security", title: "Security & Guarantee", shortLabel: "Security", description: "Pledged securities and personal guarantors." },
   { id: 6, key: "insurance", title: "Insurance & Repayment", shortLabel: "Insurance", description: "Insurance cover and repayment capacity." },
   { id: 7, key: "risk", title: "Risk Assessment", shortLabel: "Risk", description: "AML/CFT, waivers and credit risk mitigation." },
@@ -36,11 +41,15 @@ export const STEP_FIELD_PATHS: Record<number, Path<LoanAssessmentFormValues>[]> 
     "applicantInfo.pan",
     "applicantInfo.license",
     "applicantInfo.bankingRelationship",
+    "applicantInfo.existingBankName",
+    "applicantInfo.existingBankAccountNumber",
+    "applicantInfo.existingBankSavingsAmount",
+    "applicantInfo.existingBankLoanAmount",
     "applicantInfo.blacklistedStatus",
   ],
   2: ["nrbReporting"],
-  3: ["creditAssessment"],
-  4: ["applicantBackground"],
+  3: ["applicantBackground"],
+  4: ["creditAssessment"],
   5: ["security"],
   6: ["insuranceRepayment"],
   7: ["riskAssessment"],
@@ -67,6 +76,10 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
     pan: "",
     license: "",
     bankingRelationship: undefined,
+    existingBankName: "",
+    existingBankAccountNumber: "",
+    existingBankSavingsAmount: undefined,
+    existingBankLoanAmount: undefined,
     blacklistedStatus: undefined,
   },
   nrbReporting: {
@@ -87,6 +100,7 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
   },
   creditAssessment: {
     creditLimit: undefined,
+    income: undefined,
     loanToValueRatio: undefined,
     dsgir: undefined,
     performanceYears: undefined,
@@ -177,6 +191,7 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
       approvedDate: "",
       remarks: "",
       signature: "",
+      designation: "",
     },
     checker: {
       approverName: "",
@@ -185,6 +200,7 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
       approvedDate: "",
       remarks: "",
       signature: "",
+      designation: "",
     },
     approver: {
       approverName: "",
@@ -193,6 +209,7 @@ export const DEFAULT_LOAN_ASSESSMENT_VALUES: LoanAssessmentFormValues = {
       approvedDate: "",
       remarks: "",
       signature: "",
+      designation: "",
     },
   },
 };

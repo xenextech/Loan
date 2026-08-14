@@ -5,16 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  CheckCircle2,
-  Clock,
-  ArrowRight,
-  Copy,
-  Home,
-  Users,
-  GraduationCap,
-  Check,
-} from "lucide-react";
+import { CheckCircle2, Clock, ArrowRight, Copy, Home } from "lucide-react";
 import { useState } from "react";
 import { formatNPR } from "@/lib/formatters";
 
@@ -23,8 +14,6 @@ interface SubmissionSuccessProps {
   loanAmount: number;
   courseName: string;
   submittedAt: string;
-  parentLink?: string;
-  collegeLink?: string;
 }
 
 const TIMELINE = [
@@ -35,72 +24,11 @@ const TIMELINE = [
   { label: "Disbursement", status: "pending" as const },
 ];
 
-function CopyLinkCard({
-  icon: Icon,
-  label,
-  hint,
-  link,
-  color,
-}: {
-  icon: React.ElementType;
-  label: string;
-  hint: string;
-  link: string;
-  color: string;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = () => {
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="rounded-xl border border-border bg-muted/30 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
-            <Icon className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">{label}</p>
-            <p className="text-xs text-muted-foreground">{hint}</p>
-          </div>
-        </div>
-        <Button
-          variant={copied ? "default" : "outline"}
-          size="sm"
-          className="shrink-0 h-8 px-3 gap-1.5 transition-all"
-          onClick={copy}
-        >
-          {copied ? (
-            <>
-              <Check className="w-3 h-3" />
-              Copied
-            </>
-          ) : (
-            <>
-              <Copy className="w-3 h-3" />
-              Copy link
-            </>
-          )}
-        </Button>
-      </div>
-      <p className="mt-2.5 text-xs font-mono text-muted-foreground break-all bg-background rounded-lg px-3 py-2 border border-border">
-        {link}
-      </p>
-    </div>
-  );
-}
-
 export default function SubmissionSuccess({
   applicationNumber,
   loanAmount,
   courseName,
   submittedAt,
-  parentLink,
-  collegeLink,
 }: SubmissionSuccessProps) {
   const [copied, setCopied] = useState(false);
 
@@ -109,8 +37,6 @@ export default function SubmissionSuccess({
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
-  const hasLinks = parentLink || collegeLink;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-16">
@@ -246,45 +172,6 @@ export default function SubmissionSuccess({
               </div>
             </CardContent>
           </Card>
-
-          {/* Verification links */}
-          {hasLinks && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="mb-4"
-            >
-              <Card className="shadow-sm">
-                <CardContent className="p-6 space-y-4">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Verification Links</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Share these links with your contacts. They expire in 30 days.
-                    </p>
-                  </div>
-                  {parentLink && (
-                    <CopyLinkCard
-                      icon={Users}
-                      label="Parent / Guardian"
-                      hint="Share this with your parent so they can view the application"
-                      link={parentLink}
-                      color="bg-blue-500/10 text-blue-600"
-                    />
-                  )}
-                  {collegeLink && (
-                    <CopyLinkCard
-                      icon={GraduationCap}
-                      label="College / Institution"
-                      hint="Share this with your college to upload their documents"
-                      link={collegeLink}
-                      color="bg-teal-500/10 text-teal-600"
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
 
           <div className="flex gap-3">
             <Link href="/" className="flex-1">

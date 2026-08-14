@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, Eye, Hourglass, MapPinCheck, Undo2, XCircle } from "lucide-react";
-import type { ApprovalStatus } from "../types";
+import type { ApprovalRole, ApprovalStatus } from "../types";
 import { cn } from "@/lib/utils";
 
 export const APPROVAL_STATUS_CONFIG: Record<ApprovalStatus, { label: string; icon: React.ElementType; className: string }> = {
@@ -41,13 +41,36 @@ export const APPROVAL_STATUS_CONFIG: Record<ApprovalStatus, { label: string; ico
   },
 };
 
-export function ApprovalStatusBadge({ status, className }: { status: ApprovalStatus; className?: string }) {
+// The terminal "APPROVED" status reads differently per role — the Initiator
+// "initiates", Support "supports", the Checker/Credit Manager "checks", and
+// only the Approver actually "approves". Every other status is shared as-is.
+const APPROVED_LABEL_BY_ROLE: Record<ApprovalRole, string> = {
+  INITIATOR: "Initiated",
+  SUPPORT: "Supported",
+  CHECKER: "Checked",
+  APPROVER: "Approved",
+};
+
+export function getApprovalStatusLabel(role: ApprovalRole, status: ApprovalStatus): string {
+  if (status === "APPROVED") return APPROVED_LABEL_BY_ROLE[role];
+  return APPROVAL_STATUS_CONFIG[status].label;
+}
+
+export function ApprovalStatusBadge({
+  role,
+  status,
+  className,
+}: {
+  role: ApprovalRole;
+  status: ApprovalStatus;
+  className?: string;
+}) {
   const config = APPROVAL_STATUS_CONFIG[status];
   const Icon = config.icon;
   return (
     <Badge className={cn(config.className, "border-0 font-semibold text-xs gap-1.5", className)}>
       <Icon className="w-3 h-3" />
-      {config.label}
+      {getApprovalStatusLabel(role, status)}
     </Badge>
   );
 }

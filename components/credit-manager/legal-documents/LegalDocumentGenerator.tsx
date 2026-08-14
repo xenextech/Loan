@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, FileText, Loader2, Sparkles, ShieldAlert, ShieldCheck, Download, Eye, X } from "lucide-react";
+import { ArrowLeft, FileText, Loader2, Sparkles, ShieldAlert, ShieldCheck, Download, Eye, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate, formatNPR, displayName } from "@/lib/formatters";
 import { useAppSelector } from "@/lib/hooks";
@@ -125,6 +125,23 @@ interface BlankFields {
   bankAccountNumber: string;
 }
 
+/** One रोहबर साक्षी (witness) row — PROMISSORY_NOTE only. */
+interface WitnessBlank {
+  district: string;
+  municipality: string;
+  wardNo: string;
+  age: string;
+  name: string;
+}
+
+const EMPTY_WITNESS: WitnessBlank = {
+  district: "",
+  municipality: "",
+  wardNo: "",
+  age: "",
+  name: "",
+};
+
 const EMPTY_BLANKS: BlankFields = {
   studentAddress: "",
   studentCitizenshipNo: "",
@@ -213,6 +230,15 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
   const setBlank = (key: keyof BlankFields) => (value: string) =>
     setBlanks((b) => ({ ...b, [key]: value }));
 
+  // रोहबर साक्षी — PROMISSORY_NOTE only. Starts with a single witness slot;
+  // the Credit Manager can add more as needed and the numbering on the
+  // document follows the list order automatically.
+  const [witnesses, setWitnesses] = useState<WitnessBlank[]>([{ ...EMPTY_WITNESS }]);
+  const setWitnessField = (index: number, key: keyof WitnessBlank) => (value: string) =>
+    setWitnesses((list) => list.map((w, i) => (i === index ? { ...w, [key]: value } : w)));
+  const addWitness = () => setWitnesses((list) => [...list, { ...EMPTY_WITNESS }]);
+  const removeWitness = (index: number) => setWitnesses((list) => list.filter((_, i) => i !== index));
+
   const { data: fullDetail, isLoading: detailLoading } = useGetApplicationFullDetailQuery(
     { applicationId: id, page: 1, limit: 20 },
     { skip: !id },
@@ -292,9 +318,7 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
       documentNumber: null,
       agreementType,
       status: "DRAFT" as const,
-      // No em-dash fallbacks: a missing value must reach the template as null
-      // so it renders as a ruled blank rather than printing "—" on a legal
-      // document.
+
       studentName: application?.fullName ?? "",
       applicationNumber: application?.applicationNumber ?? "",
       collegeName: application?.collegeName ?? null,
@@ -356,6 +380,13 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
       collateralPlotNo: blanks.collateralPlotNo.trim() || null,
       collateralArea: blanks.collateralArea.trim() || null,
       collateralRemarks: blanks.collateralRemarks.trim() || null,
+      witnesses: witnesses.map((w) => ({
+        district: w.district.trim() || null,
+        municipality: w.municipality.trim() || null,
+        wardNo: w.wardNo.trim() || null,
+        age: w.age.trim() || null,
+        name: w.name.trim() || null,
+      })),
       approvalLetterDate: blanks.approvalLetterDate.trim() || null,
       loanExpiryDate: blanks.loanExpiryDate.trim() || null,
       borrowerPosition: blanks.borrowerPosition.trim() || null,
@@ -391,14 +422,10 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
             }
           : null,
     }),
-    [application, effective, emiAmount, totalRepayment, remarks, agreementType, generatorName, institutionName, blanks],
+    [application, effective, emiAmount, totalRepayment, remarks, agreementType, generatorName, institutionName, blanks, witnesses],
   );
 
-  // "Live Preview" opens the panel immediately on click. Once open, it
-  // keeps itself in sync with every field you type — but debounced (not on
-  // every single keystroke), so rebuilding the HTML string and reloading
-  // the <iframe srcDoc> doesn't make typing feel like the page is
-  // re-rendering constantly.
+  
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const handlePreview = () => {
@@ -428,22 +455,6 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
     application && effective.principal && effective.interestRate != null && effective.tenureMonths != null,
   );
 
-  // Which "Fill in the blanks" fields apply depends on the document type —
-  // each of the 4 legal documents is a different paper form with a
-  // different set of blanks to fill:
-  //  - कर्जा प्रस्ताव पत्र (LOAN_AGREEMENT): borrower address/citizenship,
-  //    branch manager, and a guarantor block (name/relationship/citizenship/
-  //    address only — no parentage/permanent-address/age).
-  //  - व्यक्तिगत जमानत (GUARANTEE_DEED): both borrower and guarantor in the
-  //    traditional citizenship format — address/citizenship *plus*
-  //    father-or-husband name, grandfather name, permanent district/
-  //    municipality/ward, and (guarantor only) age. No branch manager.
-  //  - कर्जा तमसुक (PROMISSORY_NOTE): borrower in the same traditional format
-  //    (plus a citizenship issue date) and a collateral/mortgage security
-  //    block — no guarantor, no branch manager.
-  //  - कर्जा रकम निकासा अनुरोध पत्र (HYPOTHECATION): none of the above —
-  //    instead its own small set of fields (approval letter date, loan
-  //    expiry date, borrower's position, disbursement bank account).
   const showBorrowerBlanks =
     agreementType === "LOAN_AGREEMENT" || agreementType === "GUARANTEE_DEED" || agreementType === "PROMISSORY_NOTE";
   const showBorrowerParentageBlanks = agreementType === "GUARANTEE_DEED" || agreementType === "PROMISSORY_NOTE";
@@ -452,6 +463,7 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
   const showGuarantorBlanks = agreementType === "LOAN_AGREEMENT" || agreementType === "GUARANTEE_DEED";
   const showGuarantorParentageBlanks = agreementType === "GUARANTEE_DEED";
   const showCollateralBlanks = agreementType === "PROMISSORY_NOTE";
+  const showWitnessBlanks = agreementType === "PROMISSORY_NOTE";
   const showHypothecationBlanks = agreementType === "HYPOTHECATION";
   const showBlanksSection = showBorrowerBlanks || showHypothecationBlanks;
 
@@ -492,6 +504,18 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
         collateralPlotNo: blanks.collateralPlotNo.trim() || undefined,
         collateralArea: blanks.collateralArea.trim() || undefined,
         collateralRemarks: blanks.collateralRemarks.trim() || undefined,
+        witnesses:
+          agreementType === "PROMISSORY_NOTE"
+            ? witnesses
+                .filter((w) => w.district.trim() || w.municipality.trim() || w.wardNo.trim() || w.age.trim() || w.name.trim())
+                .map((w) => ({
+                  district: w.district.trim() || undefined,
+                  municipality: w.municipality.trim() || undefined,
+                  wardNo: w.wardNo.trim() || undefined,
+                  age: w.age.trim() || undefined,
+                  name: w.name.trim() || undefined,
+                }))
+            : undefined,
         approvalLetterDate: blanks.approvalLetterDate.trim() || undefined,
         loanExpiryDate: blanks.loanExpiryDate.trim() || undefined,
         borrowerPosition: blanks.borrowerPosition.trim() || undefined,
@@ -720,6 +744,43 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
                       <div className="col-span-2">
                         <BlankInput label="Remarks" value={blanks.collateralRemarks} onChange={setBlank("collateralRemarks")} />
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {showWitnessBlanks && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">रोहबर साक्षी (Witnesses)</p>
+                      <Button type="button" variant="outline" size="sm" className="h-6 px-2 text-[11px] gap-1" onClick={addWitness}>
+                        <Plus className="w-3 h-3" /> Add witness
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      {witnesses.map((w, i) => (
+                        <div key={i} className="rounded-md border border-border/60 p-3 relative">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] font-medium text-muted-foreground">Witness {i + 1}</p>
+                            <button
+                              type="button"
+                              onClick={() => removeWitness(i)}
+                              className="text-muted-foreground hover:text-destructive"
+                              aria-label={`Remove witness ${i + 1}`}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+                            <BlankInput label="District" value={w.district} onChange={setWitnessField(i, "district")} />
+                            <BlankInput label="Municipality" value={w.municipality} onChange={setWitnessField(i, "municipality")} />
+                            <BlankInput label="Ward No." value={w.wardNo} onChange={setWitnessField(i, "wardNo")} />
+                            <BlankInput label="Age" value={w.age} onChange={setWitnessField(i, "age")} />
+                            <div className="col-span-2">
+                              <BlankInput label="Name" value={w.name} onChange={setWitnessField(i, "name")} />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
