@@ -16,12 +16,12 @@ interface LoanAmountFieldProps {
   error?: string;
 }
 
-const INTEREST_RATE = 11;
+export const INTEREST_RATE = 11;
 const MIN = 50000;
 const MAX = 1500000;
 const STEP = 50000;
 
-function getMonthsFromDuration(duration: string): number {
+export function getMonthsFromDuration(duration: string): number {
   const lower = duration.toLowerCase();
   if (lower.includes("year")) {
     const years = parseInt(lower) || 4;

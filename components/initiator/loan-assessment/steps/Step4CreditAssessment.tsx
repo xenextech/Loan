@@ -46,25 +46,20 @@ interface Step4CreditAssessmentProps {
   /** The student's requested loan amount from the application (LoanInformation.loanAmount)
    *  — the single source of truth for Credit Limit. Undefined/0 means it failed to load. */
   applicationLoanAmount?: number;
+  /** Estimated monthly EMI from the application (LoanInformation.estimatedEmi). */
+  applicationEstimatedEmi?: number;
 }
 
-export function Step4CreditAssessment({ applicationLoanAmount }: Step4CreditAssessmentProps) {
+export function Step4CreditAssessment({ applicationLoanAmount, applicationEstimatedEmi }: Step4CreditAssessmentProps) {
   const { control, setValue } = useFormContext<LoanAssessmentFormValues>();
   const c = useWatch({ control, name: "creditAssessment" });
 
-  // DSGIR is a debt-service ratio, so it needs the facility's actual repayment
-  // terms — those live on Step 3 ("This Facility"), along with the existing
-  // obligations that also have to be serviced out of the same income. Watching
-  // them here means the ratio stays correct no matter which step was edited last.
   const interestRate = useWatch({ control, name: "applicantBackground.interestRate" });
   const tenureMonths = useWatch({ control, name: "applicantBackground.period" });
   const existingFacilities = useWatch({ control, name: "applicantBackground.existingFacilities" });
 
   const hasValidLoanAmount = typeof applicationLoanAmount === "number" && applicationLoanAmount > 0;
 
-  // Credit Limit is never independently entered — it always mirrors the
-  // application's requested loan amount, and re-syncs if that source value
-  // ever changes. This is the only place that ever writes to this field.
   useEffect(() => {
     if (!hasValidLoanAmount) return;
     setValue("creditAssessment.creditLimit", applicationLoanAmount, { shouldDirty: true });
@@ -82,11 +77,12 @@ export function Step4CreditAssessment({ applicationLoanAmount }: Step4CreditAsse
       calculateAffordability({
         creditLimit: effectiveCreditLimit,
         annualIncome: c?.income,
+        estimatedEmi: applicationEstimatedEmi,
         interestRate,
         tenureMonths,
         existingFacilities,
       }),
-    [effectiveCreditLimit, c?.income, interestRate, tenureMonths, existingFacilities],
+    [effectiveCreditLimit, c?.income, applicationEstimatedEmi, interestRate, tenureMonths, existingFacilities],
   );
 
   const missingLabels = affordability.missingForDsgir.map((key) => MISSING_INPUT_LABEL[key]);

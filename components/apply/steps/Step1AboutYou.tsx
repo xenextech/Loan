@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { step1Schema, type Step1FormData } from "@/lib/validations/schemas";
-import LoanAmountField from "@/components/apply/fields/LoanAmountField";
-import { formatNPR } from "@/lib/formatters";
+import LoanAmountField, { INTEREST_RATE, getMonthsFromDuration } from "@/components/apply/fields/LoanAmountField";
+import { formatNPR, calculateEMI } from "@/lib/formatters";
 import { ArrowRight, Loader2, User, BookOpen, Wallet, School } from "lucide-react";
 
 interface Step1Props {
@@ -95,9 +95,15 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
   const courseDuration = form.watch("courseDuration");
   const isPrefilled = Boolean(defaultValues?.collegeId);
 
+  const handleSubmit = form.handleSubmit((data) => {
+    const months = getMonthsFromDuration(data.courseDuration);
+    const emi = calculateEMI(data.loanAmount, INTEREST_RATE, months);
+    onNext({ ...data, estimatedEmi: emi });
+  });
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onNext)} className="space-y-10">
+      <form onSubmit={handleSubmit} className="space-y-10">
         {/* Personal Information */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <SectionHeading icon={User} title="Personal Information" />

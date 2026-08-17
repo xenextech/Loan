@@ -20,6 +20,7 @@ export const step1Schema = z.object({
   collegeId: z.string().optional(),
   courseId: z.string().optional(),
   tuitionFee: z.number().optional(),
+  estimatedEmi: z.number().optional(),
 });
 
 export const step2Schema = z.object({

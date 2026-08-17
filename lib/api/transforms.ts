@@ -493,6 +493,7 @@ export const toInitiatorDetail = (record: InitiatorApplicationRecord): Initiator
     studentName:       record.fullName ?? "—",
     collegeName:       collegeVerification?.collegeName ?? "—",
     loanAmount:        toNumber(loanInformation?.loanAmount),
+    estimatedEmi:      toNumber(loanInformation?.estimatedEmi),
     program:           studyInformation?.courseName ?? "—",
     status:            record.source === "INITIATOR" ? "INITIATOR_CREATED" : "VERIFIED_BY_COLLEGE",
     collegeVerifiedAt: collegeVerification?.submittedAt ?? "",

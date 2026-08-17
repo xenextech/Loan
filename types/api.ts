@@ -272,6 +272,7 @@ export interface StudyInformation {
 
 export interface LoanInformation {
   loanAmount?: number;
+  estimatedEmi?: number;
   expectedSalary?: number;
 }
 
