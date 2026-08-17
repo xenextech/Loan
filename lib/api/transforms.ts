@@ -352,7 +352,7 @@ export const toAssessmentInitialValues = (record: InitiatorApplicationRecord): P
     },
     creditAssessment: {
       creditLimit: toOptionalNumber(record.creditLimit),
-      income: toOptionalNumber(record.income) ?? toOptionalNumber(record.loanInformation?.expectedSalary),
+      income: toOptionalNumber(record.income),
       loanToValueRatio: toOptionalNumber(record.loanToValueRatio),
       dsgir: toOptionalNumber(record.dsgir),
       performanceYears: toOptionalNumber(record.performanceYears),

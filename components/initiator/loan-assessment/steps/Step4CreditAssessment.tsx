@@ -46,11 +46,9 @@ interface Step4CreditAssessmentProps {
   /** The student's requested loan amount from the application (LoanInformation.loanAmount)
    *  — the single source of truth for Credit Limit. Undefined/0 means it failed to load. */
   applicationLoanAmount?: number;
-  /** Estimated monthly EMI from the application (LoanInformation.estimatedEmi). */
-  applicationEstimatedEmi?: number;
 }
 
-export function Step4CreditAssessment({ applicationLoanAmount, applicationEstimatedEmi }: Step4CreditAssessmentProps) {
+export function Step4CreditAssessment({ applicationLoanAmount }: Step4CreditAssessmentProps) {
   const { control, setValue } = useFormContext<LoanAssessmentFormValues>();
   const c = useWatch({ control, name: "creditAssessment" });
 
@@ -77,12 +75,11 @@ export function Step4CreditAssessment({ applicationLoanAmount, applicationEstima
       calculateAffordability({
         creditLimit: effectiveCreditLimit,
         annualIncome: c?.income,
-        estimatedEmi: applicationEstimatedEmi,
         interestRate,
         tenureMonths,
         existingFacilities,
       }),
-    [effectiveCreditLimit, c?.income, applicationEstimatedEmi, interestRate, tenureMonths, existingFacilities],
+    [effectiveCreditLimit, c?.income, interestRate, tenureMonths, existingFacilities],
   );
 
   const missingLabels = affordability.missingForDsgir.map((key) => MISSING_INPUT_LABEL[key]);

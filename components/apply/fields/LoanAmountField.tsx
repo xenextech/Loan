@@ -24,12 +24,12 @@ const STEP = 50000;
 export function getMonthsFromDuration(duration: string): number {
   const lower = duration.toLowerCase();
   if (lower.includes("year")) {
-    const years = parseInt(lower) || 4;
-    return years * 12 + 12;
+    const years = parseFloat(lower) || 4;
+    return Math.round(years * 12);
   }
   if (lower.includes("month")) {
     const months = parseInt(lower) || 24;
-    return months + 6;
+    return months;
   }
   return 60;
 }

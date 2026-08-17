@@ -32,6 +32,8 @@ interface LoanAssessmentFormProps {
   applicationLoanAmount?: number;
   /** Estimated monthly EMI from the application (LoanInformation.estimatedEmi). */
   applicationEstimatedEmi?: number;
+  /** The student's course duration from the application */
+  applicationCourseDuration?: string;
   /** True when Support/Approver sent the application back to the Initiator to
    *  fix and resend. Step 10 (Review & Submit) is a first-submission-only step —
    *  a resubmission ends at Step 9's Approval chain instead. */
@@ -45,6 +47,7 @@ export function LoanAssessmentForm({
   hasInitiatorInfo = false,
   applicationLoanAmount,
   applicationEstimatedEmi,
+  applicationCourseDuration,
   isResubmission = false,
   onSubmitted,
 }: LoanAssessmentFormProps) {
@@ -110,8 +113,8 @@ export function LoanAssessmentForm({
           >
             {currentStep === 1 && <Step1ApplicantInfo />}
             {currentStep === 2 && <Step2NrbReporting />}
-            {currentStep === 3 && <Step3ApplicantBackground applicationLoanAmount={applicationLoanAmount} />}
-            {currentStep === 4 && <Step4CreditAssessment applicationLoanAmount={applicationLoanAmount} applicationEstimatedEmi={applicationEstimatedEmi} />}
+            {currentStep === 3 && <Step3ApplicantBackground applicationLoanAmount={applicationLoanAmount} applicationCourseDuration={applicationCourseDuration} />}
+            {currentStep === 4 && <Step4CreditAssessment applicationLoanAmount={applicationLoanAmount} />}
             {currentStep === 5 && <Step5SecurityGuarantee />}
             {currentStep === 6 && <Step6InsuranceRepayment />}
             {currentStep === 7 && <Step7RiskAssessment />}

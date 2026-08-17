@@ -14,14 +14,18 @@ import type { LoanAssessmentFormValues } from "../schema";
 
 const FEE_RATE = 0.0125; // 1.25%
 
+import { getMonthsFromDuration, INTEREST_RATE } from "@/components/apply/fields/LoanAmountField";
+
 interface Step3ApplicantBackgroundProps {
   /** The student's requested loan amount — the single source of truth for
    *  the "Limit" field on this step. Mirrors the prop Step 4 receives so
    *  that Limit is populated even when Step 4 has never been mounted yet. */
   applicationLoanAmount?: number;
+  /** The student's course duration */
+  applicationCourseDuration?: string;
 }
 
-export function Step3ApplicantBackground({ applicationLoanAmount }: Step3ApplicantBackgroundProps) {
+export function Step3ApplicantBackground({ applicationLoanAmount, applicationCourseDuration }: Step3ApplicantBackgroundProps) {
   const { control, setValue, getValues } = useFormContext<LoanAssessmentFormValues>();
 
   const familyMembers = useFieldArray({ control, name: "applicantBackground.familyMembers" });
@@ -55,6 +59,21 @@ export function Step3ApplicantBackground({ applicationLoanAmount }: Step3Applica
       setValue("applicantBackground.fee", autoFee, { shouldDirty: false });
     }
   }, [effectiveLimit, getValues, setValue]);
+
+  // Auto-populate period and interestRate
+  useEffect(() => {
+    const currentInterestRate = getValues("applicantBackground.interestRate");
+    if (!currentInterestRate) {
+      setValue("applicantBackground.interestRate", INTEREST_RATE, { shouldDirty: false });
+    }
+
+    if (applicationCourseDuration) {
+      const currentPeriod = getValues("applicantBackground.period");
+      if (!currentPeriod) {
+        setValue("applicantBackground.period", getMonthsFromDuration(applicationCourseDuration), { shouldDirty: false });
+      }
+    }
+  }, [applicationCourseDuration, getValues, setValue]);
 
   const familyColumns: RepeatableTableColumn[] = [
     { key: "personName", header: "Name", render: (i) => <TextField name={`applicantBackground.familyMembers.${i}.personName`} label="" placeholder="Name" /> },
