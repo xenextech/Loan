@@ -103,18 +103,10 @@ export function Step3ApplicantBackground({ applicationLoanAmount }: Step3Applica
         <FormSection columns={3}>
           <TextField name="applicantBackground.facility" label="Facility" placeholder="e.g. Term Loan" />
           <TextField name="applicantBackground.purpose" label="Purpose" placeholder="e.g. Tuition Fee Financing" />
-          <div className="space-y-1.5">
-            <NumberField name="applicantBackground.limit" label="Limit" suffix="NPR" />
-            <p className="text-xs text-muted-foreground">Auto-filled from loan amount. Editable.</p>
-          </div>
+          <NumberField name="applicantBackground.limit" label="Limit" suffix="NPR" />
           <NumberField name="applicantBackground.period" label="Period" suffix="months" />
           <NumberField name="applicantBackground.interestRate" label="Interest Rate" suffix="%" />
-          <div className="space-y-1.5">
-            <NumberField name="applicantBackground.fee" label="Fee" suffix="NPR" />
-            <p className="text-xs text-muted-foreground">
-              Auto-calculated: Limit × 1.25%. Editable.
-            </p>
-          </div>
+          <NumberField name="applicantBackground.fee" label="Fee" suffix="NPR" />
         </FormSection>
         <div className="mt-4">
           <TextareaField name="applicantBackground.remarks" label="Remarks" rows={3} />
