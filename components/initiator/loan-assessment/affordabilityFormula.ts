@@ -23,6 +23,8 @@ export interface AffordabilityInput {
   creditLimit?: number | string;
   /** Gross ANNUAL income of the borrower/household (creditAssessment.income). */
   annualIncome?: number | string;
+  /** Estimated monthly EMI from the application. */
+  estimatedEmi?: number;
   /** Annual nominal interest rate, % (applicantBackground.interestRate). */
   interestRate?: number | string;
   /** Facility term in months (applicantBackground.period). */
@@ -34,12 +36,14 @@ export interface AffordabilityInput {
 export type AffordabilityMissingInput =
   | "creditLimit"
   | "annualIncome"
+  | "estimatedEmi"
   | "interestRate"
   | "tenureMonths";
 
 export const MISSING_INPUT_LABEL: Record<AffordabilityMissingInput, string> = {
   creditLimit: "Credit Limit",
   annualIncome: "Income",
+  estimatedEmi: "Estimated EMI (from Application)",
   interestRate: "Interest Rate (Step 3 — This Facility)",
   tenureMonths: "Period (Step 3 — This Facility)",
 };
@@ -116,25 +120,24 @@ export function calculateExistingMonthlyObligation(
 export function calculateAffordability(input: AffordabilityInput): AffordabilityResult {
   const creditLimit = positiveNumber(input.creditLimit);
   const annualIncome = positiveNumber(input.annualIncome);
-  const interestRate = nonNegativeNumber(input.interestRate);
-  const tenureMonths = positiveNumber(input.tenureMonths);
+  const estimatedEmi = positiveNumber(input.estimatedEmi);
+  const interestRate = nonNegativeNumber(input.interestRate) ?? 0;
+  const tenureMonths = positiveNumber(input.tenureMonths) ?? 60; // fallback so existing EMI calculates
 
   const missingForDsgir: AffordabilityMissingInput[] = [];
   if (creditLimit === undefined) missingForDsgir.push("creditLimit");
   if (annualIncome === undefined) missingForDsgir.push("annualIncome");
-  if (interestRate === undefined) missingForDsgir.push("interestRate");
-  if (tenureMonths === undefined) missingForDsgir.push("tenureMonths");
+  if (estimatedEmi === undefined) missingForDsgir.push("estimatedEmi");
 
   const loanToIncomeRatio =
-    creditLimit !== undefined && annualIncome !== undefined
+    creditLimit !== undefined && annualIncome !== undefined && annualIncome > 0
       ? round2((creditLimit / annualIncome) * 100)
       : undefined;
 
   if (
     creditLimit === undefined ||
     annualIncome === undefined ||
-    interestRate === undefined ||
-    tenureMonths === undefined
+    estimatedEmi === undefined
   ) {
     return {
       loanToIncomeRatio,
@@ -147,7 +150,7 @@ export function calculateAffordability(input: AffordabilityInput): Affordability
 
   // calculateEMI only rounds on the interest-bearing branch — round here so an
   // interest-free facility doesn't surface a fractional rupee instalment.
-  const proposedEmi = Math.round(calculateEMI(creditLimit, interestRate, tenureMonths));
+  const proposedEmi = Math.round(estimatedEmi);
   const { total: existingMonthlyObligation, count: existingObligationCount } =
     calculateExistingMonthlyObligation(input.existingFacilities, interestRate, tenureMonths);
 

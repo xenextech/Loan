@@ -90,6 +90,8 @@ export interface InitiatorApplicationDetail extends InitiatorApplicationListItem
   collegeVerification: InitiatorCollegeVerification;
   documents: InitiatorDocumentSet;
   submittedAt: string;
+  /** Estimated monthly EMI from the application. */
+  estimatedEmi?: number;
   workflowStage: string;
   /** Previously-saved Loan Assessment Form values, mapped from the backend record — pre-fills the form on reopen. */
   assessment: Partial<import("../loan-assessment/schema").LoanAssessmentFormValues>;

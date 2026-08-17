@@ -48,6 +48,7 @@ export function VerificationFormPanel({ detail }: { detail: InitiatorApplication
             applicationId={detail.id}
             hasInitiatorInfo={detail.hasInitiatorInfo}
             applicationLoanAmount={detail.loanAmount}
+            applicationEstimatedEmi={detail.estimatedEmi}
             isResubmission={isResubmission}
             onSubmitted={() => router.push("/initiator")}
             initialValues={{
