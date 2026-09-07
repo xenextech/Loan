@@ -25,10 +25,10 @@ export function SubmittedApplications() {
     router.push("/apply");
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (app: LoanApplication) => {
     if (!confirm("Delete this draft? This cannot be undone.")) return;
     try {
-      await deleteDraft(id).unwrap();
+      await deleteDraft(app.id).unwrap();
       toast.success("Draft deleted.");
     } catch {
       toast.error("Failed to delete draft.");

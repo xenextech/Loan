@@ -36,6 +36,21 @@ const applicationSlice = createSlice({
       state.applicationNumber = action.payload.number;
     },
 
+    // Restores a previously-saved draft's form fields into the wizard —
+    // used when resuming a draft (from the Drafts list, or after a page
+    // refresh) where Redux has an applicationId but no in-memory formData
+    // for it yet. Full replace (not merge) is safe here: this only ever
+    // runs before the step components have mounted with real user input
+    // (see ApplicationWizard's hydration gate).
+    hydrateApplication(
+      state,
+      action: PayloadAction<{ id: string; number: string; formData: ApplicationFormData }>,
+    ) {
+      state.applicationId = action.payload.id;
+      state.applicationNumber = action.payload.number;
+      state.formData = action.payload.formData;
+    },
+
     setStep(state, action: PayloadAction<number>) {
       state.currentStep = action.payload;
     },
@@ -78,6 +93,7 @@ const applicationSlice = createSlice({
 
 export const {
   setApplicationId,
+  hydrateApplication,
   setStep,
   updateStepData,
   setAutoSaveStatus,

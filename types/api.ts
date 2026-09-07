@@ -268,12 +268,18 @@ export interface StudyInformation {
   courseName?: string;
   boardUniversity?: string;
   courseDuration?: string;
+  // Present only for applications originated from the College Marketplace.
+  courseId?: string;
+  tuitionFee?: number;
 }
 
 export interface LoanInformation {
   loanAmount?: number;
   estimatedEmi?: number;
   expectedSalary?: number;
+  feeStructureMethod?: FeeStructureMethod;
+  feeStructureUrl?: string;
+  feeStructureText?: string;
 }
 
 // ─── Application ──────────────────────────────────────────────────────────────
@@ -298,6 +304,9 @@ export interface LoanApplication {
   boardUniversity?: string;
   courseDuration?: number;
   loanAmount?: number;
+  // Present only for applications originated from the College Marketplace —
+  // see LoanApplication.collegeId in the Prisma schema.
+  collegeId?: string;
   // Step 2
   identityType?: IdentityType;
   identityNumber?: string;
@@ -306,6 +315,7 @@ export interface LoanApplication {
   // Computed on read by ApplicationsService.withComputedDob() — AD-canonical
   // date of birth + live-calculated age, present on GET /applications/:id.
   dobAd?: string;
+  dobBs?: string;
   age?: number;
   issuedDistrict?: string;
   issuedDate?: string;

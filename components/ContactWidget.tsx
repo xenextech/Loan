@@ -16,7 +16,7 @@ export default function ContactWidget() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-end gap-3">
+    <div className="safe-bottom fixed bottom-6 right-6 z-50 flex items-end gap-3">
 
       {/* ── Contact card — sits to the left of the button ──────────────────── */}
       <AnimatePresence>

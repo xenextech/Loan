@@ -191,4 +191,15 @@
 @keyframes stepExit {
   from { opacity: 1; transform: translateX(0); }
   to { opacity: 0; transform: translateX(-32px); }
+}
+
+/* Installed/standalone PWA only — a normal browser tab's safe-area insets
+   are already 0, so scoping to display-mode avoids nudging layout there. */
+@media (display-mode: standalone) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 } 

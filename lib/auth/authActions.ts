@@ -25,4 +25,13 @@ export function performLogout(dispatch: AppDispatch) {
   } catch {
     // Storage unavailable — non-fatal, credentials are already cleared from Redux.
   }
+
+  // The service worker never caches API responses, but it does cache
+  // same-origin <img> assets (stale-while-revalidate) — on a shared device,
+  // a different role logging in next shouldn't even transiently see a
+  // previous user's cached avatar/document thumbnail. Belt-and-suspenders
+  // alongside the fetch-handler's own allowlist.
+  if (typeof navigator !== "undefined" && navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: "CLEAR_RUNTIME_CACHES" });
+  }
 }

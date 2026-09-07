@@ -7,17 +7,21 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import {
   setStep,
   setApplicationId,
+  hydrateApplication,
   updateStepData,
   setSubmitted,
   resetApplication,
 } from "@/lib/store/applicationSlice";
 import {
   useCreateDraftMutation,
+  useGetApplicationQuery,
+  useDeleteDraftMutation,
   useSaveStep1Mutation,
   useSaveStep2Mutation,
   useSaveStep3Mutation,
   useSubmitApplicationMutation,
 } from "@/lib/api/applicationApi";
+import { toApplicationFormData } from "@/lib/api/transforms";
 import { useGetPrefillDataQuery } from "@/lib/api/marketplaceApi";
 import type { DegreeLevel } from "@/types/college-marketplace";
 import WizardProgress from "./WizardProgress";
@@ -73,6 +77,7 @@ export default function ApplicationWizard() {
   const lastScrollY = useRef(0);
 
   const [createDraft, { isLoading: isCreating }] = useCreateDraftMutation();
+  const [deleteDraft] = useDeleteDraftMutation();
   const [saveStep1, { isLoading: isSaving1 }] = useSaveStep1Mutation();
   const [saveStep2, { isLoading: isSaving2 }] = useSaveStep2Mutation();
   const [saveStep3, { isLoading: isSaving3 }] = useSaveStep3Mutation();
@@ -119,15 +124,32 @@ export default function ApplicationWizard() {
         : null;
     if (applicationId && currentSelectionKey === marketplaceSelectionKey) return;
 
-    if (applicationId) dispatch(resetApplication());
-    createDraft()
-      .unwrap()
-      .then((app) => {
-        dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
-      })
-      .catch(() => {
-        toast.error("Failed to start application. Please refresh and try again.");
-      });
+    const startFreshDraft = () => {
+      createDraft()
+        .unwrap()
+        .then((app) => {
+          dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
+        })
+        .catch(() => {
+          toast.error("Failed to start application. Please refresh and try again.");
+        });
+    };
+
+    if (applicationId) {
+      const staleId = applicationId;
+      dispatch(resetApplication());
+      // The backend only ever keeps one active DRAFT per student — deleting
+      // the stale one first (rather than just abandoning it in Redux) means
+      // the create call below actually gets a fresh row for the new
+      // college/course instead of the backend just handing the stale draft
+      // back. Best-effort: proceed to create either way.
+      deleteDraft(staleId)
+        .unwrap()
+        .catch(() => {})
+        .finally(startFreshDraft);
+    } else {
+      startFreshDraft();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marketplaceSelectionKey]);
 
@@ -167,6 +189,51 @@ export default function ApplicationWizard() {
       );
     }
   }, [prefillError]);
+
+  // ─── Draft resume — restore previously-saved form values ─────────────────
+  // Redux's `application` slice has no persistence, so `formData` is always
+  // empty right after: a page refresh, or navigating here from the Drafts
+  // list (DraftApplications only restores applicationId/applicationNumber,
+  // not the actual fields). Whenever we have an id but no local form data
+  // for it yet, fetch the full record and hydrate the wizard from it —
+  // skipped for the marketplace-selection flow above, which populates step1
+  // itself from the catalog and would otherwise race with this effect.
+  //
+  // isResumingDraft (not isFetching) is deliberately what gates rendering
+  // the step components below: isFetching can read false for one render
+  // right after `skip` flips off (the request hasn't been dispatched into
+  // RTK Query's store yet), which previously let Step1AboutYou mount one
+  // render early with empty defaultValues — React Hook Form captures
+  // defaultValues only at that initial mount, so the later hydrate dispatch
+  // was silently ignored. hasLocalFormData is derived straight from the
+  // same `formData` the steps consume, so it flips in lockstep with it —
+  // no separate flag, no gap. It intentionally does NOT depend on
+  // hydrationFailed (that only affects the render gate below), so a failed
+  // fetch can't create a skip/refetch flip-flop.
+  const hasLocalFormData = Boolean(formData.step1 || formData.step2 || formData.step3);
+  const isResumingDraft = Boolean(applicationId) && !hasLocalFormData && !marketplaceSelectionKey;
+
+  const { data: existingApplication, isError: hydrationFailed } = useGetApplicationQuery(
+    applicationId ?? "",
+    { skip: !isResumingDraft },
+  );
+
+  useEffect(() => {
+    if (!applicationId || !existingApplication) return;
+    dispatch(
+      hydrateApplication({
+        id: applicationId,
+        number: existingApplication.applicationNumber,
+        formData: toApplicationFormData(existingApplication),
+      }),
+    );
+  }, [applicationId, existingApplication, dispatch]);
+
+  useEffect(() => {
+    if (hydrationFailed) {
+      toast.error("Couldn't load your saved progress — starting this session fresh.");
+    }
+  }, [hydrationFailed]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -329,7 +396,7 @@ export default function ApplicationWizard() {
 
       {/* Step content */}
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10">
-        {isCreating ? (
+        {isCreating || (isResumingDraft && !hydrationFailed) ? (
           <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
             Preparing your application…
           </div>

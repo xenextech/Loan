@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import StoreProvider from "@/components/providers/StoreProvider";
 import { Toaster } from "@/components/ui/sonner";
 import ContactWidget from "@/components/ContactWidget";
+import ServiceWorkerRegistration from "@/components/pwa/ServiceWorkerRegistration";
+import InstallPrompt from "@/components/pwa/InstallPrompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +28,24 @@ export const metadata: Metadata = {
     "education finance",
     "Unnati",
   ],
+  applicationName: "Edu Loan",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Edu Loan",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Lets fixed/absolute elements read env(safe-area-inset-*) so standalone
+  // mode on iOS doesn't tuck content under the notch/home indicator.
+  viewportFit: "cover",
+  themeColor: "#15C35B",
 };
 
 export default function RootLayout({
@@ -44,6 +64,8 @@ export default function RootLayout({
           {children}
           <Toaster richColors position="top-right" />
           <ContactWidget />
+          <InstallPrompt />
+          <ServiceWorkerRegistration />
         </StoreProvider>
       </body>
     </html>

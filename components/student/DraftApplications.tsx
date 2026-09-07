@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -8,6 +9,16 @@ import { resetApplication, setApplicationId } from "@/lib/store/applicationSlice
 import { useGetMyApplicationsQuery, useDeleteDraftMutation } from "@/lib/api/applicationApi";
 import type { LoanApplication } from "@/types/api";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ApplicationCard, CardSkeleton } from "./ApplicationCard";
 import { Plus, FileEdit } from "lucide-react";
 
@@ -15,7 +26,8 @@ export function DraftApplications() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { data: applications = [], isLoading } = useGetMyApplicationsQuery();
-  const [deleteDraft] = useDeleteDraftMutation();
+  const [deleteDraft, { isLoading: deleting }] = useDeleteDraftMutation();
+  const [toDelete, setToDelete] = useState<LoanApplication | null>(null);
 
   const drafts = applications.filter((a) => a.status === "DRAFT");
 
@@ -25,11 +37,12 @@ export function DraftApplications() {
     router.push("/apply");
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this draft? This cannot be undone.")) return;
+  const handleDelete = async () => {
+    if (!toDelete) return;
     try {
-      await deleteDraft(id).unwrap();
+      await deleteDraft(toDelete.id).unwrap();
       toast.success("Draft deleted.");
+      setToDelete(null);
     } catch {
       toast.error("Failed to delete draft.");
     }
@@ -81,10 +94,35 @@ export function DraftApplications() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {drafts.map((app) => (
-            <ApplicationCard key={app.id} app={app} onContinue={handleContinue} onDelete={handleDelete} />
+            <ApplicationCard key={app.id} app={app} onContinue={handleContinue} onDelete={setToDelete} />
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!toDelete} onOpenChange={(open) => !open && setToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {toDelete?.applicationNumber}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This draft and any documents you&apos;ve uploaded for it will be permanently deleted.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

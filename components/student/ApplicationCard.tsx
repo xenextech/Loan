@@ -51,7 +51,7 @@ export function ApplicationCard({
 }: {
   app: LoanApplication;
   onContinue: (app: LoanApplication) => void;
-  onDelete: (id: string) => void;
+  onDelete: (app: LoanApplication) => void;
 }) {
   const isSubmitted = app.status === "SUBMITTED";
   const studyLabel = app.studyType
@@ -175,7 +175,7 @@ export function ApplicationCard({
                   size="sm"
                   variant="ghost"
                   className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => onDelete(app.id)}
+                  onClick={() => onDelete(app)}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>

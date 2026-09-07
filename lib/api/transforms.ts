@@ -19,7 +19,15 @@ import type {
   ParentDocument,
 } from "@/types/api";
 import { toNumber, toOptionalNumber } from "@/lib/formatters";
-import type { Application, StudyType as FEStudyType } from "@/types/application";
+import type {
+  Application,
+  ApplicationFormData,
+  StudyType as FEStudyType,
+  IdentityType as FEIdentityType,
+  Gender as FEGender,
+  Occupation as FEOccupation,
+  MaritalStatus as FEMaritalStatus,
+} from "@/types/application";
 import type {
   DocumentItem,
   InitiatorApplicationDetail,
@@ -104,6 +112,91 @@ export const toFrontendApplication = (a: LoanApplication): Application => ({
   email:             a.email ?? "",
   phoneNumber:       a.phoneNumber ?? "",
 });
+
+// Reverse of toIdentityType/toGender/toOccupation/toMaritalStatus — backend
+// enums are uppercase versions of the same lowercase_underscore strings the
+// apply wizard's schemas use, so a lowercase() round-trips them exactly.
+const identityTypeBack = (v?: IdentityType | null): Exclude<FEIdentityType, "document"> | undefined =>
+  v ? (v.toLowerCase() as Exclude<FEIdentityType, "document">) : undefined;
+const genderBack = (v?: Gender | null): FEGender | undefined => (v ? (v.toLowerCase() as FEGender) : undefined);
+const occupationBack = (v?: Occupation | null): FEOccupation | undefined =>
+  v ? (v.toLowerCase() as FEOccupation) : undefined;
+const maritalStatusBack = (v?: MaritalStatus | null): FEMaritalStatus | undefined =>
+  v ? (v.toLowerCase() as FEMaritalStatus) : undefined;
+
+const feeMethodBack: Record<FeeStructureMethod, "upload" | "website" | "manual"> = {
+  DOCUMENT: "upload",
+  LINK: "website",
+  MANUAL: "manual",
+};
+
+// Reverse of buildStep1Body/buildStep2Body/buildStep3Body in applicationApi.ts
+// — restores a previously-saved draft's GET /applications/:id response into
+// the wizard's per-step form shape, so resuming a draft doesn't present a
+// blank form. Nested studyInformation/loanInformation win over the flat
+// top-level fields when both are present, matching toFrontendApplication above.
+export const toApplicationFormData = (a: LoanApplication): ApplicationFormData => {
+  const study = a.studyInformation;
+  const loan = a.loanInformation;
+  // Left undefined (not defaulted) when the student hasn't actually chosen
+  // one yet — a brand-new, never-filled draft must still render its Select
+  // fields unselected/placeholder, exactly as it did before hydration existed.
+  const rawStudyType = study?.studyType ?? a.studyType;
+  const rawFeeMethod = loan?.feeStructureMethod ?? a.feeStructureMethod;
+  // Decimal fields arrive over the wire as a {d, e, s} decimal.js shape, not
+  // a plain number — must go through toOptionalNumber (same as loanAmount/
+  // tuitionFee below) rather than a raw String(), which would stringify the
+  // object itself ("[object Object]") instead of its numeric value.
+  const expectedSalaryNum = toOptionalNumber(loan?.expectedSalary ?? a.expectedSalary);
+
+  return {
+    step1: {
+      fullName: a.fullName ?? undefined,
+      phoneNumber: a.phoneNumber ?? undefined,
+      email: a.email ?? undefined,
+      studyType: rawStudyType ? studyTypeBack[rawStudyType] : undefined,
+      courseName: study?.courseName ?? a.courseName ?? undefined,
+      collegeName: a.collegeName ?? undefined,
+      boardUniversity: study?.boardUniversity ?? a.boardUniversity ?? undefined,
+      courseDuration:
+        study?.courseDuration ?? (a.courseDuration != null ? String(a.courseDuration) : undefined),
+      loanAmount: toOptionalNumber(loan?.loanAmount ?? a.loanAmount),
+      collegeId: a.collegeId ?? undefined,
+      courseId: study?.courseId ?? undefined,
+      tuitionFee: toOptionalNumber(study?.tuitionFee),
+      // estimatedEmi is deliberately not restored here — Step1Data has no
+      // such field (Step1AboutYou recomputes it live from loanAmount +
+      // courseDuration once those are restored, via LoanAmountField).
+    },
+    step2: {
+      identityType: identityTypeBack(a.identityType),
+      identityNumber: a.identityNumber ?? undefined,
+      identityName: a.identityName ?? undefined,
+      dobBs: a.dobBs ?? undefined,
+      dob: toDateInputValue(a.dobAd ?? a.dob),
+      issuedDistrict: a.issuedDistrict ?? undefined,
+      issuedDate: toDateInputValue(a.issuedDate),
+      gender: genderBack(a.gender),
+      occupation: occupationBack(a.occupation),
+      province: a.province ?? undefined,
+      district: a.district ?? undefined,
+      municipality: a.municipality ?? undefined,
+      ward: a.ward != null ? String(a.ward) : undefined,
+    },
+    step3: {
+      fatherName: a.fatherName ?? undefined,
+      motherName: a.motherName ?? undefined,
+      grandfatherName: a.grandfatherName ?? undefined,
+      maritalStatus: maritalStatusBack(a.maritalStatus),
+      spouseName: a.spouseName ?? undefined,
+      expectedSalary: expectedSalaryNum != null ? String(expectedSalaryNum) : undefined,
+      feeStructureType: rawFeeMethod ? feeMethodBack[rawFeeMethod] : undefined,
+      feeWebsiteLink: loan?.feeStructureUrl ?? a.feeWebsiteLink ?? undefined,
+      feeManualAmount:
+        loan?.feeStructureText ?? (a.feeManualAmount != null ? String(a.feeManualAmount) : undefined),
+    },
+  };
+};
 
 // ─── Initiator ─────────────────────────────────────────────────────────────────
 // Backend college-verified / initiator responses → the Initiator dashboard's view models.
