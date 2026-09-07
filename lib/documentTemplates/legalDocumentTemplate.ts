@@ -183,7 +183,7 @@ export interface LegalDocumentTemplateData {
   bankAccountNumber?: string | null;
 }
 
-const DEFAULT_INSTITUTION_NAME = "Unnati";
+const DEFAULT_INSTITUTION_NAME = "Best Finance Company Limited";
 
 // ---------------------------------------------------------------------------
 // Escaping and blank-field rendering
@@ -890,7 +890,6 @@ function buildLoanProposalLetterHtml(
     remarks,
     generatedByName,
     generatedAt,
-    institutionName: institutionNameInput,
     studentAddress,
     studentCitizenshipNo,
     studentCitizenshipOffice,
@@ -898,7 +897,7 @@ function buildLoanProposalLetterHtml(
     branchManagerName,
   } = data;
 
-  const institutionName = institutionNameInput?.trim() || DEFAULT_INSTITUTION_NAME;
+  const institutionName = DEFAULT_INSTITUTION_NAME;
   // The letter's own issue date falls back to today; the application date does
   // not — an unrecorded application date prints as a blank to complete in ink.
   const bsDate = formatBsDateDiv(generatedAt ?? new Date().toISOString());
@@ -1114,10 +1113,9 @@ function buildGuaranteeDeedHtml(
     finalDisbursementAmount,
     remarks,
     generatedAt,
-    institutionName: institutionNameInput,
   } = data;
 
-  const institutionName = institutionNameInput?.trim() || DEFAULT_INSTITUTION_NAME;
+  const institutionName = DEFAULT_INSTITUTION_NAME;
   const bsDateSlashed = formatBsDateSlashed(generatedAt);
   const loanAmount = amountAkshare(finalDisbursementAmount);
   const lender = lenderDescriptor(data.lender, institutionName);
@@ -1197,7 +1195,6 @@ function buildPromissoryNoteHtml(
     tenureMonths,
     remarks,
     generatedAt,
-    institutionName: institutionNameInput,
     collateralOwnerName,
     collateralAddress,
     collateralPlotNo,
@@ -1206,7 +1203,7 @@ function buildPromissoryNoteHtml(
     witnesses,
   } = data;
 
-  const institutionName = institutionNameInput?.trim() || DEFAULT_INSTITUTION_NAME;
+  const institutionName = DEFAULT_INSTITUTION_NAME;
   const bsDateSlashed = formatBsDateSlashed(generatedAt);
   const loanAmount = amountMatra(finalDisbursementAmount);
   const interestRateNp = interestRateText(interestRate);
@@ -1291,7 +1288,6 @@ function buildDisbursementRequestHtml(
     finalDisbursementAmount,
     remarks,
     generatedAt,
-    institutionName: institutionNameInput,
     approvalLetterDate,
     loanExpiryDate,
     borrowerPosition,
@@ -1299,7 +1295,7 @@ function buildDisbursementRequestHtml(
     bankAccountNumber,
   } = data;
 
-  const institutionName = institutionNameInput?.trim() || DEFAULT_INSTITUTION_NAME;
+  const institutionName = DEFAULT_INSTITUTION_NAME;
   const bsDate = formatBsDate(generatedAt);
   const loanAmount = amountMatra(finalDisbursementAmount);
   const purposeText = [courseName, collegeName].filter(Boolean).join(", ");

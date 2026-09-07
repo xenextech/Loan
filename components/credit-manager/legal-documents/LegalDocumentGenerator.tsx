@@ -220,9 +220,9 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
 
   const [agreementType, setAgreementType] = useState<LegalDocumentType>("LOAN_AGREEMENT");
   const [remarks, setRemarks] = useState("");
-  // Editable per document — the platform generates these on behalf of
-  // different partner banks/NBFCs, not just Unnati, so it isn't hardcoded.
-  const [institutionName, setInstitutionName] = useState("Unnati");
+  // Fixed — every document is issued in the platform's own name and must
+  // not be changed per generation.
+  const institutionName = "Best Finance Company Limited";
   // Blanks on the paper Loan Agreement ("....................") with no
   // source in the application data — the Credit Manager types these in by
   // hand before generating.
@@ -604,14 +604,9 @@ export function LegalDocumentGenerator({ id }: { id: string }) {
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-2">
                 Financial Institution Name
               </p>
-              <Input
-                value={institutionName}
-                onChange={(e) => setInstitutionName(e.target.value)}
-                placeholder="e.g. Unnati, XYZ Finance Company Ltd."
-                className="h-9 text-sm"
-              />
+              <p className="text-sm font-semibold text-foreground">{institutionName}</p>
               <p className="text-[11px] text-muted-foreground mt-1.5">
-                The document is issued in this institution&apos;s name — change it when generating on behalf of a different partner bank/NBFC.
+                All documents are issued in this institution&apos;s name.
               </p>
             </div>
 
