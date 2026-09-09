@@ -64,7 +64,7 @@ export default function OurApproach() {
     <section
       id="our-approach"
       ref={ref}
-      className="py-20 bg-white border-b border-zinc-100"
+      className="py-16 sm:py-20 bg-white border-b border-zinc-100"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -78,7 +78,7 @@ export default function OurApproach() {
           <p className="text-[11px] font-bold text-primary uppercase tracking-[0.2em] mb-4">
             Our Approach
           </p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight leading-tight mb-4">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 tracking-tight leading-tight mb-4">
             Financing built around your{" "}
             <span className="inline-block bg-linear-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">
               education journey
@@ -100,7 +100,7 @@ export default function OurApproach() {
             initial={{ opacity: 0, x: -20 }}
             animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.55, delay: 0.1, ease: "easeOut" }}
-            className="relative rounded-3xl overflow-hidden min-h-[380px] lg:min-h-full"
+            className="relative rounded-3xl overflow-hidden h-56 sm:h-72 lg:min-h-full min-h-[280px]"
           >
             <Image
               src="/assets/E10N2AA.avif"
@@ -126,7 +126,7 @@ export default function OurApproach() {
                 The Unnati Formula
               </h3>
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2">
                 {FORMULA_ITEMS.map((item, i) => (
                   <span key={item.label} className="flex items-center gap-2.5">
                     <span

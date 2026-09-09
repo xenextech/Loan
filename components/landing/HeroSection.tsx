@@ -118,25 +118,23 @@ export default function HeroSection() {
       className="relative overflow-hidden"
       aria-labelledby="hero-heading"
     >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row relative pt-24 sm:pt-28 lg:pt-32 pb-8 sm:pb-12 lg:pb-16">
 
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex relative pt-32 pb-12 lg:pb-16">
-
-        {/* ── Left panel — static, never changes ───────────────────────────── */}
-        <div className="relative flex flex-col justify-center w-full lg:w-[55%] xl:w-[52%] pr-6 lg:pr-10">
+        {/* ── Left panel ─────────────────────────────────────────────────────── */}
+        <div className="relative flex flex-col justify-center w-full lg:w-[55%] xl:w-[52%] lg:pr-10">
 
           {/* Eyebrow */}
-          <p className="text-[10.5px] font-bold text-primary uppercase tracking-[0.2em] mb-3">
+          <p className="text-[10px] sm:text-[10.5px] font-bold text-primary uppercase tracking-[0.2em] mb-3">
             Education Loan Platform · Nepal
           </p>
 
-          {/* Headline — fixed prefix + looping typewriter word */}
+          {/* Headline */}
           <h1
             id="hero-heading"
-            className="text-[2.5rem] sm:text-5xl lg:text-[3.1rem] font-bold tracking-tight text-zinc-900 leading-[1.09] mb-5 min-h-[2.2em]"
+            className="text-[1.9rem] xs:text-[2.2rem] sm:text-5xl lg:text-[3.1rem] font-bold tracking-tight text-zinc-900 leading-[1.09] mb-4 sm:mb-5 min-h-[2.2em]"
           >
             Apply for loan that{" "}
-            <span className="relative inline-block ">
+            <span className="relative inline-block">
               funds
               <ThreeLine className="hidden lg:block absolute -top-2 -right-7 w-9 h-9 text-primary" />
             </span>
@@ -149,17 +147,16 @@ export default function HeroSection() {
           </h1>
 
           {/* Sub-copy */}
-          <p className="text-base text-zinc-600 leading-relaxed max-w-115 mb-3">
+          <p className="text-sm sm:text-base text-zinc-600 leading-relaxed mb-4 sm:mb-5 max-w-xl">
             {STATIC_SUB}
           </p>
 
-
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Link href="/apply">
+          <div className="flex flex-col lg:flex-row gap-3">
+            <Link href="/apply" className="xs:flex-none">
               <Button
                 size="lg"
-                className="w-full sm:w-auto h-11 px-7 text-sm font-semibold rounded-xl"
+                className="w-full xs:w-auto h-11 px-7 text-sm font-semibold rounded-xl"
               >
                 Apply For Loan
                 <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
@@ -170,27 +167,44 @@ export default function HeroSection() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto h-11 px-7 text-sm font-medium rounded-xl border-zinc-300 text-zinc-700 bg-transparent hover:bg-zinc-100 hover:text-zinc-900 hover:border-zinc-400"
+                  className="w-full lg:w-auto h-11 px-7 text-sm font-medium rounded-xl border-zinc-300 text-zinc-700 bg-transparent hover:bg-zinc-100 hover:text-zinc-900 hover:border-zinc-400"
                 >
-                 Check Eligibility
+                  Check Eligibility
                 </Button>
               </DialogTrigger>
               <DialogContent
-                className="sm:max-w-3xl lg:max-w-4xl p-0 overflow-hidden gap-0"
+                className="w-[95vw] sm:max-w-3xl lg:max-w-4xl p-0 overflow-hidden gap-0"
                 style={{ maxHeight: "90vh" }}
               >
                 <EligibilityForm onDone={() => {}} />
               </DialogContent>
             </Dialog>
           </div>
-
-
         </div>
 
-        {/* ── Right panel — image changes with wordIndex ────────────────────── */}
-        <div className="hidden lg:flex relative flex-1 items-center justify-center">
+        {/* ── Mobile / tablet hero image — below text on small screens ──────── */}
+        <div className="lg:hidden relative w-full mt-8 sm:mt-10 h-56 xs:h-64 sm:h-80">
+          <AnimatePresence mode="sync">
+            <motion.div
+              key={`mobile-${wordIndex}`}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.1, ease: "easeInOut" }}
+              className="absolute inset-0"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={slide.image}
+                alt={slide.alt}
+                className="w-full h-full object-contain"
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
-          {/* Photo crossfade */}
+        {/* ── Right panel — desktop only ──────────────────────────────────────── */}
+        <div className="hidden lg:flex relative flex-1 items-center justify-center">
           <div className="relative z-10 w-full h-130">
             <AnimatePresence mode="sync">
               <motion.div
@@ -201,23 +215,23 @@ export default function HeroSection() {
                 transition={{ duration: 1.1, ease: "easeInOut" }}
                 className="absolute inset-0"
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={slide.image}
-                  alt={slide.alt}
-                  className="w-full h-full object-contain"
-                />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={slide.image}
+                alt={slide.alt}
+                className="w-full h-full object-contain"
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
-    
       </div>
-    <div className="mt-0 lg:-mt-27">
-    <StatsSection />
-    </div>
-      
+
+      </div>
+
+      <div className="-mt-10 lg:-mt-30">
+        <StatsSection />
+      </div>
+
     </section>
   );
 }

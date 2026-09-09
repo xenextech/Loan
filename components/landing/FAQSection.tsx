@@ -45,7 +45,7 @@ export default function FAQSection() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="faq" ref={ref} className="py-24">
+    <section id="faq" ref={ref} className="py-16 sm:py-20 lg:py-24">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header — single centered block, no sticky/duplicate version */}
         <motion.div
@@ -57,7 +57,7 @@ export default function FAQSection() {
           <p className="text-[11px] font-bold text-primary uppercase tracking-[0.18em] mb-3">
             FAQ
           </p>
-          <h2 className="text-3xl font-bold text-zinc-900 tracking-tight leading-tight mb-3">
+          <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight leading-tight mb-3">
             Got questions? We&apos;ve{" "}
             <span className="inline-block">
               <span className="bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent font-bold">

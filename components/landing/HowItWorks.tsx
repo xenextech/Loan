@@ -223,8 +223,7 @@ function PhoneMockup({ inView, screen }: { inView: boolean; screen: ScreenId }) 
       initial={{ opacity: 0, y: 32 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="relative mx-auto"
-      style={{ width: 300 }}
+      className="relative mx-auto w-[220px] sm:w-[260px] lg:w-[300px]"
     >
       {/* Ambient glow behind phone */}
       <div className="absolute -inset-8 rounded-full bg-primary/8 blur-3xl pointer-events-none" />
@@ -334,15 +333,18 @@ export default function HowItWorks() {
     <section
       id="how-it-works"
       ref={ref}
-      className="py-24 bg-white border-b border-zinc-100"
+      className="py-16 sm:py-20 lg:py-24 bg-white border-b border-zinc-100"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-14 xl:gap-20 items-center">
-          {/* ── Left: phone mockup ───────────────────────────────────────── */}
-          <PhoneMockup inView={inView} screen={STEPS[activeIndex].screen} />
+        <div className="grid lg:grid-cols-2 gap-10 xl:gap-20 items-center">
 
-          {/* ── Right: steps ─────────────────────────────────────────────── */}
-          <div>
+          {/* ── Left: phone mockup — order-2 on mobile (below steps) ─────── */}
+          <div className="order-2 lg:order-1 hidden lg:block">
+            <PhoneMockup inView={inView} screen={STEPS[activeIndex].screen} />
+          </div>
+
+          {/* ── Right: steps — order-1 on mobile (shown first) ──────────── */}
+          <div className="order-1 lg:order-2">
             {/* Eyebrow */}
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -353,17 +355,16 @@ export default function HowItWorks() {
               How It Works
             </motion.p>
 
-            {/* Headline with green squiggle accent */}
+            {/* Headline */}
             <motion.h2
               initial={{ opacity: 0, y: 12 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: 0.06 }}
-              className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight leading-tight mb-4"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-900 tracking-tight leading-tight mb-4"
             >
               Apply with Your{" "}
               <span className="inline-block bg-gradient-to-b from-[#15C35B] to-[#0F7D3C] bg-clip-text text-transparent">
                 confidence
-           
               </span>
             </motion.h2>
 
@@ -372,14 +373,14 @@ export default function HowItWorks() {
               initial={{ opacity: 0, y: 10 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: 0.12 }}
-              className="text-base text-zinc-500 leading-relaxed mb-8 max-w-md"
+              className="text-sm sm:text-base text-zinc-500 leading-relaxed mb-6 sm:mb-8 max-w-md"
             >
               Four clear steps from sign-in to funded — every step backed by
               partner banks built for Nepali students.
             </motion.p>
 
             {/* Step cards */}
-            <div className="space-y-7">
+            <div className="space-y-3 sm:space-y-5">
               {STEPS.map((step, i) => (
                 <StepCard
                   key={step.title}

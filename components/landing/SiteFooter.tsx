@@ -48,12 +48,13 @@ export default function SiteFooter() {
     <footer ref={ref} className="bg-[#0E1E14]">
       {/* ── Main content ──────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2.2fr_1fr_1fr_1fr_1fr] gap-10 mb-14">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-[2.2fr_1fr_1fr_1fr] gap-8 sm:gap-10 mb-12 sm:mb-14">
           {/* ── Brand column ──────────────────────────────────── */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.4 }}
+            className="col-span-2 sm:col-span-2 md:col-span-1 lg:col-span-1"
           >
             {/* Logo — matches LandingNav */}
             <Link
@@ -161,7 +162,7 @@ export default function SiteFooter() {
           initial={{ opacity: 0 }}
           animate={inView ? { opacity: 1 } : {}}
           transition={{ duration: 0.4, delay: 0.38 }}
-          className="flex flex-col sm:flex-row items-center justify-cemter gap-4"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <p className="text-xs text-zinc-400 text-center mx-auto">
             © {new Date().getFullYear()} Unnati Education Loan Platform. All
