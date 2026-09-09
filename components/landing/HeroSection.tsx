@@ -14,7 +14,7 @@ const SLIDES = [
   {
     animatedWord: "Master's",
     image: "/assets/Hero.png",
-    alt: "Happy student in graduation cap and gown holding a diploma",
+    alt: "Happy student in graduation cap",
   },
   {
     animatedWord: "Bachelor's",
