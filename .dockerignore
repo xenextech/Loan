@@ -1,0 +1,58 @@
+# -- Node ----------------------------------------------------------------------
+node_modules
+
+# -- Next.js build output -------------------------------------------------------
+# Rebuilt inside Docker; including it would bake local-machine paths into the image.
+.next
+out
+
+# -- Environment / secrets ------------------------------------------------------
+# NEXT_PUBLIC_* values are passed as Docker build args — never bake .env files.
+.env
+.env.*
+!.env.example
+
+# -- Git ------------------------------------------------------------------------
+.git
+.gitignore
+.gitattributes
+
+# -- TypeScript incremental build cache ----------------------------------------
+*.tsbuildinfo
+next-env.d.ts
+
+# -- Tests & coverage ----------------------------------------------------------
+coverage
+playwright-report
+test-results
+
+# -- Editor / OS ---------------------------------------------------------------
+.DS_Store
+*.pem
+.vscode
+.idea
+*.swp
+*.swo
+Thumbs.db
+
+# -- Docs & CI (not needed in image) -------------------------------------------
+README.md
+CLAUDE.md
+AGENTS.md
+
+# -- Yarn (project uses npm) ---------------------------------------------------
+.yarn
+.pnp
+.pnp.*
+.pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# -- Vercel --------------------------------------------------------------------
+.vercel
+
+# -- Antigravity/Gemini agent files --------------------------------------------
+.agents
+plugins
+skill.json
