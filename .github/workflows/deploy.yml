@@ -1,0 +1,100 @@
+name: Deploy Unnati Frontend
+
+on:
+  push:
+    branches: [qa]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-unnati-frontend
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Code Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+  deploy:
+    name: Deploy to VPS
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          chmod 600 ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy frontend
+        env:
+          VPS: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+          SHA: ${{ github.sha }}
+
+        run: |
+          ssh -o BatchMode=yes "$VPS" "bash -euo pipefail -s" <<SCRIPT
+          cd /home/deploy/projects/unnati-frontend
+
+          echo "Fetching qa branch..."
+          git fetch origin qa
+
+          echo "Deploying commit: $SHA"
+
+          # Don't use git clean -fd.
+          # .env.production is untracked and must survive deployments.
+          git reset --hard "$SHA"
+
+          echo "Building frontend..."
+          docker compose --env-file .env.production build frontend
+
+          echo "Starting frontend..."
+          docker compose --env-file .env.production up -d frontend
+
+          echo "Cleaning unused Docker images..."
+          docker image prune -f
+          SCRIPT
+
+      - name: Verify frontend health
+        env:
+          VPS: ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}
+
+        run: |
+          ssh -o BatchMode=yes "$VPS" "bash -euo pipefail -s" <<'SCRIPT'
+          curl -fsS \
+            --retry 15 \
+            --retry-delay 2 \
+            --retry-connrefused \
+            http://127.0.0.1:3002/ > /dev/null
+
+          echo "Frontend is responding successfully."
+          SCRIPT
