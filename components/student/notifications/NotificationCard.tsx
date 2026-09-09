@@ -14,7 +14,7 @@ import {
 } from "./notificationCategory";
 
 // Regex that matches http(s) URLs in text.
-const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+const URL_REGEX = /(https?:\/\/[^\s]+)/;
 
 /**
  * Splits a message string into alternating plain-text and URL segments,
@@ -27,8 +27,6 @@ function MessageWithLinks({ text, collapsed }: { text: string; collapsed: boolea
     <p className={cn("text-sm text-muted-foreground break-words", collapsed && "truncate")}>
       {parts.map((part, i) => {
         if (URL_REGEX.test(part)) {
-          // Reset lastIndex after test() call (stateful with /g flag)
-          URL_REGEX.lastIndex = 0;
           return (
             <a
               key={i}
@@ -43,8 +41,6 @@ function MessageWithLinks({ text, collapsed }: { text: string; collapsed: boolea
             </a>
           );
         }
-        // Reset after test()
-        URL_REGEX.lastIndex = 0;
         return <span key={i}>{part}</span>;
       })}
     </p>
@@ -64,7 +60,6 @@ export function NotificationCard({
 
   // Check if message contains a URL so we can show an expand hint
   const hasUrl = URL_REGEX.test(notification.message);
-  URL_REGEX.lastIndex = 0;
 
   const handleClick = () => {
     setExpanded((v) => !v);

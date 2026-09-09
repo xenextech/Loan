@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { motion, useInView, useMotionValue, useTransform, animate } from "framer-motion";
 
 /* ─── Data ───────────────────────────────────────────────────────────────── */
@@ -47,10 +47,13 @@ function useIsomorphicCountUp(
   inView: boolean,
 ) {
   const started = useRef(false);
-  if (inView && !started.current) {
-    started.current = true;
-    animate(count, value, { duration: 1.6, ease: "easeOut" });
-  }
+
+  useEffect(() => {
+    if (inView && !started.current) {
+      started.current = true;
+      animate(count, value, { duration: 1.6, ease: "easeOut" });
+    }
+  }, [inView, count, value]);
 }
 
 /* ─── Component ─────────────────────────────────────────────────────────── */

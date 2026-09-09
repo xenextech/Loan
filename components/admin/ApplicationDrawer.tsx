@@ -36,7 +36,6 @@ import {
   User,
   BookOpen,
   Wallet,
-  Loader2,
   ExternalLink,
   Images,
   MapPin,
@@ -99,6 +98,7 @@ function DocCard({ docType, url }: { docType: DocumentType; url?: string }) {
     <div className="rounded-xl border border-border overflow-hidden group">
       {isImage ? (
         <div className="relative h-32 bg-muted overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={url}
             alt={label}

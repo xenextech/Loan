@@ -5,10 +5,6 @@ import {
   Building2,
   Banknote,
   Clock,
-  AlertTriangle,
-  Info,
-  CheckCircle2,
-  AlertCircle,
   ArrowRight,
   Plus,
   InboxIcon,
@@ -67,46 +63,6 @@ const STATS = [
   },
 ];
 
-const ALERTS = [
-  {
-    type: "warning" as const,
-    icon: AlertTriangle,
-    text: "2 co-sign requests overdue — parents not responding",
-    time: "Today",
-  },
-  {
-    type: "info" as const,
-    icon: Info,
-    text: "NIC Asia Bank lowered rate to 9.5% — BBA students eligible",
-    time: "Yesterday",
-  },
-  {
-    type: "success" as const,
-    icon: CheckCircle2,
-    text: "4 students received disbursement — Laxmi Sunrise batch",
-    time: "2 days ago",
-  },
-  {
-    type: "error" as const,
-    icon: AlertCircle,
-    text: "Offer letter AIM-OFFER-2081-082/0039 expiring in 8 days",
-    time: "3 days ago",
-  },
-];
-
-const alertStyles = {
-  warning: "border-l-[oklch(0.75_0.18_80)] bg-[oklch(0.75_0.18_80)]/5",
-  info: "border-l-primary bg-primary/5",
-  success: "border-l-[oklch(0.62_0.18_145)] bg-[oklch(0.62_0.18_145)]/5",
-  error: "border-l-destructive bg-destructive/5",
-} as const;
-
-const alertIconStyles = {
-  warning: "text-[oklch(0.55_0.18_80)]",
-  info: "text-primary",
-  success: "text-[oklch(0.42_0.18_145)]",
-  error: "text-destructive",
-} as const;
 
 const PARTNER_BANKS = [
   {

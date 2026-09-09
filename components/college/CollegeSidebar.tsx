@@ -22,7 +22,6 @@ import {
   LogOut,
   Building2,
   Menu,
-  BadgeCheck,
 } from "lucide-react";
 import Image from "next/image";
 

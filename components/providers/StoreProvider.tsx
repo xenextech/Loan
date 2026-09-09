@@ -104,9 +104,8 @@ function SessionValidator() {
 }
 
 export default function StoreProvider({ children }: { children: React.ReactNode }) {
-  const storeRef = useRef(store);
   return (
-    <Provider store={storeRef.current}>
+    <Provider store={store}>
       <AuthRehydrator />
       <SessionWatcher />
       <SessionValidator />

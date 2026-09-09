@@ -9,7 +9,6 @@ import {
   Link2,
   Download,
   CheckCircle2,
-  X,
   ImageIcon,
   Trash2,
 } from "lucide-react";
@@ -18,7 +17,6 @@ import { useCreateAgreementMutation } from "@/lib/api/templateApi";
 import { useGetMyVerificationsQuery } from "@/lib/api/collegeApi";
 import { buildAgreementHtml } from "@/lib/documentTemplates/agreementTemplate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

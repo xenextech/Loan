@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, X, FileText, Image, CheckCircle2, AlertCircle, Loader2, Eye, Download } from "lucide-react";
+import { Upload, X, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, Loader2, Eye, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DocumentLightbox, type LightboxFile } from "./DocumentLightbox";
@@ -280,7 +280,7 @@ export default function FileUploadZone({
                 dragging ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
               )}
             >
-              {isPhoto ? <Image className="w-6 h-6" /> : <Upload className="w-6 h-6" />}
+              {isPhoto ? <ImageIcon className="w-6 h-6" /> : <Upload className="w-6 h-6" />}
             </div>
             <p className="text-sm font-semibold text-foreground mb-1 text-center wrap-break-word px-2">{label}</p>
             {hint && <p className="text-xs text-muted-foreground text-center wrap-break-word px-2">{hint}</p>}

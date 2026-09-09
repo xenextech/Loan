@@ -59,8 +59,6 @@ function useTypewriter(words: readonly string[], speed = 45) {
     const word = words[wordIndex];
     let n = 0;
     let id: ReturnType<typeof setTimeout>;
-    setDisplayed("");
-    setTyping(true);
 
     const forward = () => {
       n++;
@@ -83,7 +81,11 @@ function useTypewriter(words: readonly string[], speed = 45) {
       }
     };
 
-    id = setTimeout(forward, speed);
+    id = setTimeout(() => {
+      setDisplayed("");
+      setTyping(true);
+      id = setTimeout(forward, speed);
+    }, 0);
     return () => clearTimeout(id);
   }, [wordIndex]); // words and speed are stable module-level constants
 
