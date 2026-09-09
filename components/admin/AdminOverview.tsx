@@ -1,5 +1,4 @@
 "use client";
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -20,7 +19,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { Application } from "@/types/application";
 import {
   FileText,
   Send,

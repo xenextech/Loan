@@ -110,7 +110,7 @@ function ContactEmailForm({
               </FormControl>
               <FormMessage />
               <p className="text-xs text-muted-foreground mt-1">
-                A secure verification link will be sent to this address. They'll create their own account.
+              A secure verification link will be sent to this address. They&apos;ll create their own account.
               </p>
             </FormItem>
           )}

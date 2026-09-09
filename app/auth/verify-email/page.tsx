@@ -2,7 +2,7 @@
 import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { GraduationCap, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVerifyEmailQuery } from "@/lib/api/authApi";
 import Image from "next/image";

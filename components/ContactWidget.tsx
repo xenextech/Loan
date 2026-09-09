@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, X, Clock3 } from "lucide-react";
+import { Phone, X } from "lucide-react";
 
 const PHONE_DISPLAY = "+977-9860005961";
 const PHONE_HREF    = "tel:+9779860005961";

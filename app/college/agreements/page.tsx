@@ -1,4 +1,3 @@
-import AgreementsView from "@/components/college/AgreementsView";
 import BonafideGenerator from "@/components/college/BonafideGenerator";
 
 export const metadata = {
