@@ -83,7 +83,7 @@ export default function InstallPrompt() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -16 }}
           transition={{ duration: 0.25 }}
-          className="safe-top fixed inset-x-4 top-4 z-40 sm:inset-x-auto sm:right-4 sm:w-80"
+          className="safe-top fixed inset-x-4 top-4 z-100 sm:inset-x-auto sm:right-4 sm:w-80"
         >
           <div className="flex items-start gap-3 rounded-2xl border border-border bg-popover p-4 text-popover-foreground shadow-xl shadow-black/10">
             <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">

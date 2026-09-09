@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -40,10 +40,19 @@ export default function LoanAmountField({
   courseDuration = "4 Years",
   error,
 }: LoanAmountFieldProps) {
-  const [inputValue, setInputValue] = useState(String(value));
+  // Guard against undefined arriving before form initialises
+  const safeValue = value ?? MIN;
+  const [inputValue, setInputValue] = useState(String(safeValue));
+
+  // Keep local text input in sync when the parent resets the value
+  // (e.g. async college-marketplace prefill via form.reset())
+  useEffect(() => {
+    setInputValue(String(safeValue));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   const repaymentMonths = getMonthsFromDuration(courseDuration);
-  const emi = calculateEMI(value, INTEREST_RATE, repaymentMonths);
+  const emi = calculateEMI(safeValue, INTEREST_RATE, repaymentMonths);
 
   const handleSliderChange = useCallback(
     (vals: number[]) => {
@@ -109,7 +118,7 @@ export default function LoanAmountField({
           min={MIN}
           max={MAX}
           step={STEP}
-          value={[value]}
+          value={[safeValue]}
           onValueChange={handleSliderChange}
           className="w-full"
         />
