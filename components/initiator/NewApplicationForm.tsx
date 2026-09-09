@@ -62,9 +62,19 @@ export function NewApplicationForm() {
       // Uploads are optional and best-effort — a failed upload shouldn't block
       // moving on to the credit-appraisal step; the initiator can re-upload
       // later from the application's document review workspace.
+      // identityType is ignored by the backend for non-identity documentTypes,
+      // so it's safe to pass it uniformly here — for IDENTITY_FRONT/BACK/
+      // DOCUMENT it must match details.identityType (already fixed for this
+      // whole one-shot form) so the submit-time completeness check, which
+      // filters by the application's final identityType, actually finds it.
       const uploads = await Promise.allSettled(
         Object.entries(documents).map(([documentType, file]) =>
-          uploadDocument({ applicationId: created.id, documentType: documentType as DocumentType, file: file as File }).unwrap(),
+          uploadDocument({
+            applicationId: created.id,
+            documentType: documentType as DocumentType,
+            identityType: details.identityType,
+            file: file as File,
+          }).unwrap(),
         ),
       );
       const failedCount = uploads.filter((r) => r.status === "rejected").length;

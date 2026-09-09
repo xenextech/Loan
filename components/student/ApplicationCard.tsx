@@ -18,6 +18,7 @@ import {
   Wallet,
   CalendarDays,
   Eye,
+  ListChecks,
 } from "lucide-react";
 
 const STUDY_TYPE_LABELS: Record<string, string> = {
@@ -54,8 +55,15 @@ export function ApplicationCard({
   onDelete: (app: LoanApplication) => void;
 }) {
   const isSubmitted = app.status === "SUBMITTED";
-  const studyLabel = app.studyType
-    ? (STUDY_TYPE_LABELS[app.studyType] ?? app.studyType)
+  // Course/type/loan-amount come back nested under studyInformation /
+  // loanInformation on every list & detail response — the flat fields on
+  // LoanApplication are a fallback for the rare response shape that has
+  // them directly (see the same pattern in lib/api/transforms.ts).
+  const courseName = app.studyInformation?.courseName ?? app.courseName;
+  const studyType = app.studyInformation?.studyType ?? app.studyType;
+  const loanAmount = app.loanInformation?.loanAmount ?? app.loanAmount;
+  const studyLabel = studyType
+    ? (STUDY_TYPE_LABELS[studyType] ?? studyType)
     : null;
 
   return (
@@ -92,13 +100,13 @@ export function ApplicationCard({
 
           {/* Details grid */}
           <div className="grid grid-cols-2 gap-3 mb-4">
-            {app.courseName && (
+            {courseName && (
               <div className="flex items-start gap-2">
                 <BookOpen className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Course</p>
                   <p className="text-xs font-semibold text-foreground truncate max-w-[120px]">
-                    {app.courseName}
+                    {courseName}
                   </p>
                 </div>
               </div>
@@ -114,13 +122,13 @@ export function ApplicationCard({
                 </div>
               </div>
             )}
-            {app.loanAmount && (
+            {loanAmount && (
               <div className="flex items-start gap-2">
                 <Wallet className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Loan Amount</p>
                   <p className="text-xs font-semibold text-foreground">
-                    {formatNPR(toNumber(app.loanAmount))}
+                    {formatNPR(toNumber(loanAmount))}
                   </p>
                 </div>
               </div>
@@ -129,13 +137,13 @@ export function ApplicationCard({
               <CalendarDays className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">
-                  {isSubmitted ? "Submitted" : "Created"}
+                  {isSubmitted ? "Submitted" : "Last saved"}
                 </p>
                 <p className="text-xs font-semibold text-foreground">
                   {new Date(
-                    isSubmitted && app.submittedAt
-                      ? app.submittedAt
-                      : app.createdAt,
+                    isSubmitted
+                      ? (app.submittedAt ?? app.createdAt)
+                      : (app.draftSavedAt ?? app.updatedAt ?? app.createdAt),
                   ).toLocaleDateString("en-US", {
                     day: "numeric",
                     month: "short",
@@ -144,6 +152,19 @@ export function ApplicationCard({
                 </p>
               </div>
             </div>
+            {/* Where Continue will pick the draft back up — the step it was
+                on when it was saved. */}
+            {!isSubmitted && app.currentStep != null && (
+              <div className="flex items-start gap-2">
+                <ListChecks className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Progress</p>
+                  <p className="text-xs font-semibold text-foreground">
+                    Step {app.currentStep} of 4
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

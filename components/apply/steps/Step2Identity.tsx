@@ -26,6 +26,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import SaveDraftButton, { type SaveDraftStatus } from "@/components/apply/SaveDraftButton";
 import { step2Schema, type Step2FormData } from "@/lib/validations/schemas";
 import FileUploadZone from "@/components/apply/fields/FileUploadZone";
 import {
@@ -41,8 +42,21 @@ import {
   useGetDocumentsQuery,
   useDeleteDocumentMutation,
 } from "@/lib/api/documentsApi";
+import { toIdentityType } from "@/lib/api/transforms";
 import { useAppSelector } from "@/lib/hooks";
-import type { Document, DocumentType } from "@/types/api";
+import type { Document, DocumentType, IdentityType } from "@/types/api";
+
+// Mirrors buildStep2Body's exact special-casing (lib/api/applicationApi.ts):
+// the "document" radio option has no backend IdentityType equivalent, so it
+// must map to undefined/null rather than an invalid "DOCUMENT" enum value.
+// This is what keeps each identity type's IDENTITY_FRONT/BACK/DOCUMENT
+// uploads independent of every other type's — see docFor/uploadFile below.
+function toBackendIdentityType(
+  value: string | undefined,
+): IdentityType | undefined {
+  if (!value || value === "document") return undefined;
+  return toIdentityType(value);
+}
 
 interface Step2Props {
   defaultValues?: Partial<Step2FormData>;
@@ -50,6 +64,8 @@ interface Step2Props {
   onPrev: () => void;
   onDataChange?: (data: Partial<Step2FormData>) => void;
   isSaving?: boolean;
+  onSaveDraft?: (data: Step2FormData) => void;
+  saveDraftStatus?: SaveDraftStatus;
 }
 
 const PROVINCES = [
@@ -95,6 +111,8 @@ export default function Step2Identity({
   onPrev,
   onDataChange,
   isSaving,
+  onSaveDraft,
+  saveDraftStatus = "idle",
 }: Step2Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
@@ -103,36 +121,6 @@ export default function Step2Identity({
   const { data: documents } = useGetDocumentsQuery(applicationId ?? "", {
     skip: !applicationId,
   });
-
-  const docFor = (documentType: DocumentType): Document | undefined =>
-    documents?.find((d) => d.documentType === documentType);
-
-  const uploadFile = async (file: File, documentType: DocumentType) => {
-    if (!applicationId) {
-      toast.error("No active application. Please refresh.");
-      return;
-    }
-    try {
-      await uploadDocument({ applicationId, documentType, file }).unwrap();
-    } catch (err) {
-      toast.error(
-        getUploadErrorMessage(err) ??
-          `Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`,
-      );
-    }
-  };
-
-  const removeUploadedFile = async (documentType: DocumentType) => {
-    const doc = docFor(documentType);
-    if (!applicationId || !doc) return;
-    try {
-      await deleteDocument({ applicationId, documentId: doc.id }).unwrap();
-    } catch {
-      toast.error(
-        `Failed to remove ${documentType.replace(/_/g, " ").toLowerCase()}`,
-      );
-    }
-  };
 
   const form = useForm<Step2FormData>({
     resolver: zodResolver(step2Schema),
@@ -157,6 +145,63 @@ export default function Step2Identity({
   const identityType = form.watch("identityType");
   const dobBs = form.watch("dobBs");
   const watchedValues = form.watch();
+
+  // The currently-selected identity type, in the backend's shape — every
+  // document lookup/upload below is scoped by this (in addition to
+  // documentType) so switching identity types reveals that type's own,
+  // independent set of documents instead of colliding with another type's
+  // IDENTITY_FRONT/BACK/DOCUMENT slot. "document" (no specific legal type)
+  // and null both mean the same thing here: undefined.
+  const backendIdentityType = toBackendIdentityType(identityType);
+
+  // Only the identity-document slots are scoped by identity type — the
+  // applicant photo isn't tied to any identity type and always has
+  // identityType: null on the backend regardless of the current selection.
+  const IDENTITY_SCOPED_TYPES: DocumentType[] = [
+    "IDENTITY_FRONT",
+    "IDENTITY_BACK",
+    "IDENTITY_DOCUMENT",
+  ];
+
+  const docFor = (documentType: DocumentType): Document | undefined =>
+    documents?.find(
+      (d) =>
+        d.documentType === documentType &&
+        (!IDENTITY_SCOPED_TYPES.includes(documentType) ||
+          d.identityType === (backendIdentityType ?? null)),
+    );
+
+  const uploadFile = async (file: File, documentType: DocumentType) => {
+    if (!applicationId) {
+      toast.error("No active application. Please refresh.");
+      return;
+    }
+    try {
+      await uploadDocument({
+        applicationId,
+        documentType,
+        identityType: backendIdentityType,
+        file,
+      }).unwrap();
+    } catch (err) {
+      toast.error(
+        getUploadErrorMessage(err) ??
+          `Failed to upload ${documentType.replace(/_/g, " ").toLowerCase()}`,
+      );
+    }
+  };
+
+  const removeUploadedFile = async (documentType: DocumentType) => {
+    const doc = docFor(documentType);
+    if (!applicationId || !doc) return;
+    try {
+      await deleteDocument({ applicationId, documentId: doc.id }).unwrap();
+    } catch {
+      toast.error(
+        `Failed to remove ${documentType.replace(/_/g, " ").toLowerCase()}`,
+      );
+    }
+  };
 
   useEffect(() => {
     onDataChange?.(watchedValues);
@@ -298,9 +343,23 @@ export default function Step2Identity({
                   </p>
                 </div>
 
-                {/* Front + Back images — available for all identity types */}
+                {/* Front + Back images — available for all identity types.
+                    Keyed by identityType: FileUploadZone keeps its own local
+                    `file`/`preview` state for the instant post-selection
+                    preview (before the upload round-trips and this list
+                    refetches), and without a key React reuses the same
+                    component instance — and therefore that same local state
+                    — across an identity type switch. That's what let a
+                    locally-picked file for one identity type keep rendering
+                    under every other identity type: the correctly-scoped
+                    `existingFile` prop below was already right, but the
+                    stale local `file` state took rendering priority over it
+                    (see FileUploadZone's `hasFile = !!file || showingExisting`).
+                    The key forces a fresh instance — and fresh state — per
+                    identity type. */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                   <FileUploadZone
+                    key={`${identityType}-front`}
                     label="Front Side"
                     hint="Image or PDF of the front side"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
@@ -310,6 +369,7 @@ export default function Step2Identity({
                     isRemoving={isDeleting}
                   />
                   <FileUploadZone
+                    key={`${identityType}-back`}
                     label="Back Side"
                     hint="Image or PDF of the back side"
                     accept="image/jpeg,image/png,image/webp,application/pdf"
@@ -322,6 +382,7 @@ export default function Step2Identity({
 
                 {/* Single document / PDF — available for all identity types */}
                 <FileUploadZone
+                  key={`${identityType}-document`}
                   label={identityType === "citizenship" ? "Full Document (PDF)" : "Identity Document"}
                   hint="Image or PDF of your full identity document, under 5MB"
                   accept="image/jpeg,image/png,image/webp,application/pdf"
@@ -595,24 +656,32 @@ export default function Step2Identity({
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button
-            type="submit"
-            size="lg"
-            disabled={isSaving}
-            className="h-12 px-8 text-base font-semibold"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving…
-              </>
-            ) : (
-              <>
-                Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </>
+          <div className="flex items-center gap-3">
+            {onSaveDraft && (
+              <SaveDraftButton
+                status={saveDraftStatus}
+                onClick={() => onSaveDraft(form.getValues())}
+              />
             )}
-          </Button>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isSaving}
+              className="h-12 px-8 text-base font-semibold"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

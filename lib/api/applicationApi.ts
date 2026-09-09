@@ -115,7 +115,10 @@ export const applicationApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: buildStep1Body(data),
       }),
-      invalidatesTags: (_r, _e, { id }) => [{ type: "Application", id }],
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "Application", id },
+        "Application",
+      ],
     }),
 
     // Save step 2 (identity + address)
@@ -128,7 +131,10 @@ export const applicationApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: buildStep2Body(data),
       }),
-      invalidatesTags: (_r, _e, { id }) => [{ type: "Application", id }],
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "Application", id },
+        "Application",
+      ],
     }),
 
     // Save step 3 (family + fee info)
@@ -141,7 +147,46 @@ export const applicationApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: buildStep3Body(data),
       }),
-      invalidatesTags: (_r, _e, { id }) => [{ type: "Application", id }],
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "Application", id },
+        "Application",
+      ],
+    }),
+
+    // Lightweight resume-position tracker — persists which wizard page
+    // (1-4) to land on next time, independent of the heavier per-step data
+    // saves above. Fired on every navigation (Next/Back/progress-bar
+    // click), so deliberately doesn't invalidate the Application tag —
+    // that would trigger a refetch on every click for no benefit.
+    updateCurrentStep: builder.mutation<
+      { id: string; currentStep: number },
+      { id: string; currentStep: number }
+    >({
+      query: ({ id, currentStep }) => ({
+        url: `/applications/${id}/step`,
+        method: "PATCH",
+        body: { currentStep },
+      }),
+    }),
+
+    // Save as draft — the explicit "keep this application for later" action.
+    // Separate from updateCurrentStep above: that only records a wizard
+    // position, this is what makes the application show up under
+    // /dashboard/drafts. Invalidates the list so the Drafts page picks the
+    // application up immediately.
+    saveDraft: builder.mutation<
+      LoanApplication,
+      { id: string; currentStep: number }
+    >({
+      query: ({ id, currentStep }) => ({
+        url: `/applications/${id}/save-draft`,
+        method: "PATCH",
+        body: { currentStep },
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "Application", id },
+        "Application",
+      ],
     }),
 
     // Final submission — declaration + status change only. Parent/college
@@ -272,6 +317,8 @@ export const {
   useSaveStep1Mutation,
   useSaveStep2Mutation,
   useSaveStep3Mutation,
+  useUpdateCurrentStepMutation,
+  useSaveDraftMutation,
   useSubmitApplicationMutation,
   useDeleteDraftMutation,
   useGetApplicationTrackerQuery,

@@ -8,6 +8,7 @@ import { rehydrateAuth } from "@/lib/store/authSlice";
 import type { AuthUser } from "@/lib/store/authSlice";
 import { getTokenExpiryMs } from "@/lib/auth/tokenExpiry";
 import { performLogout } from "@/lib/auth/authActions";
+import { useGetMeQuery } from "@/lib/api/authApi";
 
 function AuthRehydrator() {
   useEffect(() => {
@@ -83,12 +84,32 @@ function SessionWatcher() {
   return null;
 }
 
+// SessionWatcher only catches a token past its own JWT `exp` claim. It can't
+// catch a session the *backend* has independently invalidated (revoked,
+// signing secret rotated, admin action) before that — and nothing else in
+// the app ever asks the backend "is this still valid" unless the user
+// happens to hit a protected endpoint. On a public page (landing, marketing)
+// that never does, Redux/localStorage keep looking authenticated
+// indefinitely. This pings /auth/me once on load and periodically after —
+// a 401 is handled entirely by baseApi.ts's centralized handler already
+// (clears credentials, shows the session-expired toast, redirects), so this
+// component only needs to trigger the check.
+function SessionValidator() {
+  const token = useSelector((s: RootState) => s.auth.token);
+  useGetMeQuery(undefined, {
+    skip: !token,
+    pollingInterval: 5 * 60 * 1000,
+  });
+  return null;
+}
+
 export default function StoreProvider({ children }: { children: React.ReactNode }) {
   const storeRef = useRef(store);
   return (
     <Provider store={storeRef.current}>
       <AuthRehydrator />
       <SessionWatcher />
+      <SessionValidator />
       {children}
     </Provider>
   );

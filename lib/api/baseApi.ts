@@ -5,6 +5,7 @@ import {
   type FetchArgs,
   type FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
+import { toast } from "sonner";
 import { clearCredentials } from "@/lib/store/authSlice";
 
 const rawBaseQuery = fetchBaseQuery({
@@ -42,7 +43,14 @@ const baseQueryWithUnwrap: BaseQueryFn<
       if (typeof window !== "undefined") {
         localStorage.removeItem("auth_token");
         localStorage.removeItem("auth_user");
+        // Skip on /login itself — a plain wrong-password attempt is also a
+        // 401 through this same pipeline, and "your session expired" would
+        // be a confusing thing to tell someone who was never logged in this
+        // session. The pathname check also doubles as the redirect-loop guard.
         if (window.location.pathname !== "/login") {
+          toast.error("Your session has expired", {
+            description: "Please log in again to continue.",
+          });
           window.location.href = "/login";
         }
       }

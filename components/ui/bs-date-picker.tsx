@@ -1,18 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import NepaliDate, { dateConfigMap } from "nepali-date-converter";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { BS_MIN_YEAR, BS_MAX_YEAR, isValidBsDateString } from "@/lib/bsDate";
 
 // Keys of `dateConfigMap[year]`, in month order (index 0 = Baisakh) — matches
@@ -67,6 +60,19 @@ export function BsDatePicker({ value, onChange, placeholder = "YYYY-MM-DD (BS)",
 
   const today = useMemo(() => NepaliDate.now().getBS(), []);
   const [open, setOpen] = useState(false);
+  // Month/year use a plain button list (like the day grid below), not
+  // Radix's <Select> — profiling showed mounting Select's 91 <SelectItem>s
+  // for the year list alone cost 300-650ms on every open (scaling roughly
+  // linearly with item count: the 12-item month list cost ~150ms), because
+  // each SelectItem carries real per-item overhead — collection
+  // registration, roving-tabindex/typeahead wiring, animation-state classes
+  // — that a plain button doesn't. The day grid's up to 42 plain buttons
+  // measured effectively 0ms, so reusing that same pattern here removes the
+  // cost outright instead of just relocating it to whenever the dropdown is
+  // opened.
+  const [monthOpen, setMonthOpen] = useState(false);
+  const [yearOpen, setYearOpen] = useState(false);
+  const selectedYearRef = useRef<HTMLButtonElement>(null);
   const [viewYear, setViewYear] = useState(selected?.year ?? today.year);
   const [viewMonth, setViewMonth] = useState(selected?.month ?? today.month);
 
@@ -138,31 +144,80 @@ export function BsDatePicker({ value, onChange, placeholder = "YYYY-MM-DD (BS)",
             <ChevronLeft className="w-4 h-4" />
           </Button>
 
-          <Select value={String(viewMonth)} onValueChange={(v) => setViewMonth(Number(v))}>
-            <SelectTrigger className="h-8 flex-1 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+          <Popover open={monthOpen} onOpenChange={setMonthOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-8 flex-1 justify-between px-2 text-xs font-normal"
+              >
+                {BS_MONTHS[viewMonth]}
+                <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[140px] max-h-64 overflow-y-auto p-1" align="start">
               {BS_MONTHS.map((m, i) => (
-                <SelectItem key={m} value={String(i)}>
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setViewMonth(i);
+                    setMonthOpen(false);
+                  }}
+                  className={cn(
+                    "w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted",
+                    i === viewMonth && "bg-primary/10 font-medium text-primary",
+                  )}
+                >
                   {m}
-                </SelectItem>
+                </button>
               ))}
-            </SelectContent>
-          </Select>
+            </PopoverContent>
+          </Popover>
 
-          <Select value={String(viewYear)} onValueChange={(v) => setViewYear(Number(v))}>
-            <SelectTrigger className="h-8 w-[84px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+          <Popover
+            open={yearOpen}
+            onOpenChange={(next) => {
+              setYearOpen(next);
+              if (next) {
+                // Center the current year in the scrollable list instead of
+                // making the user scroll from BS_MIN_YEAR to find it.
+                requestAnimationFrame(() =>
+                  selectedYearRef.current?.scrollIntoView({ block: "center" }),
+                );
+              }
+            }}
+          >
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-8 w-[84px] justify-between px-2 text-xs font-normal"
+              >
+                {viewYear}
+                <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[100px] max-h-64 overflow-y-auto p-1" align="start">
               {years.map((y) => (
-                <SelectItem key={y} value={String(y)}>
+                <button
+                  key={y}
+                  type="button"
+                  ref={y === viewYear ? selectedYearRef : undefined}
+                  onClick={() => {
+                    setViewYear(y);
+                    setYearOpen(false);
+                  }}
+                  className={cn(
+                    "w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted",
+                    y === viewYear && "bg-primary/10 font-medium text-primary",
+                  )}
+                >
                   {y}
-                </SelectItem>
+                </button>
               ))}
-            </SelectContent>
-          </Select>
+            </PopoverContent>
+          </Popover>
 
           <Button
             type="button"

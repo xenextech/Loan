@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import SaveDraftButton, { type SaveDraftStatus } from "@/components/apply/SaveDraftButton";
 import { step1Schema, type Step1FormData } from "@/lib/validations/schemas";
 import LoanAmountField, { INTEREST_RATE, getMonthsFromDuration } from "@/components/apply/fields/LoanAmountField";
 import { formatNPR, calculateEMI } from "@/lib/formatters";
@@ -32,6 +33,8 @@ interface Step1Props {
   onNext: (data: Step1FormData) => void;
   onDataChange?: (data: Partial<Step1FormData>) => void;
   isSaving?: boolean;
+  onSaveDraft?: (data: Step1FormData) => void;
+  saveDraftStatus?: SaveDraftStatus;
 }
 
 const STUDY_TYPES = [
@@ -55,7 +58,14 @@ const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType; title:
   </div>
 );
 
-export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isSaving }: Step1Props) {
+export default function Step1AboutYou({
+  defaultValues,
+  onNext,
+  onDataChange,
+  isSaving,
+  onSaveDraft,
+  saveDraftStatus = "idle",
+}: Step1Props) {
   const form = useForm<Step1FormData>({
     resolver: zodResolver(step1Schema),
     defaultValues: {
@@ -312,7 +322,13 @@ export default function Step1AboutYou({ defaultValues, onNext, onDataChange, isS
         </motion.div>
 
         {/* Submit */}
-        <div className="flex justify-end pt-2">
+        <div className="flex justify-end items-center gap-3 pt-2">
+          {onSaveDraft && (
+            <SaveDraftButton
+              status={saveDraftStatus}
+              onClick={() => onSaveDraft(form.getValues())}
+            />
+          )}
           <Button
             type="submit"
             size="lg"

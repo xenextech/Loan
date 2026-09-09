@@ -1,11 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAppDispatch } from "@/lib/hooks";
-import { resetApplication, setApplicationId } from "@/lib/store/applicationSlice";
+import { resetApplication } from "@/lib/store/applicationSlice";
 import { useGetMyApplicationsQuery, useDeleteDraftMutation } from "@/lib/api/applicationApi";
+import { clearWizardSessionState } from "@/lib/wizardSessionState";
 import type { LoanApplication } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { ApplicationCard, CardSkeleton } from "./ApplicationCard";
@@ -21,18 +21,25 @@ export function SubmittedApplications() {
 
   const handleContinue = (app: LoanApplication) => {
     dispatch(resetApplication());
-    dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
-    router.push("/apply");
+    router.push(`/apply?applicationId=${app.id}`);
   };
 
   const handleDelete = async (app: LoanApplication) => {
     if (!confirm("Delete this draft? This cannot be undone.")) return;
     try {
       await deleteDraft(app.id).unwrap();
+      clearWizardSessionState(app.id);
       toast.success("Draft deleted.");
     } catch {
       toast.error("Failed to delete draft.");
     }
+  };
+
+  // Straight into the wizard — any saved draft the student has is kept and
+  // stays available under Drafts, so there is nothing to confirm here.
+  const handleNewApplication = () => {
+    dispatch(resetApplication());
+    router.push("/apply?new=1");
   };
 
   return (
@@ -48,12 +55,10 @@ export function SubmittedApplications() {
             {isLoading ? "Loading…" : `${submitted.length} application${submitted.length !== 1 ? "s" : ""} under review.`}
           </p>
         </div>
-        <Link href="/apply">
-          <Button size="sm" className="gap-1.5 shrink-0">
-            <Plus className="w-4 h-4" />
-            New Application
-          </Button>
-        </Link>
+        <Button size="sm" className="gap-1.5 shrink-0" onClick={handleNewApplication}>
+          <Plus className="w-4 h-4" />
+          New Application
+        </Button>
       </motion.div>
 
       {isLoading ? (
@@ -71,12 +76,10 @@ export function SubmittedApplications() {
           <p className="text-sm text-muted-foreground max-w-xs mb-6">
             Once you submit an application, it will show up here for you to track.
           </p>
-          <Link href="/apply">
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Start Application
-            </Button>
-          </Link>
+          <Button className="gap-2" onClick={handleNewApplication}>
+            <Plus className="w-4 h-4" />
+            Start Application
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -85,6 +88,7 @@ export function SubmittedApplications() {
           ))}
         </div>
       )}
+
     </div>
   );
 }

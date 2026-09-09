@@ -1,9 +1,10 @@
 "use client";
 import { useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Upload, X, FileText, Image, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, X, FileText, Image, CheckCircle2, AlertCircle, Loader2, Eye, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { DocumentLightbox, type LightboxFile } from "./DocumentLightbox";
 
 export interface ExistingFile {
   name: string;
@@ -44,6 +45,7 @@ export default function FileUploadZone({
   const [preview, setPreview] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxFile, setLightboxFile] = useState<LightboxFile | null>(null);
   // Once the user removes the server-side file, stop showing it even if the
   // parent hasn't refetched yet (avoids it flashing back before invalidation).
   // Reset whenever a *different* existing file shows up, using the
@@ -107,6 +109,42 @@ export default function FileUploadZone({
 
   const isPhoto = variant === "photo";
   const inputId = `upload-${label.replace(/\s+/g, "-").toLowerCase()}`;
+
+  // Build the LightboxFile from whatever is currently displayed
+  const openLightbox = () => {
+    if (file) {
+      const url = preview ?? URL.createObjectURL(file);
+      setLightboxFile({ name: file.name, url, mimeType: file.type });
+    } else if (showingExisting && existingFile) {
+      setLightboxFile({
+        name: existingFile.name,
+        url: existingFile.url,
+        mimeType: existingFile.mimeType,
+      });
+    }
+  };
+
+  const handleQuickDownload = () => {
+    let url = "";
+    let name = "document";
+    if (file) {
+      // For images preview is a data-URL; for PDFs preview is null — create an object URL
+      url = preview ?? URL.createObjectURL(file);
+      name = file.name;
+    } else if (showingExisting && existingFile) {
+      url = existingFile.url;
+      name = existingFile.name;
+    }
+    if (!url) return;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const displayName = file?.name ?? existingFile?.name ?? "";
   const displayPreview =
@@ -176,20 +214,44 @@ export default function FileUploadZone({
               </div>
             )}
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={isRemoving}
-              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-background/80 hover:bg-background shadow-sm"
-              onClick={removeFile}
-            >
-              {isRemoving ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <X className="w-3.5 h-3.5" />
-              )}
-            </Button>
+            {/* Action buttons: View · Download · Remove */}
+            <div className="absolute top-2 right-2 flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="w-7 h-7 rounded-full bg-background/80 hover:bg-background shadow-sm"
+                onClick={openLightbox}
+                title="View document"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="w-7 h-7 rounded-full bg-background/80 hover:bg-background shadow-sm"
+                onClick={handleQuickDownload}
+                title="Download"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={isRemoving}
+                className="w-7 h-7 rounded-full bg-background/80 hover:bg-background shadow-sm"
+                onClick={removeFile}
+                title="Remove"
+              >
+                {isRemoving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <X className="w-3.5 h-3.5" />
+                )}
+              </Button>
+            </div>
           </motion.div>
         ) : (
           <motion.label
@@ -244,6 +306,12 @@ export default function FileUploadZone({
           {error}
         </div>
       )}
+
+      {/* Document Lightbox — rendered outside the card so it covers the full viewport */}
+      <DocumentLightbox
+        file={lightboxFile}
+        onClose={() => setLightboxFile(null)}
+      />
     </div>
   );
 }

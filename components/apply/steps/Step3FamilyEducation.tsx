@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import SaveDraftButton, { type SaveDraftStatus } from "@/components/apply/SaveDraftButton";
 import { step3Schema, type Step3FormData } from "@/lib/validations/schemas";
 import FileUploadZone from "@/components/apply/fields/FileUploadZone";
 import {
@@ -129,6 +130,8 @@ interface Step3Props {
   onPrev: () => void;
   onDataChange?: (data: Partial<Step3FormData>) => void;
   isSaving?: boolean;
+  onSaveDraft?: (data: Step3FormData) => void;
+  saveDraftStatus?: SaveDraftStatus;
 }
 
 const SectionHeading = ({
@@ -166,6 +169,8 @@ export default function Step3FamilyEducation({
   onPrev,
   onDataChange,
   isSaving,
+  onSaveDraft,
+  saveDraftStatus = "idle",
 }: Step3Props) {
   const applicationId = useAppSelector((s) => s.application.applicationId);
   const [uploadDocument] = useUploadDocumentMutation();
@@ -663,24 +668,32 @@ export default function Step3FamilyEducation({
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <Button
-            type="submit"
-            size="lg"
-            disabled={isSaving}
-            className="h-12 px-8 text-base font-semibold"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving…
-              </>
-            ) : (
-              <>
-                Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </>
+          <div className="flex items-center gap-3">
+            {onSaveDraft && (
+              <SaveDraftButton
+                status={saveDraftStatus}
+                onClick={() => onSaveDraft(form.getValues())}
+              />
             )}
-          </Button>
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isSaving}
+              className="h-12 px-8 text-base font-semibold"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

@@ -64,7 +64,7 @@ export interface LoginResponse {
 
 export type AppStatus = 'DRAFT' | 'SUBMITTED';
 export type StudyType = 'PROGRAM' | 'COURSE' | 'DIPLOMA' | 'CERTIFICATION';
-export type IdentityType = 'CITIZENSHIP' | 'PASSPORT' | 'DRIVING_LICENSE';
+export type IdentityType = 'CITIZENSHIP' | 'PASSPORT' | 'DRIVING_LICENSE' | 'NATIONAL_ID' | 'PAN_NUMBER';
 export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 export type MaritalStatus = 'SINGLE' | 'MARRIED' | 'DIVORCED' | 'WIDOWED';
 export type Occupation = 'STUDENT' | 'EMPLOYED' | 'SELF_EMPLOYED' | 'UNEMPLOYED';
@@ -289,6 +289,13 @@ export interface LoanApplication {
   applicationNumber: string;
   status: AppStatus;
   userId: string;
+  // Which page of the 4-step apply wizard to resume on — see
+  // ApplicationWizard.tsx. Defaults to 1 on the backend for every draft.
+  currentStep?: number;
+  // When the student last clicked "Save as Draft". Null/absent means the row
+  // only exists because the wizard was open (a scratch application) — those
+  // are deliberately NOT listed as drafts anywhere in the UI.
+  draftSavedAt?: string | null;
   // Nested relations (present when included by Prisma)
   studyInformation?: StudyInformation;
   loanInformation?: LoanInformation;
@@ -727,6 +734,10 @@ export interface Document {
   id: string;
   applicationId: string;
   documentType: DocumentType;
+  // Only meaningful for IDENTITY_FRONT/IDENTITY_BACK/IDENTITY_DOCUMENT —
+  // null for every other documentType, and null here also distinguishes the
+  // generic "upload a document" identity option from a specific legal type.
+  identityType: IdentityType | null;
   fileName: string;
   originalFileName: string;
   mimeType: string;

@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAppDispatch } from "@/lib/hooks";
-import { resetApplication, setApplicationId } from "@/lib/store/applicationSlice";
+import { resetApplication } from "@/lib/store/applicationSlice";
 import { useGetMyApplicationsQuery, useDeleteDraftMutation } from "@/lib/api/applicationApi";
+import { clearWizardSessionState } from "@/lib/wizardSessionState";
 import type { LoanApplication } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,23 +29,42 @@ export function DraftApplications() {
   const [deleteDraft, { isLoading: deleting }] = useDeleteDraftMutation();
   const [toDelete, setToDelete] = useState<LoanApplication | null>(null);
 
-  const drafts = applications.filter((a) => a.status === "DRAFT");
+  // Only applications the student explicitly saved (draftSavedAt) belong
+  // here. A DRAFT row also exists for an application that is merely open in
+  // the wizard — created so uploads and step saves have something to attach
+  // to — and starting or refreshing the form must never make one of those
+  // show up as a draft, so they're filtered out.
+  const drafts = applications.filter(
+    (a) => a.status === "DRAFT" && Boolean(a.draftSavedAt),
+  );
 
+  // Opens this exact application at the step it was saved on — the wizard
+  // reads the id from the URL, so a refresh in there stays on the same
+  // application instead of falling back to a new one.
   const handleContinue = (app: LoanApplication) => {
     dispatch(resetApplication());
-    dispatch(setApplicationId({ id: app.id, number: app.applicationNumber }));
-    router.push("/apply");
+    router.push(`/apply?applicationId=${app.id}`);
   };
 
   const handleDelete = async () => {
     if (!toDelete) return;
     try {
       await deleteDraft(toDelete.id).unwrap();
+      clearWizardSessionState(toDelete.id);
       toast.success("Draft deleted.");
       setToDelete(null);
     } catch {
       toast.error("Failed to delete draft.");
     }
+  };
+
+  // Straight into the wizard. Saved drafts are kept (they're listed right
+  // here and can be resumed any time), so there is nothing to confirm or
+  // discard — ?new=1 just tells the wizard to start a fresh application
+  // rather than resume whatever this tab was last working on.
+  const handleNewApplication = () => {
+    dispatch(resetApplication());
+    router.push("/apply?new=1");
   };
 
   return (
@@ -61,12 +80,10 @@ export function DraftApplications() {
             {isLoading ? "Loading…" : `${drafts.length} application${drafts.length !== 1 ? "s" : ""} in progress — pick up where you left off.`}
           </p>
         </div>
-        <Link href="/apply">
-          <Button size="sm" className="gap-1.5 shrink-0">
-            <Plus className="w-4 h-4" />
-            New Application
-          </Button>
-        </Link>
+        <Button size="sm" className="gap-1.5 shrink-0" onClick={handleNewApplication}>
+          <Plus className="w-4 h-4" />
+          New Application
+        </Button>
       </motion.div>
 
       {isLoading ? (
@@ -84,12 +101,10 @@ export function DraftApplications() {
           <p className="text-sm text-muted-foreground max-w-xs mb-6">
             Start your education loan application. It takes about 10 minutes to complete.
           </p>
-          <Link href="/apply">
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Start Application
-            </Button>
-          </Link>
+          <Button className="gap-2" onClick={handleNewApplication}>
+            <Plus className="w-4 h-4" />
+            Start Application
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -123,6 +138,7 @@ export function DraftApplications() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   );
 }

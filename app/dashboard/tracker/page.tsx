@@ -38,7 +38,7 @@ export default function ApplicationTrackerPage() {
             {isLoading ? "Loading…" : `Track the progress of ${submitted.length} submitted application${submitted.length !== 1 ? "s" : ""}.`}
           </p>
         </div>
-        <Link href="/apply">
+        <Link href="/apply?new=1">
           <Button size="sm" className="gap-1.5 shrink-0">
             <Plus className="w-4 h-4" />
             New Application
@@ -73,7 +73,7 @@ export default function ApplicationTrackerPage() {
           <p className="text-sm text-muted-foreground max-w-xs mb-6">
             Once you submit an application, its progress will show up here.
           </p>
-          <Link href="/apply">
+          <Link href="/apply?new=1">
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
               Start Application

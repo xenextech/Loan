@@ -3,6 +3,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import SaveDraftButton, { type SaveDraftStatus } from "@/components/apply/SaveDraftButton";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,8 @@ interface Step4Props {
   onPrev: () => void;
   onEdit: (step: number) => void;
   onSubmit: (decl: Step4Declaration) => void;
+  onSaveDraft?: () => void;
+  saveDraftStatus?: SaveDraftStatus;
 }
 
 function getApiErrorMessage(err: unknown): string {
@@ -316,6 +319,8 @@ export default function Step4ReviewSubmit({
   onPrev,
   onEdit,
   onSubmit,
+  onSaveDraft,
+  saveDraftStatus = "idle",
 }: Step4Props) {
   const [agreed1, setAgreed1] = useState(false);
   const [agreed2, setAgreed2] = useState(false);
@@ -588,29 +593,34 @@ export default function Step4ReviewSubmit({
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>
-        <Button
-          onClick={() =>
-            onSubmit({
-              informationAccurate: agreed1,
-              authorizeVerification: agreed2,
-            })
-          }
-          disabled={!canSubmit}
-          size="lg"
-          className="h-12 px-8 text-base font-semibold shadow-sm hover:shadow-md transition-all disabled:opacity-50"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Submitting…
-            </>
-          ) : (
-            <>
-              <Send className="w-4 h-4 mr-2" />
-              Submit Application
-            </>
+        <div className="flex items-center gap-3">
+          {onSaveDraft && (
+            <SaveDraftButton status={saveDraftStatus} onClick={onSaveDraft} />
           )}
-        </Button>
+          <Button
+            onClick={() =>
+              onSubmit({
+                informationAccurate: agreed1,
+                authorizeVerification: agreed2,
+              })
+            }
+            disabled={!canSubmit}
+            size="lg"
+            className="h-12 px-8 text-base font-semibold shadow-sm hover:shadow-md transition-all disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Submitting…
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 mr-2" />
+                Submit Application
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {!agreed1 || !agreed2 ? (
